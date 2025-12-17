@@ -33,6 +33,7 @@
 - Array subscripts are expressions; assignment and access use the same path.
 - DATA list is collected before execution; RESTORE resets pointer; READ errors on exhaustion.
 - DEF FN stores parsed expression; arguments resolved at call; function names share variable normalization rules.
+- Cursor helpers: TAB/SPC return space padding; POS queries terminal cursor column (ANSI escape on POSIX, `GetConsoleScreenBufferInfo` on Windows) and falls back to 0 when unknown. Tests assume an xterm-like terminal.
 
 ## Testing Guidance
 
