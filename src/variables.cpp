@@ -1,0 +1,124 @@
+#include "variables.h"
+#include <algorithm>
+#include <stdexcept>
+
+Variables::Variables() {}
+
+std::string Variables::normalizeName(const std::string& name) const {
+    // In Applesoft BASIC, only first 2 characters are significant
+    std::string normalized = name;
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::toupper);
+    
+    // For non-string, non-integer variables, use first 2 chars
+    if (normalized.length() > 2 && normalized.back() != '$' && normalized.back() != '%') {
+        return normalized.substr(0, 2);
+    }
+    
+    return normalized;
+}
+
+void Variables::setVariable(const std::string& name, const Value& value) {
+    variables_[normalizeName(name)] = value;
+}
+
+Value Variables::getVariable(const std::string& name) {
+    std::string normalized = normalizeName(name);
+    auto it = variables_.find(normalized);
+    if (it != variables_.end()) {
+        return it->second;
+    }
+    
+    // Uninitialized variables default to 0 or empty string
+    if (!name.empty() && name.back() == '$') {
+        return Value("");
+    }
+    return Value(0.0);
+}
+
+bool Variables::hasVariable(const std::string& name) const {
+    return variables_.find(normalizeName(name)) != variables_.end();
+}
+
+void Variables::clear() {
+    variables_.clear();
+    arrays_.clear();
+    // Don't clear functions - they persist
+}
+
+void Variables::dimArray(const std::string& name, const std::vector<int>& dimensions) {
+    std::string normalized = normalizeName(name);
+    ArrayInfo& arr = arrays_[normalized];
+    arr.dimensions = dimensions;
+    arr.data.clear();
+}
+
+void Variables::setArrayElement(const std::string& name, const std::vector<int>& indices, const Value& value) {
+    std::string normalized = normalizeName(name);
+    
+    if (arrays_.find(normalized) == arrays_.end()) {
+        // Auto-dimension to 10 if not explicitly dimensioned (Applesoft behavior)
+        std::vector<int> defaultDims(indices.size(), 10);
+        dimArray(name, defaultDims);
+    }
+    
+    ArrayInfo& arr = arrays_[normalized];
+    
+    // Check bounds
+    for (size_t i = 0; i < indices.size() && i < arr.dimensions.size(); ++i) {
+        if (indices[i] < 0 || indices[i] > arr.dimensions[i]) {
+            throw std::runtime_error("BAD SUBSCRIPT ERROR");
+        }
+    }
+    
+    arr.data[indices] = value;
+}
+
+Value Variables::getArrayElement(const std::string& name, const std::vector<int>& indices) {
+    std::string normalized = normalizeName(name);
+    
+    if (arrays_.find(normalized) == arrays_.end()) {
+        // Auto-dimension to 10 if not explicitly dimensioned
+        std::vector<int> defaultDims(indices.size(), 10);
+        dimArray(name, defaultDims);
+    }
+    
+    ArrayInfo& arr = arrays_[normalized];
+    
+    // Check bounds
+    for (size_t i = 0; i < indices.size() && i < arr.dimensions.size(); ++i) {
+        if (indices[i] < 0 || indices[i] > arr.dimensions[i]) {
+            throw std::runtime_error("BAD SUBSCRIPT ERROR");
+        }
+    }
+    
+    auto it = arr.data.find(indices);
+    if (it != arr.data.end()) {
+        return it->second;
+    }
+    
+    // Uninitialized array elements default to 0 or empty string
+    if (!name.empty() && name.back() == '$') {
+        return Value("");
+    }
+    return Value(0.0);
+}
+
+void Variables::defineFunction(const std::string& name, const std::string& param, const std::string& expr) {
+    std::string normalized = normalizeName(name);
+    FunctionInfo& func = functions_[normalized];
+    func.parameter = param;
+    func.expression = expr;
+}
+
+bool Variables::hasFunction(const std::string& name) const {
+    return functions_.find(normalizeName(name)) != functions_.end();
+}
+
+std::pair<std::string, std::string> Variables::getFunction(const std::string& name) {
+    std::string normalized = normalizeName(name);
+    auto it = functions_.find(normalized);
+    if (it == functions_.end()) {
+        throw std::runtime_error("UNDEFINED FUNCTION ERROR");
+    }
+    return {it->second.parameter, it->second.expression};
+}

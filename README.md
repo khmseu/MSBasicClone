@@ -1,0 +1,153 @@
+# Applesoft BASIC Clone
+
+A modern implementation of the Applesoft II BASIC interpreter written in C++20, targeting compatibility with the classic Apple II BASIC dialect.
+
+## Features
+
+### Implemented
+
+- **Interactive Mode**: Classic "]" prompt with immediate command execution
+- **Script Mode**: Execute BASIC programs from files
+- **Variables**: Numeric and string variables (with $ suffix for strings)
+- **Operators**: Arithmetic (+, -, *, /, ^), comparison (=, <>, <, >, <=, >=), logical (AND, OR, NOT)
+- **Control Flow**:
+  - IF/THEN/ELSE statements
+  - FOR/NEXT loops (with STEP support)
+  - GOTO statements
+  - GOSUB/RETURN subroutines
+- **Built-in Commands**:
+  - NEW, RUN, LIST, END
+  - LOAD, SAVE, CATALOG
+  - PRINT (with semicolon and comma separators)
+  - INPUT (with optional prompts)
+  - LET (assignment, also works without LET keyword)
+  - REM (comments)
+- **Math Functions**: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND
+- **String Functions**: LEFT$, RIGHT$, MID$, LEN, CHR$, ASC, VAL, STR$
+- **40-bit Floating Point**: Emulated Applesoft floating-point precision
+- **Cross-Platform**: Compiles on Linux, macOS, and Windows
+
+## Building
+
+### Requirements
+
+- CMake 3.20 or later
+- GCC 13 or Clang 18 (or compatible)
+- C++20 support
+
+### Build Instructions
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+### Building with Clang
+
+```bash
+mkdir build
+cd build
+CXX=clang++ cmake ..
+make
+```
+
+## Usage
+
+### Interactive Mode
+
+Run without arguments to start the interactive REPL:
+
+```bash
+./msbasic
+```
+
+You'll see the Applesoft-style prompt:
+
+```
+APPLESOFT II BASIC CLONE v1.0
+Compatible with Applesoft BASIC
+
+]
+```
+
+### Script Mode
+
+Run a BASIC program from a file:
+
+```bash
+./msbasic program.bas
+```
+
+## Example Programs
+
+### Hello World
+
+```basic
+10 PRINT "HELLO, WORLD!"
+20 END
+```
+
+### Fibonacci Sequence
+
+```basic
+10 REM FIBONACCI SEQUENCE
+20 PRINT "FIBONACCI NUMBERS:"
+30 LET A = 0
+40 LET B = 1
+50 FOR I = 1 TO 10
+60 PRINT A
+70 LET C = A + B
+80 LET A = B
+90 LET B = C
+100 NEXT I
+110 END
+```
+
+### Subroutine Example
+
+```basic
+10 PRINT "MAIN"
+20 GOSUB 100
+30 PRINT "BACK IN MAIN"
+40 END
+100 PRINT "IN SUBROUTINE"
+110 RETURN
+```
+
+## Applesoft II Compatibility
+
+This interpreter aims for source-code compatibility with Applesoft II BASIC as it appeared on the Apple II+, IIe, IIc, and IIGS. Key compatibility features:
+
+- Only first 2 characters of variable names are significant (except for string and array variables)
+- 40-bit floating-point precision
+- Line numbers from 0-32767
+- Classic BASIC syntax and semantics
+
+## DOS/ProDOS Commands
+
+File system commands are implemented with modern cross-platform file I/O:
+
+- `LOAD "filename"` - Load a BASIC program
+- `SAVE "filename"` - Save the current program
+- `CATALOG` - List files in the current directory
+
+## Development Status
+
+This is a working interpreter with core Applesoft BASIC features implemented. Some advanced features are still in development:
+
+- Arrays with DIM
+- DATA/READ/RESTORE statements
+- DEF FN (user-defined functions)
+- Error handling (ONERR GOTO, RESUME)
+- Graphics commands (GR, HIRES, PLOT, HPLOT, etc.)
+- Sound and hardware-specific commands
+
+## License
+
+This project is open source. See LICENSE file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
