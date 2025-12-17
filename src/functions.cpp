@@ -3,6 +3,10 @@
 #include <cmath>
 #include <iomanip>
 #include <sstream>
+#ifndef _WIN32
+#include <termios.h>
+#include <unistd.h>
+#endif
 
 Value funcSin(const Value &arg) {
   Float40 f(arg.getNumber());
@@ -147,6 +151,40 @@ Value funcSpc(const Value &arg) {
 }
 
 Value funcPos(const Value &) {
-  // No real cursor tracking; return 0 to indicate start of line.
-  return Value(0.0);
+  int col = -1;
+
+#ifndef _WIN32
+  if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
+    termios oldt;
+    if (tcgetattr(STDIN_FILENO, &oldt) == 0) {
+      termios raw = oldt;
+      raw.c_lflag &= static_cast<unsigned>(~(ICANON | ECHO));
+      raw.c_cc[VMIN] = 0;
+      raw.c_cc[VTIME] = 1; // Tenths of a second
+
+      if (tcsetattr(STDIN_FILENO, TCSANOW, &raw) == 0) {
+        const char query[] = "\x1b[6n";
+        (void)!write(STDOUT_FILENO, query, sizeof(query) - 1);
+
+        char buf[32];
+        ssize_t n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+        if (n > 0) {
+          buf[n] = '\0';
+          int row = 0;
+          int parsedCol = 0;
+          if (sscanf(buf, "\x1b[%d;%dR", &row, &parsedCol) == 2) {
+            col = parsedCol;
+          }
+        }
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+      }
+    }
+  }
+#endif
+
+  if (col <= 0) {
+    return Value(0.0);
+  }
+  return Value(static_cast<double>(col - 1)); // BASIC columns are 0-based
 }
