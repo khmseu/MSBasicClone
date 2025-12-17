@@ -15,9 +15,9 @@
 
 ## Yet to Implement / Missing
 
-- Low-level system calls: PEEK/POKE/GET/CALL tokens exist but no execution support.
-- Screen/graphics: HOME, TEXT, GR, HIRES tokens not interpreted.
-- Memory/state queries: FRE, PDL tokens not interpreted.
+- Low-level system calls: PEEK/POKE/GET/CALL implemented (in-memory PEEK/POKE; CALL no-op).
+- Screen/graphics: HOME clears screen; TEXT/GR/HIRES are no-ops.
+- Memory/state queries: FRE returns fixed free-memory placeholder; PDL returns 0.
 - Additional file or device I/O beyond LOAD/SAVE/CATALOG not implemented.
 
 ## Notes

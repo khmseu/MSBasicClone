@@ -9,6 +9,27 @@
 #include <termios.h>
 #include <unistd.h>
 #endif
+#include <unordered_map>
+
+namespace {
+std::unordered_map<int, int> &memoryMap() {
+  static std::unordered_map<int, int> mem;
+  return mem;
+}
+}
+
+void pokeMemory(int addr, int val) {
+  memoryMap()[addr] = val & 0xFF;
+}
+
+int peekMemory(int addr) {
+  auto &mem = memoryMap();
+  auto it = mem.find(addr);
+  if (it == mem.end()) {
+    return 0;
+  }
+  return it->second & 0xFF;
+}
 
 Value funcSin(const Value &arg) {
   Float40 f(arg.getNumber());
@@ -197,4 +218,20 @@ Value funcPos(const Value &) {
     return Value(0.0);
   }
   return Value(static_cast<double>(col));
+}
+
+Value funcFre(const Value &) {
+  // Placeholder free-memory report; Applesoft returned bytes free. Use fixed
+  // value to keep behavior deterministic across platforms.
+  return Value(32767.0);
+}
+
+Value funcPdl(const Value &) {
+  // Paddle input not supported; return 0.
+  return Value(0.0);
+}
+
+Value funcPeek(const Value &arg) {
+  int addr = static_cast<int>(arg.getNumber());
+  return Value(static_cast<double>(peekMemory(addr)));
 }

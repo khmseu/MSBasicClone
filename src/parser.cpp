@@ -495,6 +495,78 @@ public:
   void execute(Interpreter *interp) override { interp->restoreData(); }
 };
 
+class PokeStmt : public Statement {
+public:
+  PokeStmt(std::shared_ptr<Expression> addr, std::shared_ptr<Expression> val)
+      : addr_(std::move(addr)), val_(std::move(val)) {}
+
+  void execute(Interpreter *interp) override {
+    int a = static_cast<int>(addr_->evaluate(interp).getNumber());
+    int v = static_cast<int>(val_->evaluate(interp).getNumber());
+    pokeMemory(a, v);
+  }
+
+private:
+  std::shared_ptr<Expression> addr_;
+  std::shared_ptr<Expression> val_;
+};
+
+class CallStmt : public Statement {
+public:
+  explicit CallStmt(std::shared_ptr<Expression> addr) : addr_(std::move(addr)) {}
+
+  void execute(Interpreter *interp) override {
+    // No-op stub for CALL; evaluate for side effects only.
+    (void)addr_->evaluate(interp);
+  }
+
+private:
+  std::shared_ptr<Expression> addr_;
+};
+
+class HomeStmt : public Statement {
+public:
+  void execute(Interpreter *) override { std::cout << "\x1b[2J\x1b[H"; }
+};
+
+class TextStmt : public Statement {
+public:
+  void execute(Interpreter *) override {}
+};
+
+class GrStmt : public Statement {
+public:
+  void execute(Interpreter *) override {}
+};
+
+class HiresStmt : public Statement {
+public:
+  void execute(Interpreter *) override {}
+};
+
+class GetStmt : public Statement {
+public:
+  explicit GetStmt(std::string name) : name_(std::move(name)) {}
+
+  void execute(Interpreter *interp) override {
+    char ch = '\0';
+    if (!std::cin.get(ch)) {
+      ch = '\0';
+    }
+
+    if (!name_.empty() && name_.back() == '$') {
+      interp->getVariables().setVariable(name_, Value(std::string(1, ch)));
+    } else {
+      interp->getVariables().setVariable(name_,
+                                         Value(static_cast<double>(
+                                             static_cast<unsigned char>(ch))));
+    }
+  }
+
+private:
+  std::string name_;
+};
+
 class OnErrStmt : public Statement {
 public:
   explicit OnErrStmt(int lineNum) : lineNum_(lineNum) {}
@@ -605,6 +677,42 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return std::make_shared<RestoreStmt>();
   case TokenType::DEF:
     return parseDef(tokens, pos);
+  case TokenType::POKE: {
+    pos++; // Skip POKE
+    auto addr = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto val = parseExpression(tokens, pos);
+    return std::make_shared<PokeStmt>(addr, val);
+  }
+  case TokenType::CALL: {
+    pos++; // Skip CALL
+    auto addr = parseExpression(tokens, pos);
+    return std::make_shared<CallStmt>(addr);
+  }
+  case TokenType::HOME:
+    pos++;
+    return std::make_shared<HomeStmt>();
+  case TokenType::TEXT:
+    pos++;
+    return std::make_shared<TextStmt>();
+  case TokenType::GR:
+    pos++;
+    return std::make_shared<GrStmt>();
+  case TokenType::HIRES:
+    pos++;
+    return std::make_shared<HiresStmt>();
+  case TokenType::GET: {
+    pos++; // Skip GET
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED VARIABLE");
+    }
+    std::string varName = tokens[pos].text;
+    pos++;
+    return std::make_shared<GetStmt>(varName);
+  }
   case TokenType::REM:
     // REM consumes rest of line
     pos++;
@@ -899,7 +1007,7 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   }
 
   // Built-in functions - single argument
-  if (token.type == TokenType::SIN || token.type == TokenType::COS ||
+    if (token.type == TokenType::SIN || token.type == TokenType::COS ||
       token.type == TokenType::TAN || token.type == TokenType::ATN ||
       token.type == TokenType::EXP || token.type == TokenType::LOG ||
       token.type == TokenType::SQR || token.type == TokenType::ABS ||
@@ -908,7 +1016,8 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
       token.type == TokenType::VAL || token.type == TokenType::ASC ||
       token.type == TokenType::CHR || token.type == TokenType::STR ||
       token.type == TokenType::TAB || token.type == TokenType::SPC ||
-      token.type == TokenType::POS) {
+      token.type == TokenType::POS || token.type == TokenType::FRE ||
+      token.type == TokenType::PDL || token.type == TokenType::PEEK) {
     TokenType func = token.type;
     pos++;
 
