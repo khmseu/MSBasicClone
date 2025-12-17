@@ -16,11 +16,9 @@ std::unordered_map<int, int> &memoryMap() {
   static std::unordered_map<int, int> mem;
   return mem;
 }
-}
+} // namespace
 
-void pokeMemory(int addr, int val) {
-  memoryMap()[addr] = val & 0xFF;
-}
+void pokeMemory(int addr, int val) { memoryMap()[addr] = val & 0xFF; }
 
 int peekMemory(int addr) {
   auto &mem = memoryMap();

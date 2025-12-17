@@ -513,7 +513,8 @@ private:
 
 class CallStmt : public Statement {
 public:
-  explicit CallStmt(std::shared_ptr<Expression> addr) : addr_(std::move(addr)) {}
+  explicit CallStmt(std::shared_ptr<Expression> addr)
+      : addr_(std::move(addr)) {}
 
   void execute(Interpreter *interp) override {
     // No-op stub for CALL; evaluate for side effects only.
@@ -557,9 +558,8 @@ public:
     if (!name_.empty() && name_.back() == '$') {
       interp->getVariables().setVariable(name_, Value(std::string(1, ch)));
     } else {
-      interp->getVariables().setVariable(name_,
-                                         Value(static_cast<double>(
-                                             static_cast<unsigned char>(ch))));
+      interp->getVariables().setVariable(
+          name_, Value(static_cast<double>(static_cast<unsigned char>(ch))));
     }
   }
 
@@ -1007,7 +1007,7 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   }
 
   // Built-in functions - single argument
-    if (token.type == TokenType::SIN || token.type == TokenType::COS ||
+  if (token.type == TokenType::SIN || token.type == TokenType::COS ||
       token.type == TokenType::TAN || token.type == TokenType::ATN ||
       token.type == TokenType::EXP || token.type == TokenType::LOG ||
       token.type == TokenType::SQR || token.type == TokenType::ABS ||

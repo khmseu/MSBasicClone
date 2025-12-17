@@ -28,9 +28,9 @@ Value funcStr(const Value &arg);
 Value funcTab(const Value &arg);
 Value funcSpc(const Value &arg);
 Value funcPos(const Value &arg);
-Value funcFre(const Value& arg);
-Value funcPdl(const Value& arg);
-Value funcPeek(const Value& arg);
+Value funcFre(const Value &arg);
+Value funcPdl(const Value &arg);
+Value funcPeek(const Value &arg);
 
 // Simplified memory model used by PEEK/POKE helpers.
 void pokeMemory(int addr, int val);
