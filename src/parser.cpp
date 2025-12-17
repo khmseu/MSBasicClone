@@ -899,7 +899,7 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   }
 
   // Built-in functions - single argument
-    if (token.type == TokenType::SIN || token.type == TokenType::COS ||
+  if (token.type == TokenType::SIN || token.type == TokenType::COS ||
       token.type == TokenType::TAN || token.type == TokenType::ATN ||
       token.type == TokenType::EXP || token.type == TokenType::LOG ||
       token.type == TokenType::SQR || token.type == TokenType::ABS ||
