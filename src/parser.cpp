@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "interpreter.h"
 #include "functions.h"
+#include "float40.h"
 #include <iostream>
 #include <memory>
 #include <algorithm>
@@ -38,6 +39,16 @@ public:
             case TokenType::MINUS: return lval - rval;
             case TokenType::MULTIPLY: return lval * rval;
             case TokenType::DIVIDE: return lval / rval;
+            case TokenType::POWER: {
+                Float40 a(lval.getNumber());
+                Float40 b(rval.getNumber());
+                return Value(a.power(b).toDouble());
+            }
+            case TokenType::MOD: {
+                Float40 a(lval.getNumber());
+                Float40 b(rval.getNumber());
+                return Value(a.mod(b).toDouble());
+            }
             case TokenType::EQUAL: return Value(lval == rval ? 1.0 : 0.0);
             case TokenType::NOT_EQUAL: return Value(lval != rval ? 1.0 : 0.0);
             case TokenType::LESS: return Value(lval < rval ? 1.0 : 0.0);
