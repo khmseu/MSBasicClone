@@ -63,6 +63,9 @@ public:
   // File system operations
   void catalog();
 
+  // State reset
+  void clearState();
+
 private:
   Variables variables_;
   std::map<LineNumber, ProgramLine> program_;

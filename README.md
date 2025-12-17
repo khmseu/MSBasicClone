@@ -21,6 +21,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - PRINT (with semicolon and comma separators)
   - INPUT (with optional prompts)
   - LET (assignment, also works without LET keyword)
+  - CLR (clear variables and control stacks)
   - REM (comments)
 - **Math Functions**: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND
 - **String Functions**: LEFT$, RIGHT$, MID$, LEN, CHR$, ASC, VAL, STR$

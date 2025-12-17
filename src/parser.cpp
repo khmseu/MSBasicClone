@@ -546,6 +546,11 @@ public:
   void execute(Interpreter *) override { graphics().enterHighRes(); }
 };
 
+class ClrStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->clearState(); }
+};
+
 class GetStmt : public Statement {
 public:
   explicit GetStmt(std::string name) : name_(std::move(name)) {}
@@ -699,6 +704,9 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   case TokenType::TEXT:
     pos++;
     return std::make_shared<TextStmt>();
+  case TokenType::CLR:
+    pos++;
+    return std::make_shared<ClrStmt>();
   case TokenType::GR:
     pos++;
     return std::make_shared<GrStmt>();

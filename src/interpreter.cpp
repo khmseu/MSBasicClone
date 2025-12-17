@@ -75,6 +75,17 @@ void Interpreter::newProgram() {
   dataPointer_ = 0;
 }
 
+void Interpreter::clearState() {
+  variables_.clear();
+  forStack_.clear();
+  while (!gosubStack_.empty()) {
+    gosubStack_.pop();
+  }
+  errorHandlerLine_ = -1;
+  errorLine_ = -1;
+  lastError_.clear();
+}
+
 void Interpreter::listProgram(int startLine, int endLine) {
   for (const auto &pair : program_) {
     if ((startLine < 0 || pair.first >= startLine) &&
