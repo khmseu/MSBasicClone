@@ -495,6 +495,22 @@ public:
   void execute(Interpreter *interp) override { interp->restoreData(); }
 };
 
+class OnErrStmt : public Statement {
+public:
+  explicit OnErrStmt(int lineNum) : lineNum_(lineNum) {}
+  void execute(Interpreter *interp) override {
+    interp->setErrorHandler(lineNum_);
+  }
+
+private:
+  int lineNum_;
+};
+
+class ResumeStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->resume(); }
+};
+
 class DefStmt : public Statement {
 public:
   DefStmt(std::string name, std::string param, std::shared_ptr<Expression> expr)
@@ -597,6 +613,11 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       pos++;
     }
     return std::make_shared<RemStmt>();
+  case TokenType::ONERR:
+    return parseOnErr(tokens, pos);
+  case TokenType::RESUME:
+    pos++;
+    return std::make_shared<ResumeStmt>();
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);
   default:
@@ -1298,6 +1319,25 @@ std::shared_ptr<Statement> Parser::parseDef(const std::vector<Token> &tokens,
 
   auto expr = parseExpression(tokens, pos);
   return std::make_shared<DefStmt>(toUpper(fnName), param, expr);
+}
+
+std::shared_ptr<Statement>
+Parser::parseOnErr(const std::vector<Token> &tokens, size_t &pos) {
+  pos++; // Skip ONERR
+
+  if (pos >= tokens.size() || tokens[pos].type != TokenType::GOTO) {
+    throw std::runtime_error("SYNTAX ERROR: EXPECTED GOTO");
+  }
+  pos++;
+
+  if (pos >= tokens.size() || tokens[pos].type != TokenType::NUMBER) {
+    throw std::runtime_error("SYNTAX ERROR: EXPECTED LINE NUMBER");
+  }
+
+  int lineNum = static_cast<int>(tokens[pos].value.getNumber());
+  pos++;
+
+  return std::make_shared<OnErrStmt>(lineNum);
 }
 
 bool Parser::match(const std::vector<Token> &tokens, size_t pos,

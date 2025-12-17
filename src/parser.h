@@ -82,6 +82,8 @@ private:
                                        size_t &pos);
   std::shared_ptr<Statement> parseDef(const std::vector<Token> &tokens,
                                       size_t &pos);
+  std::shared_ptr<Statement> parseOnErr(const std::vector<Token> &tokens,
+                                        size_t &pos);
 
   bool match(const std::vector<Token> &tokens, size_t pos,
              TokenType type) const;
