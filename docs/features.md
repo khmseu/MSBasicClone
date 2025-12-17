@@ -11,7 +11,7 @@
 - User-defined functions: DEF FNname(arg)=expr parsed to AST; functions stored in `Variables`; one-argument calls `FNx(expr)` evaluated with local parameter substitution.
 - Built-in functions: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, LEN, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$, STR$.
 - CLI commands: RUN, LIST, NEW, LOAD filename, SAVE filename, CATALOG; immediate-mode statements use the same parser/interpreter.
-- Cursor helpers: TAB(n) and SPC(n) return space padding; POS returns current column when running in a terminal (falls back to 0 otherwise).
+- Cursor helpers: TAB(n) and SPC(n) return space padding; POS reports current column on terminals (ANSI query) and Windows consoles; falls back to 0 otherwise.
 
 ## Yet to Implement / Missing
 

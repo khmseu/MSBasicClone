@@ -3,7 +3,9 @@
 #include <cmath>
 #include <iomanip>
 #include <sstream>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <termios.h>
 #include <unistd.h>
 #endif
@@ -153,7 +155,15 @@ Value funcSpc(const Value &arg) {
 Value funcPos(const Value &) {
   int col = -1;
 
-#ifndef _WIN32
+#ifdef _WIN32
+  HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (h != nullptr && h != INVALID_HANDLE_VALUE) {
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    if (GetConsoleScreenBufferInfo(h, &info)) {
+      col = static_cast<int>(info.dwCursorPosition.X);
+    }
+  }
+#else
   if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
     termios oldt;
     if (tcgetattr(STDIN_FILENO, &oldt) == 0) {
@@ -173,7 +183,7 @@ Value funcPos(const Value &) {
           int row = 0;
           int parsedCol = 0;
           if (sscanf(buf, "\x1b[%d;%dR", &row, &parsedCol) == 2) {
-            col = parsedCol;
+            col = parsedCol - 1; // Escape reports 1-based column
           }
         }
 
@@ -183,8 +193,8 @@ Value funcPos(const Value &) {
   }
 #endif
 
-  if (col <= 0) {
+  if (col < 0) {
     return Value(0.0);
   }
-  return Value(static_cast<double>(col - 1)); // BASIC columns are 0-based
+  return Value(static_cast<double>(col));
 }
