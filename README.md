@@ -57,6 +57,17 @@ make
 
 The build derives the version from `git describe --tags --dirty --always` (uses the output verbatim). If git data is unavailable, it falls back to `1.0.0` or a `-DVERSION_OVERRIDE=...` value passed to CMake. CPack picks up the same string via `CPACK_PACKAGE_VERSION`.
 
+## Testing
+
+Configure and build, then run the BASIC script tests via CTest (each `tests/*.bas` and `examples/*.bas` is executed and must exit cleanly):
+
+```bash
+cmake -S . -B build
+cmake --build build
+cd build
+ctest
+```
+
 ## Usage
 
 ### Interactive Mode

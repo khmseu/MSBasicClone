@@ -98,6 +98,22 @@ include(CPack)
 add_executable(msbasic ${SOURCES} ${HEADERS})
 target_include_directories(msbasic PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
+enable_testing()
+
+file(GLOB BAS_TEST_FILES
+    "${CMAKE_SOURCE_DIR}/tests/*.bas"
+    "${CMAKE_SOURCE_DIR}/examples/*.bas"
+)
+
+foreach(BAS_FILE ${BAS_TEST_FILES})
+    get_filename_component(BAS_NAME "${BAS_FILE}" NAME_WE)
+    add_test(
+        NAME bas_${BAS_NAME}
+        COMMAND $<TARGET_FILE:msbasic> ${BAS_FILE}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    )
+endforeach()
+
 # Link math library on Unix-like systems
 if(UNIX)
     target_link_libraries(msbasic m)
