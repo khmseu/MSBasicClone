@@ -53,6 +53,10 @@ CXX=clang++ cmake ..
 make
 ```
 
+### Versioning
+
+The build derives the version from `git describe --tags --dirty --always` (uses the output verbatim). If git data is unavailable, it falls back to `1.0.0` or a `-DVERSION_OVERRIDE=...` value passed to CMake. CPack picks up the same string via `CPACK_PACKAGE_VERSION`.
+
 ## Usage
 
 ### Interactive Mode
@@ -66,7 +70,7 @@ Run without arguments to start the interactive REPL:
 You'll see the Applesoft-style prompt:
 
 ```
-APPLESOFT II BASIC CLONE v1.0
+APPLESOFT II BASIC CLONE <git describe output>
 Compatible with Applesoft BASIC
 
 ]

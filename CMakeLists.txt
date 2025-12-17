@@ -1,5 +1,28 @@
 cmake_minimum_required(VERSION 3.20)
-project(MSBasicClone VERSION 1.0.0 LANGUAGES CXX)
+
+set(DEFAULT_VERSION "1.0.0")
+set(MSBASIC_VERSION_STRING "${DEFAULT_VERSION}")
+
+if(DEFINED VERSION_OVERRIDE)
+    set(MSBASIC_VERSION_STRING "${VERSION_OVERRIDE}")
+else()
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --always
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            RESULT_VARIABLE GIT_DESCRIBE_RESULT
+            OUTPUT_VARIABLE GIT_DESCRIBE_OUTPUT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(GIT_DESCRIBE_RESULT EQUAL 0 AND NOT "${GIT_DESCRIBE_OUTPUT}" STREQUAL "")
+            set(MSBASIC_VERSION_STRING "${GIT_DESCRIBE_OUTPUT}")
+        endif()
+    endif()
+endif()
+
+project(MSBasicClone LANGUAGES CXX)
+message(STATUS "MSBasicClone version: ${MSBASIC_VERSION_STRING}")
 
 # Set C++20 standard
 set(CMAKE_CXX_STANDARD 20)
@@ -61,8 +84,19 @@ set(HEADERS
     src/types.h
 )
 
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.h
+    @ONLY
+)
+
+set(CPACK_PACKAGE_VERSION "${MSBASIC_VERSION_STRING}")
+include(CPack)
+
 # Create executable
 add_executable(msbasic ${SOURCES} ${HEADERS})
+target_include_directories(msbasic PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 # Link math library on Unix-like systems
 if(UNIX)

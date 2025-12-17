@@ -1,0 +1,5 @@
+#pragma once
+
+namespace msbasic {
+inline constexpr char kVersion[] = "@MSBASIC_VERSION_STRING@";
+}
