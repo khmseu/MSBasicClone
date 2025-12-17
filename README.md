@@ -9,7 +9,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
 - **Interactive Mode**: Classic "]" prompt with immediate command execution
 - **Script Mode**: Execute BASIC programs from files
 - **Variables**: Numeric and string variables (with $ suffix for strings)
-- **Operators**: Arithmetic (+, -, *, /, ^), comparison (=, <>, <, >, <=, >=), logical (AND, OR, NOT)
+- **Operators**: Arithmetic (+, -, \*, /, ^), comparison (=, <>, <, >, <=, >=), logical (AND, OR, NOT)
 - **Control Flow**:
   - IF/THEN/ELSE statements
   - FOR/NEXT loops (with STEP support)
@@ -80,7 +80,7 @@ Run without arguments to start the interactive REPL:
 
 You'll see the Applesoft-style prompt:
 
-```
+```text
 APPLESOFT II BASIC CLONE <git describe output>
 Compatible with Applesoft BASIC
 

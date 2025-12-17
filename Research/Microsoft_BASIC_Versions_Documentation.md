@@ -9,7 +9,7 @@
 1. [Early Era (1975-1980s)](#early-era-1975-1980s)
 2. [Professional Era (1985-1998)](#professional-era-1985-1998)
 3. [Modern Era (2002+)](#modern-era-2002)
-4. [Apple-Specific BASIC Variants](#apple-specific-basic-variants)
+4. [Apple Computer BASIC Variants](#apple-computer-basic-variants)
 5. [Summary Timeline](#summary-timeline)
 6. [Sources](#sources)
 
@@ -578,19 +578,19 @@
 
 **Version History and Features:**
 
-| Version | Release Year | Key Features |
-|---------|--------------|--------------|
-| 7.0 | 2002 | First .NET version, managed code, .NET Framework 1.0 |
-| 7.1 | 2003 | .NET Framework 1.1, Compact Framework support, improved IDE |
-| 8.0 | 2005 | Edit and Continue, `My` namespace, Generics, Partial classes, Operator overloading, Nullable types, `IsNot` operator |
-| 9.0 | Nov 2007 | .NET Framework 3.5, Conditional operator, Anonymous types, LINQ support, Lambda expressions, XML literals, Type inference, Extension methods |
-| 10.0 | April 2010 | Dynamic Language Runtime interop, Inline functions/subs, Multi-line lambdas, Line continuation inference |
-| 11.0 | 2012 | .NET Framework 4.5, Async/await, Iterators, Call hierarchy, Caller information |
-| 12.0 | 2013 | .NET Framework 4.5.1 |
-| 14.0 | 2015 | Null-conditional operator `?.`, String interpolation, .NET Framework 4.6 |
-| 15.x | 2017 | Refactoring tools, Enhanced language features |
-| 16.0 | 2019 | .NET Core 3.0 focus, Init-only properties (v16.9) |
-| 17+ | 2022+ | Maintenance mode, continued .NET support |
+| Version | Release Year | Key Features                                                                                                                                 |
+| ------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 7.0     | 2002         | First .NET version, managed code, .NET Framework 1.0                                                                                         |
+| 7.1     | 2003         | .NET Framework 1.1, Compact Framework support, improved IDE                                                                                  |
+| 8.0     | 2005         | Edit and Continue, `My` namespace, Generics, Partial classes, Operator overloading, Nullable types, `IsNot` operator                         |
+| 9.0     | Nov 2007     | .NET Framework 3.5, Conditional operator, Anonymous types, LINQ support, Lambda expressions, XML literals, Type inference, Extension methods |
+| 10.0    | April 2010   | Dynamic Language Runtime interop, Inline functions/subs, Multi-line lambdas, Line continuation inference                                     |
+| 11.0    | 2012         | .NET Framework 4.5, Async/await, Iterators, Call hierarchy, Caller information                                                               |
+| 12.0    | 2013         | .NET Framework 4.5.1                                                                                                                         |
+| 14.0    | 2015         | Null-conditional operator `?.`, String interpolation, .NET Framework 4.6                                                                     |
+| 15.x    | 2017         | Refactoring tools, Enhanced language features                                                                                                |
+| 16.0    | 2019         | .NET Core 3.0 focus, Init-only properties (v16.9)                                                                                            |
+| 17+     | 2022+        | Maintenance mode, continued .NET support                                                                                                     |
 
 **Core Capabilities:**
 
@@ -633,27 +633,27 @@
 
 ## Summary Timeline
 
-| Name | Version | Year | Type | Platform |
-|------|---------|------|------|----------|
-| Altair BASIC | 2.0-5.0 | 1975 | Interpreter | Altair 8800, S-100 |
-| Integer BASIC | Single | 1976 | Interpreter | Apple I, Apple II |
-| Applesoft BASIC | 1.x, II | 1977 | Interpreter | Apple II series |
-| IBM Cassette BASIC | C1.00-C1.20 | 1981 | Interpreter | IBM PC, XT, PS/2 |
-| IBM Disk BASIC | 1.0-3.30 | 1981 | Interpreter | IBM PC DOS |
-| IBM BASICA | 1.0-3.30 | 1981 | Interpreter | IBM PC DOS |
-| Apple Business BASIC | Single | 1981 | Interpreter | Apple III |
-| IBM PCjr Cartridge BASIC | — | 1984 | Interpreter | IBM PCjr |
-| GW-BASIC | 1.0-3.23 | 1983 | Interpreter | MS-DOS (PC compatibles) |
-| MBASIC | 5.x+ | 1976+ | Interpreter/Compiler | CP/M |
-| BASIC-86 | — | 1979 | Standalone | 8086 systems |
-| TRS-80 BASIC | Level II-III | 1977+ | Interpreter | Tandy TRS-80 |
-| BASIC-68/69 | — | 1980s | Interpreter | Motorola 6800/6809 |
-| 6502 BASIC | 8K-9K variants | 1976 | Interpreter | 6502-based systems |
-| QuickBASIC | 1.0-4.5, PDS 7.x | 1985-1990 | Compiler/Interpreter | MS-DOS, Macintosh |
-| QBasic | 1.0-1.1 | 1991 | Interpreter | MS-DOS, Windows 95+, OS/2 |
-| Visual Basic Classic | 1.0-6.0 | 1991-1998 | Compiler | Windows, DOS, Macintosh |
-| Visual Basic .NET | 7.0-16.x+ | 2002+ | Compiler | .NET Framework/Core, Cross-platform |
-| Small Basic | 1.0+ | 2008+ | Interpreter | Windows |
+| Name                     | Version          | Year      | Type                 | Platform                            |
+| ------------------------ | ---------------- | --------- | -------------------- | ----------------------------------- |
+| Altair BASIC             | 2.0-5.0          | 1975      | Interpreter          | Altair 8800, S-100                  |
+| Integer BASIC            | Single           | 1976      | Interpreter          | Apple I, Apple II                   |
+| Applesoft BASIC          | 1.x, II          | 1977      | Interpreter          | Apple II series                     |
+| IBM Cassette BASIC       | C1.00-C1.20      | 1981      | Interpreter          | IBM PC, XT, PS/2                    |
+| IBM Disk BASIC           | 1.0-3.30         | 1981      | Interpreter          | IBM PC DOS                          |
+| IBM BASICA               | 1.0-3.30         | 1981      | Interpreter          | IBM PC DOS                          |
+| Apple Business BASIC     | Single           | 1981      | Interpreter          | Apple III                           |
+| IBM PCjr Cartridge BASIC | —                | 1984      | Interpreter          | IBM PCjr                            |
+| GW-BASIC                 | 1.0-3.23         | 1983      | Interpreter          | MS-DOS (PC compatibles)             |
+| MBASIC                   | 5.x+             | 1976+     | Interpreter/Compiler | CP/M                                |
+| BASIC-86                 | —                | 1979      | Standalone           | 8086 systems                        |
+| TRS-80 BASIC             | Level II-III     | 1977+     | Interpreter          | Tandy TRS-80                        |
+| BASIC-68/69              | —                | 1980s     | Interpreter          | Motorola 6800/6809                  |
+| 6502 BASIC               | 8K-9K variants   | 1976      | Interpreter          | 6502-based systems                  |
+| QuickBASIC               | 1.0-4.5, PDS 7.x | 1985-1990 | Compiler/Interpreter | MS-DOS, Macintosh                   |
+| QBasic                   | 1.0-1.1          | 1991      | Interpreter          | MS-DOS, Windows 95+, OS/2           |
+| Visual Basic Classic     | 1.0-6.0          | 1991-1998 | Compiler             | Windows, DOS, Macintosh             |
+| Visual Basic .NET        | 7.0-16.x+        | 2002+     | Compiler             | .NET Framework/Core, Cross-platform |
+| Small Basic              | 1.0+             | 2008+     | Interpreter          | Windows                             |
 
 ---
 
@@ -691,8 +691,8 @@
   - [GW-BASIC](https://en.wikipedia.org/wiki/GW-BASIC)
   - [QuickBASIC](https://en.wikipedia.org/wiki/QuickBASIC)
   - [QBasic](https://en.wikipedia.org/wiki/QBasic)
-  - [Visual Basic (classic)](https://en.wikipedia.org/wiki/Visual_Basic_(classic))
-  - [Visual Basic (.NET)](https://en.wikipedia.org/wiki/Visual_Basic_(.NET))
+  - [Visual Basic (classic)](<https://en.wikipedia.org/wiki/Visual_Basic_(classic)>)
+  - [Visual Basic (.NET)](<https://en.wikipedia.org/wiki/Visual_Basic_(.NET)>)
   - [Integer BASIC](https://en.wikipedia.org/wiki/Integer_BASIC)
   - [Applesoft BASIC](https://en.wikipedia.org/wiki/Applesoft_BASIC)
   - [Apple III](https://en.wikipedia.org/wiki/Apple_III) (for Business BASIC)
@@ -808,19 +808,19 @@
 
 **Comparison to Applesoft BASIC:**
 
-| Feature | Integer BASIC | Applesoft BASIC |
-|---------|---------------|-----------------|
-| Numeric Types | Integer only | Floating-point (40-bit), Integer with `%` |
-| String Model | Fixed-size arrays | Dynamic garbage-collected |
-| Floating-Point | Via CALL to ROM routines | Native support |
-| Performance | 2-3× faster | Slower due to floating-point overhead |
-| Arrays | Single-dimension only | Multi-dimensional |
-| User Functions | None | `DEF FN` (single-line) |
-| Error Trapping | None | `ONERR...GOTO` and `RESUME` |
-| Graphics Commands | Low-res only | High-resolution graphics support |
-| Variable Names | Unlimited length | Effective 2-character limit (first 2 significant) |
-| Intended Use | Games, education | General-purpose, business applications |
-| Compatibility | No MS BASIC compatibility | Backwards-compatible with Integer BASIC intent |
+| Feature           | Integer BASIC             | Applesoft BASIC                                   |
+| ----------------- | ------------------------- | ------------------------------------------------- |
+| Numeric Types     | Integer only              | Floating-point (40-bit), Integer with `%`         |
+| String Model      | Fixed-size arrays         | Dynamic garbage-collected                         |
+| Floating-Point    | Via CALL to ROM routines  | Native support                                    |
+| Performance       | 2-3× faster               | Slower due to floating-point overhead             |
+| Arrays            | Single-dimension only     | Multi-dimensional                                 |
+| User Functions    | None                      | `DEF FN` (single-line)                            |
+| Error Trapping    | None                      | `ONERR...GOTO` and `RESUME`                       |
+| Graphics Commands | Low-res only              | High-resolution graphics support                  |
+| Variable Names    | Unlimited length          | Effective 2-character limit (first 2 significant) |
+| Intended Use      | Games, education          | General-purpose, business applications            |
+| Compatibility     | No MS BASIC compatibility | Backwards-compatible with Integer BASIC intent    |
 
 **Historical Context:**
 
@@ -983,17 +983,17 @@
 
 **Comparison to Integer BASIC:**
 
-| Aspect | Integer BASIC | Applesoft BASIC |
-|--------|---------------|-----------------|
-| Primary Use | Games | General-purpose |
-| Floating-Point | No (call ROM) | Yes (native) |
-| Graphics | Low-res only | High-res support |
-| String Type | Fixed arrays | Dynamic, atomic |
-| Speed | 2-3× faster | Slower |
-| Math Functions | Sparse | Comprehensive |
-| Variable Names | Unlimited | 2-char significant |
-| User Functions | No | Yes (DEF FN) |
-| Intended Replacement | None | Yes, phased Integer BASIC |
+| Aspect               | Integer BASIC | Applesoft BASIC           |
+| -------------------- | ------------- | ------------------------- |
+| Primary Use          | Games         | General-purpose           |
+| Floating-Point       | No (call ROM) | Yes (native)              |
+| Graphics             | Low-res only  | High-res support          |
+| String Type          | Fixed arrays  | Dynamic, atomic           |
+| Speed                | 2-3× faster   | Slower                    |
+| Math Functions       | Sparse        | Comprehensive             |
+| Variable Names       | Unlimited     | 2-char significant        |
+| User Functions       | No            | Yes (DEF FN)              |
+| Intended Replacement | None          | Yes, phased Integer BASIC |
 
 **Historical Evolution:**
 
@@ -1185,22 +1185,22 @@
 
 **Comparison to Applesoft BASIC:**
 
-| Feature | Applesoft | Apple Business |
-|---------|-----------|----------------|
-| Variable Name Length | 2 chars significant | 64 chars, all significant |
-| Data Types | 2 (float, string) | 4 (float, string, int, long) |
-| Integer Support | Via `%` suffix only | Full `%` and `&` (long) types |
-| Currency Support | No | Yes (long int × 100) |
-| File I/O | Cassette only | Sequential + random-access |
-| File Management | Via DOS | Direct `CREATE`, `DELETE`, `RENAME` |
-| Line Number Range | 0-32,767 | 0-63,999 |
-| Full-Screen Editing | No | Yes (Escape key) |
-| Program Tracing | No | Yes (`TRACE`/`NOTRACE`) |
-| `CHAIN` (modular programs) | No | Yes |
-| External Code Loading | Via `CALL` only | `INVOKE`/`PERFORM` library model |
-| Target Use | General home computing | Business/enterprise applications |
-| Graphics | Full (low & high-res) | Limited (low-res) |
-| High-Res Graphics | Yes | No |
+| Feature                    | Applesoft              | Apple Business                      |
+| -------------------------- | ---------------------- | ----------------------------------- |
+| Variable Name Length       | 2 chars significant    | 64 chars, all significant           |
+| Data Types                 | 2 (float, string)      | 4 (float, string, int, long)        |
+| Integer Support            | Via `%` suffix only    | Full `%` and `&` (long) types       |
+| Currency Support           | No                     | Yes (long int × 100)                |
+| File I/O                   | Cassette only          | Sequential + random-access          |
+| File Management            | Via DOS                | Direct `CREATE`, `DELETE`, `RENAME` |
+| Line Number Range          | 0-32,767               | 0-63,999                            |
+| Full-Screen Editing        | No                     | Yes (Escape key)                    |
+| Program Tracing            | No                     | Yes (`TRACE`/`NOTRACE`)             |
+| `CHAIN` (modular programs) | No                     | Yes                                 |
+| External Code Loading      | Via `CALL` only        | `INVOKE`/`PERFORM` library model    |
+| Target Use                 | General home computing | Business/enterprise applications    |
+| Graphics                   | Full (low & high-res)  | Limited (low-res)                   |
+| High-Res Graphics          | Yes                    | No                                  |
 
 **Intended Use Case:**
 
@@ -1249,11 +1249,11 @@
 
 **Hardware Support Summary:**
 
-| BASIC | Apple I | Apple II | Apple II+ | Apple IIe | Apple IIc | Apple IIGS | Apple III |
-|-------|---------|----------|-----------|-----------|-----------|------------|-----------|
-| Integer | YES (ROM) | YES (ROM) | EXEC | - | - | - | - |
-| Applesoft | - | YES (cassette) | YES (ROM) | YES (ROM) | YES (ROM) | YES (ROM) | - |
-| Business | - | - | - | - | - | - | YES (built-in) |
+| BASIC     | Apple I   | Apple II       | Apple II+ | Apple IIe | Apple IIc | Apple IIGS | Apple III      |
+| --------- | --------- | -------------- | --------- | --------- | --------- | ---------- | -------------- |
+| Integer   | YES (ROM) | YES (ROM)      | EXEC      | -         | -         | -          | -              |
+| Applesoft | -         | YES (cassette) | YES (ROM) | YES (ROM) | YES (ROM) | YES (ROM)  | -              |
+| Business  | -         | -              | -         | -         | -         | -          | YES (built-in) |
 
 ---
 

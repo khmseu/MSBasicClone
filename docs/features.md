@@ -3,13 +3,13 @@
 ## Implemented
 
 - Core flow: tokenizer → parser → interpreter sharing the same AST for interactive and program execution.
-- Numeric runtime: custom 40-bit floating point (`src/float40.*`) with number/string `Value` type; expression support for +, -, *, /, ^, MOD, unary ±, comparisons, AND/OR.
+- Numeric runtime: custom 40-bit floating point (`src/float40.*`) with number/string `Value` type; expression support for +, -, \*, /, ^, MOD, unary ±, comparisons, AND/OR.
 - Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; END; REM comment; COLON separators.
 - Data handling: DATA collected before run; READ consumes sequentially across control flow; RESTORE resets the DATA cursor; DATA honored in immediate mode.
 - Arrays: DIM with expression subscripts; auto-dimension to size 10 per dimension if undeclared; shared access/assign path; bounds checks yield BAD SUBSCRIPT.
 - User-defined functions: DEF FNname(arg)=expr parsed to AST; functions stored in `Variables`; one-argument calls `FNx(expr)` evaluated with local parameter substitution.
 - Built-in functions: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, LEN, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$, STR$.
-- CLI commands: RUN, LIST, NEW, LOAD <file>, SAVE <file>, CATALOG; immediate-mode statements use the same parser/interpreter.
+- CLI commands: RUN, LIST, NEW, LOAD \<file\>, SAVE \<file\>, CATALOG; immediate-mode statements use the same parser/interpreter.
 
 ## Yet to Implement / Missing
 
