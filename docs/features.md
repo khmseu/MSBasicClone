@@ -10,7 +10,7 @@
 - Arrays: DIM with expression subscripts; auto-dimension to size 10 per dimension if undeclared; shared access/assign path; bounds checks yield BAD SUBSCRIPT.
 - User-defined functions: DEF FNname(arg)=expr parsed to AST; functions stored in `Variables`; one-argument calls `FNx(expr)` evaluated with local parameter substitution.
 - Built-in functions: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, LEN, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$, STR$.
-- CLI commands: RUN, LIST, NEW, LOAD filename, SAVE filename, CATALOG, CLR; immediate-mode statements use the same parser/interpreter.
+- CLI commands: RUN (optionally `RUN n`), LIST (optionally `LIST start[,end]`), NEW, LOAD filename, SAVE filename, CATALOG, CLR; immediate-mode statements use the same parser/interpreter.
 - Cursor helpers: TAB(n) and SPC(n) return space padding; POS reports current column on terminals (ANSI query) and Windows consoles; falls back to 0 otherwise.
 - Graphics stubs: GR/HIRES configure a scaled overlay window sized to the terminal and track scaled plot samples for future drawing APIs (no on-screen rendering yet).
 

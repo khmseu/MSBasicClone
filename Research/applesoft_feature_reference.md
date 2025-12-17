@@ -5,7 +5,7 @@ This is a concise feature map of Applesoft BASIC as implemented (or planned) in 
 ## Program structure & execution
 
 - Lines: Optional decimal line numbers; stored in ascending order. Blank line number deletes that line. Multiple statements separated by `:` on the same line.
-- Immediate mode: A line without a line number executes directly (uses same parser/interpreter). `RUN` starts at lowest line (or specific line if given by `GOTO`/`GOSUB`).
+- Immediate mode: A line without a line number executes directly (uses same parser/interpreter). `RUN` starts at lowest line, or `RUN n` starts from a specific line (like an implicit GOTO before RUN).
 - Flow control state: `GOTO`, `GOSUB`/`RETURN`, `FOR`/`NEXT`, `ONERR`/`RESUME` all mutate interpreter state (program counter, stacks, error handler).
 
 ## Variables & data model

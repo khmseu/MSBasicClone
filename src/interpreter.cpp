@@ -161,28 +161,78 @@ void Interpreter::executeImmediate(const std::string &line) {
     addLine(lineNum, code);
   } else {
     // Immediate command
-    std::string upperCode = code;
-    std::transform(upperCode.begin(), upperCode.end(), upperCode.begin(),
+    auto trim = [](std::string s) {
+      auto isSpace = [](unsigned char ch) { return std::isspace(ch) != 0; };
+      s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+                                      [&](char c) { return !isSpace(c); }));
+      s.erase(std::find_if(s.rbegin(), s.rend(),
+                           [&](char c) { return !isSpace(c); })
+                  .base(),
+              s.end());
+      return s;
+    };
+
+    std::string trimmed = trim(code);
+    std::string upperTrim = trimmed;
+    std::transform(upperTrim.begin(), upperTrim.end(), upperTrim.begin(),
                    ::toupper);
 
-    if (upperCode == "RUN") {
-      run();
-    } else if (upperCode == "LIST") {
-      listProgram();
-    } else if (upperCode == "NEW") {
+    auto spacePos = upperTrim.find_first_of(" \t");
+    std::string command = (spacePos == std::string::npos)
+                              ? upperTrim
+                              : upperTrim.substr(0, spacePos);
+    std::string args = (spacePos == std::string::npos)
+                           ? std::string()
+                           : trim(trimmed.substr(spacePos));
+
+    if (command == "RUN") {
+      if (args.empty()) {
+        run();
+      } else {
+        try {
+          int start = std::stoi(args);
+          runFrom(start);
+        } catch (...) {
+          std::cout << "?SYNTAX ERROR\n";
+        }
+      }
+    } else if (command == "LIST") {
+      if (args.empty()) {
+        listProgram();
+      } else {
+        int start = -1;
+        int end = -1;
+        auto commaPos = args.find(',');
+        std::string first =
+            (commaPos == std::string::npos) ? args : args.substr(0, commaPos);
+        std::string second = (commaPos == std::string::npos)
+                                 ? std::string()
+                                 : args.substr(commaPos + 1);
+
+        first = trim(first);
+        second = trim(second);
+
+        try {
+          if (!first.empty()) {
+            start = std::stoi(first);
+          }
+          if (!second.empty()) {
+            end = std::stoi(second);
+          }
+          listProgram(start, end);
+        } catch (...) {
+          std::cout << "?SYNTAX ERROR\n";
+        }
+      }
+    } else if (command == "NEW") {
       newProgram();
-    } else if (upperCode.substr(0, 4) == "LOAD") {
-      std::string filename = code.substr(4);
-      // Trim spaces
-      filename.erase(0, filename.find_first_not_of(" \t"));
-      filename.erase(filename.find_last_not_of(" \t") + 1);
+    } else if (command.rfind("LOAD", 0) == 0) {
+      std::string filename = trim(code.substr(4));
       loadProgram(filename);
-    } else if (upperCode.substr(0, 4) == "SAVE") {
-      std::string filename = code.substr(4);
-      filename.erase(0, filename.find_first_not_of(" \t"));
-      filename.erase(filename.find_last_not_of(" \t") + 1);
+    } else if (command.rfind("SAVE", 0) == 0) {
+      std::string filename = trim(code.substr(4));
       saveProgram(filename);
-    } else if (upperCode == "CATALOG" || upperCode == "CAT") {
+    } else if (command == "CATALOG" || command == "CAT") {
       catalog();
     } else {
       // Execute as immediate statement
