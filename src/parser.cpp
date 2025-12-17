@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "float40.h"
 #include "functions.h"
+#include "graphics.h"
 #include "interpreter.h"
 #include <algorithm>
 #include <cctype>
@@ -537,12 +538,12 @@ public:
 
 class GrStmt : public Statement {
 public:
-  void execute(Interpreter *) override {}
+  void execute(Interpreter *) override { graphics().enterLowRes(); }
 };
 
 class HiresStmt : public Statement {
 public:
-  void execute(Interpreter *) override {}
+  void execute(Interpreter *) override { graphics().enterHighRes(); }
 };
 
 class GetStmt : public Statement {

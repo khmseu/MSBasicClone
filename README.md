@@ -156,7 +156,7 @@ This is a working interpreter with core Applesoft BASIC features implemented. So
 - DATA/READ/RESTORE statements
 - DEF FN (user-defined functions)
 - Error handling (ONERR GOTO, RESUME)
-- Graphics commands (GR, HIRES, PLOT, HPLOT, etc.)
+- Graphics commands (GR, HIRES, PLOT, HPLOT, etc.) — window state tracked/stubbed, no rendering yet
 - Sound and hardware-specific commands
 
 ## License

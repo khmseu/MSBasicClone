@@ -10,6 +10,11 @@ std::string Variables::normalizeName(const std::string &name) const {
   std::transform(normalized.begin(), normalized.end(), normalized.begin(),
                  ::toupper);
 
+  // Preserve the distinguishing character of user-defined functions (FNx)
+  if (normalized.rfind("FN", 0) == 0 && normalized.length() > 2) {
+    return normalized.substr(0, 3);
+  }
+
   // For non-string, non-integer variables, use first 2 chars
   if (normalized.length() > 2 && normalized.back() != '$' &&
       normalized.back() != '%') {

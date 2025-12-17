@@ -12,11 +12,12 @@
 - Built-in functions: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, LEN, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$, STR$.
 - CLI commands: RUN, LIST, NEW, LOAD filename, SAVE filename, CATALOG; immediate-mode statements use the same parser/interpreter.
 - Cursor helpers: TAB(n) and SPC(n) return space padding; POS reports current column on terminals (ANSI query) and Windows consoles; falls back to 0 otherwise.
+- Graphics stubs: GR/HIRES configure a scaled overlay window sized to the terminal and track scaled plot samples for future drawing APIs (no on-screen rendering yet).
 
 ## Yet to Implement / Missing
 
 - Low-level system calls: PEEK/POKE/GET/CALL implemented (in-memory PEEK/POKE; CALL no-op).
-- Screen/graphics: HOME clears screen; TEXT/GR/HIRES are no-ops.
+- Screen/graphics: No on-screen rendering for graphics commands or plotting primitives yet.
 - Memory/state queries: FRE returns fixed free-memory placeholder; PDL returns 0.
 - Additional file or device I/O beyond LOAD/SAVE/CATALOG not implemented.
 

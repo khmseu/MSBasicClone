@@ -68,6 +68,7 @@ set(SOURCES
     src/filesystem.cpp
     src/interactive.cpp
     src/float40.cpp
+    src/graphics.cpp
 )
 
 # Header files
@@ -82,6 +83,7 @@ set(HEADERS
     src/interactive.h
     src/float40.h
     src/types.h
+    src/graphics.h
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
