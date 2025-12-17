@@ -1321,8 +1321,8 @@ std::shared_ptr<Statement> Parser::parseDef(const std::vector<Token> &tokens,
   return std::make_shared<DefStmt>(toUpper(fnName), param, expr);
 }
 
-std::shared_ptr<Statement>
-Parser::parseOnErr(const std::vector<Token> &tokens, size_t &pos) {
+std::shared_ptr<Statement> Parser::parseOnErr(const std::vector<Token> &tokens,
+                                              size_t &pos) {
   pos++; // Skip ONERR
 
   if (pos >= tokens.size() || tokens[pos].type != TokenType::GOTO) {
