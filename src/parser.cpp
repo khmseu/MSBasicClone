@@ -140,6 +140,131 @@ public:
     }
 };
 
+class GotoStmt : public Statement {
+public:
+    explicit GotoStmt(int lineNum) : lineNum_(lineNum) {}
+    void execute(Interpreter* interp) override {
+        interp->gotoLine(lineNum_);
+    }
+private:
+    int lineNum_;
+};
+
+class GosubStmt : public Statement {
+public:
+    explicit GosubStmt(int lineNum) : lineNum_(lineNum) {}
+    void execute(Interpreter* interp) override {
+        interp->gosub(lineNum_);
+    }
+private:
+    int lineNum_;
+};
+
+class ReturnStmt : public Statement {
+public:
+    void execute(Interpreter* interp) override {
+        interp->returnFromGosub();
+    }
+};
+
+class IfStmt : public Statement {
+public:
+    IfStmt(std::shared_ptr<Expression> condition, 
+           std::vector<std::shared_ptr<Statement>> thenStmts,
+           std::vector<std::shared_ptr<Statement>> elseStmts = {})
+        : condition_(condition), thenStmts_(thenStmts), elseStmts_(elseStmts) {}
+    
+    void execute(Interpreter* interp) override {
+        Value val = condition_->evaluate(interp);
+        if (val.getNumber() != 0) {
+            for (auto& stmt : thenStmts_) {
+                stmt->execute(interp);
+            }
+        } else if (!elseStmts_.empty()) {
+            for (auto& stmt : elseStmts_) {
+                stmt->execute(interp);
+            }
+        }
+    }
+private:
+    std::shared_ptr<Expression> condition_;
+    std::vector<std::shared_ptr<Statement>> thenStmts_;
+    std::vector<std::shared_ptr<Statement>> elseStmts_;
+};
+
+class ForStmt : public Statement {
+public:
+    ForStmt(const std::string& var, std::shared_ptr<Expression> start,
+            std::shared_ptr<Expression> end, std::shared_ptr<Expression> step)
+        : var_(var), start_(start), end_(end), step_(step) {}
+    
+    void execute(Interpreter* interp) override {
+        double startVal = start_->evaluate(interp).getNumber();
+        double endVal = end_->evaluate(interp).getNumber();
+        double stepVal = step_ ? step_->evaluate(interp).getNumber() : 1.0;
+        
+        interp->getVariables().setVariable(var_, Value(startVal));
+        interp->pushForLoop(var_, endVal, stepVal, interp->getCurrentLine());
+    }
+private:
+    std::string var_;
+    std::shared_ptr<Expression> start_;
+    std::shared_ptr<Expression> end_;
+    std::shared_ptr<Expression> step_;
+};
+
+class NextStmt : public Statement {
+public:
+    explicit NextStmt(const std::string& var) : var_(var) {}
+    void execute(Interpreter* interp) override {
+        interp->nextForLoop(var_);
+    }
+private:
+    std::string var_;
+};
+
+class InputStmt : public Statement {
+public:
+    InputStmt(const std::string& prompt, const std::vector<std::string>& vars)
+        : prompt_(prompt), vars_(vars) {}
+    
+    void execute(Interpreter* interp) override {
+        if (!prompt_.empty()) {
+            std::cout << prompt_;
+        }
+        
+        for (const auto& var : vars_) {
+            std::string input;
+            std::cout << "? ";
+            std::getline(std::cin, input);
+            
+            // Try to parse as number, otherwise treat as string
+            if (!var.empty() && var.back() == '$') {
+                // String variable
+                interp->getVariables().setVariable(var, Value(input));
+            } else {
+                // Numeric variable
+                try {
+                    double val = std::stod(input);
+                    interp->getVariables().setVariable(var, Value(val));
+                } catch (...) {
+                    std::cout << "?REENTER\n";
+                }
+            }
+        }
+    }
+private:
+    std::string prompt_;
+    std::vector<std::string> vars_;
+};
+
+class RemStmt : public Statement {
+public:
+    void execute(Interpreter*) override {
+        // REM does nothing - it's a comment
+    }
+};
+
 // Parser implementation
 Parser::Parser() {}
 
@@ -178,6 +303,21 @@ std::shared_ptr<Statement> Parser::parseStatement(const std::vector<Token>& toke
         case TokenType::PRINT: return parsePrint(tokens, pos);
         case TokenType::LET: return parseLetOrAssignment(tokens, pos);
         case TokenType::END: pos++; return std::make_shared<EndStmt>();
+        case TokenType::IF: return parseIf(tokens, pos);
+        case TokenType::GOTO: return parseGoto(tokens, pos);
+        case TokenType::GOSUB: return parseGosub(tokens, pos);
+        case TokenType::RETURN: pos++; return std::make_shared<ReturnStmt>();
+        case TokenType::FOR: return parseFor(tokens, pos);
+        case TokenType::NEXT: return parseNext(tokens, pos);
+        case TokenType::INPUT: return parseInput(tokens, pos);
+        case TokenType::REM: 
+            // REM consumes rest of line
+            pos++;
+            while (pos < tokens.size() && tokens[pos].type != TokenType::NEWLINE && 
+                   tokens[pos].type != TokenType::COLON) {
+                pos++;
+            }
+            return std::make_shared<RemStmt>();
         case TokenType::IDENTIFIER: return parseLetOrAssignment(tokens, pos);
         default: pos++; return nullptr;
     }
@@ -394,27 +534,159 @@ std::shared_ptr<Expression> Parser::parsePrimaryExpression(const std::vector<Tok
 }
 
 std::shared_ptr<Statement> Parser::parseInput(const std::vector<Token>& tokens, size_t& pos) {
-    return nullptr;
+    pos++; // Skip INPUT
+    
+    std::string prompt;
+    std::vector<std::string> vars;
+    
+    // Check for prompt string
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+        prompt = tokens[pos].text;
+        pos++;
+        
+        if (pos < tokens.size() && tokens[pos].type == TokenType::SEMICOLON) {
+            pos++;
+        }
+    }
+    
+    // Parse variable list
+    while (pos < tokens.size() && tokens[pos].type != TokenType::COLON && 
+           tokens[pos].type != TokenType::NEWLINE) {
+        if (tokens[pos].type == TokenType::IDENTIFIER) {
+            vars.push_back(tokens[pos].text);
+            pos++;
+            
+            if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+                pos++;
+            }
+        } else {
+            break;
+        }
+    }
+    
+    return std::make_shared<InputStmt>(prompt, vars);
 }
 
 std::shared_ptr<Statement> Parser::parseIf(const std::vector<Token>& tokens, size_t& pos) {
-    return nullptr;
+    pos++; // Skip IF
+    
+    auto condition = parseExpression(tokens, pos);
+    
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::THEN) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED THEN");
+    }
+    pos++;
+    
+    std::vector<std::shared_ptr<Statement>> thenStmts;
+    std::vector<std::shared_ptr<Statement>> elseStmts;
+    
+    // Check if THEN is followed by a line number (GOTO)
+    if (pos < tokens.size() && tokens[pos].type == TokenType::NUMBER) {
+        int lineNum = static_cast<int>(tokens[pos].value.getNumber());
+        pos++;
+        thenStmts.push_back(std::make_shared<GotoStmt>(lineNum));
+    } else {
+        // Parse statements until ELSE or end of line
+        while (pos < tokens.size() && tokens[pos].type != TokenType::ELSE &&
+               tokens[pos].type != TokenType::COLON && tokens[pos].type != TokenType::NEWLINE) {
+            auto stmt = parseStatement(tokens, pos);
+            if (stmt) {
+                thenStmts.push_back(stmt);
+            }
+        }
+    }
+    
+    // Check for ELSE
+    if (pos < tokens.size() && tokens[pos].type == TokenType::ELSE) {
+        pos++;
+        
+        if (pos < tokens.size() && tokens[pos].type == TokenType::NUMBER) {
+            int lineNum = static_cast<int>(tokens[pos].value.getNumber());
+            pos++;
+            elseStmts.push_back(std::make_shared<GotoStmt>(lineNum));
+        } else {
+            while (pos < tokens.size() && tokens[pos].type != TokenType::COLON && 
+                   tokens[pos].type != TokenType::NEWLINE) {
+                auto stmt = parseStatement(tokens, pos);
+                if (stmt) {
+                    elseStmts.push_back(stmt);
+                }
+            }
+        }
+    }
+    
+    return std::make_shared<IfStmt>(condition, thenStmts, elseStmts);
 }
 
 std::shared_ptr<Statement> Parser::parseGoto(const std::vector<Token>& tokens, size_t& pos) {
-    return nullptr;
+    pos++; // Skip GOTO
+    
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::NUMBER) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED LINE NUMBER");
+    }
+    
+    int lineNum = static_cast<int>(tokens[pos].value.getNumber());
+    pos++;
+    
+    return std::make_shared<GotoStmt>(lineNum);
 }
 
 std::shared_ptr<Statement> Parser::parseGosub(const std::vector<Token>& tokens, size_t& pos) {
-    return nullptr;
+    pos++; // Skip GOSUB
+    
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::NUMBER) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED LINE NUMBER");
+    }
+    
+    int lineNum = static_cast<int>(tokens[pos].value.getNumber());
+    pos++;
+    
+    return std::make_shared<GosubStmt>(lineNum);
 }
 
 std::shared_ptr<Statement> Parser::parseFor(const std::vector<Token>& tokens, size_t& pos) {
-    return nullptr;
+    pos++; // Skip FOR
+    
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED VARIABLE");
+    }
+    
+    std::string varName = tokens[pos].text;
+    pos++;
+    
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::EQUAL) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED =");
+    }
+    pos++;
+    
+    auto start = parseExpression(tokens, pos);
+    
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::TO) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED TO");
+    }
+    pos++;
+    
+    auto end = parseExpression(tokens, pos);
+    
+    std::shared_ptr<Expression> step;
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STEP) {
+        pos++;
+        step = parseExpression(tokens, pos);
+    }
+    
+    return std::make_shared<ForStmt>(varName, start, end, step);
 }
 
 std::shared_ptr<Statement> Parser::parseNext(const std::vector<Token>& tokens, size_t& pos) {
-    return nullptr;
+    pos++; // Skip NEXT
+    
+    std::string varName;
+    if (pos < tokens.size() && tokens[pos].type == TokenType::IDENTIFIER) {
+        varName = tokens[pos].text;
+        pos++;
+    }
+    
+    return std::make_shared<NextStmt>(varName);
 }
 
 std::shared_ptr<Statement> Parser::parseDim(const std::vector<Token>& tokens, size_t& pos) {

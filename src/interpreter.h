@@ -32,6 +32,9 @@ public:
     // Variable access (for expressions)
     Variables& getVariables() { return variables_; }
     
+    // Get current line number
+    LineNumber getCurrentLine() const { return currentLine_; }
+    
     // Execution control
     void gotoLine(LineNumber lineNum);
     void gosub(LineNumber lineNum);
@@ -64,6 +67,7 @@ private:
     LineNumber currentLine_;
     bool running_;
     bool immediate_;
+    bool jumped_;  // Flag to prevent auto-increment after GOTO/GOSUB
     std::map<LineNumber, ProgramLine>::iterator programCounter_;
     
     // GOSUB stack

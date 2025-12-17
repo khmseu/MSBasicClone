@@ -9,7 +9,7 @@
 #include <cctype>
 
 Interpreter::Interpreter() 
-    : currentLine_(0), running_(false), immediate_(false),
+    : currentLine_(0), running_(false), immediate_(false), jumped_(false),
       dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1) {}
 
 void Interpreter::parseLine(const std::string& line, LineNumber& lineNum, std::string& code) {
@@ -101,13 +101,16 @@ void Interpreter::runFrom(LineNumber lineNum) {
     try {
         while (running_ && programCounter_ != program_.end()) {
             currentLine_ = programCounter_->first;
+            jumped_ = false;
             
             for (auto& stmt : programCounter_->second.statements) {
                 stmt->execute(this);
-                if (!running_) break;
+                if (!running_ || jumped_) break;
             }
             
-            ++programCounter_;
+            if (!jumped_) {
+                ++programCounter_;
+            }
         }
     } catch (const std::exception& e) {
         if (errorHandlerLine_ >= 0) {
@@ -181,11 +184,17 @@ void Interpreter::gotoLine(LineNumber lineNum) {
         throw std::runtime_error("UNDEF'D STATEMENT ERROR");
     }
     programCounter_ = it;
+    jumped_ = true;
 }
 
 void Interpreter::gosub(LineNumber lineNum) {
     gosubStack_.push(currentLine_);
-    gotoLine(lineNum);
+    auto it = program_.find(lineNum);
+    if (it == program_.end()) {
+        throw std::runtime_error("UNDEF'D STATEMENT ERROR");
+    }
+    programCounter_ = it;
+    jumped_ = true;
 }
 
 void Interpreter::returnFromGosub() {
@@ -200,6 +209,7 @@ void Interpreter::returnFromGosub() {
     if (it != program_.end()) {
         ++it;
         programCounter_ = it;
+        jumped_ = true;
     }
 }
 
@@ -288,11 +298,11 @@ bool Interpreter::isInForLoop(const std::string& varName) {
 void Interpreter::nextForLoop(const std::string& varName) {
     // Find matching FOR loop
     for (auto it = forStack_.rbegin(); it != forStack_.rend(); ++it) {
-        if (it->varName == varName) {
+        if (it->varName == varName || varName.empty()) {
             // Increment variable
-            Value current = variables_.getVariable(varName);
+            Value current = variables_.getVariable(it->varName);
             double newVal = current.getNumber() + it->stepValue;
-            variables_.setVariable(varName, Value(newVal));
+            variables_.setVariable(it->varName, Value(newVal));
             
             // Check if loop should continue
             bool shouldContinue;
@@ -304,7 +314,12 @@ void Interpreter::nextForLoop(const std::string& varName) {
             
             if (shouldContinue) {
                 // Jump back to line after FOR
-                gotoLine(it->returnLine);
+                auto lineIt = program_.find(it->returnLine);
+                if (lineIt != program_.end()) {
+                    ++lineIt;  // Move to next line
+                    programCounter_ = lineIt;
+                    jumped_ = true;
+                }
             } else {
                 // Loop complete, remove from stack
                 forStack_.erase(std::next(it).base());
