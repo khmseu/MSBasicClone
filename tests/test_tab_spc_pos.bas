@@ -1,0 +1,8 @@
+10 A$=TAB(3)+"X"
+20 IF LEN(A$)<>4 THEN 1/0
+30 IF MID$(A$,1,1)<>" " THEN 1/0
+40 IF MID$(A$,3,1)<>" " THEN 1/0
+50 B$=SPC(2)+"YZ"
+60 IF B$<>"  YZ" THEN 1/0
+70 IF POS(0)<>0 THEN 1/0
+80 END

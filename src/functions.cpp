@@ -124,3 +124,20 @@ Value funcStr(const Value& arg) {
     }
     return Value(result);
 }
+
+Value funcTab(const Value& arg) {
+    int n = static_cast<int>(arg.getNumber());
+    if (n < 0) n = 0;
+    return Value(std::string(static_cast<size_t>(n), ' '));
+}
+
+Value funcSpc(const Value& arg) {
+    int n = static_cast<int>(arg.getNumber());
+    if (n < 0) n = 0;
+    return Value(std::string(static_cast<size_t>(n), ' '));
+}
+
+Value funcPos(const Value&) {
+    // No real cursor tracking; return 0 to indicate start of line.
+    return Value(0.0);
+}

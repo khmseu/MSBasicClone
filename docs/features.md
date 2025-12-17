@@ -11,12 +11,12 @@
 - User-defined functions: DEF FNname(arg)=expr parsed to AST; functions stored in `Variables`; one-argument calls `FNx(expr)` evaluated with local parameter substitution.
 - Built-in functions: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, LEN, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$, STR$.
 - CLI commands: RUN, LIST, NEW, LOAD filename, SAVE filename, CATALOG; immediate-mode statements use the same parser/interpreter.
+ - Cursor helpers: TAB(n) and SPC(n) return space padding; POS returns 0.
 
 ## Yet to Implement / Missing
 
 - Low-level system calls: PEEK/POKE/GET/CALL tokens exist but no execution support.
 - Screen/graphics: HOME, TEXT, GR, HIRES tokens not interpreted.
-- Cursor/spacing functions: TAB, SPC, POS tokens not interpreted.
 - Memory/state queries: FRE, PDL tokens not interpreted.
 - Additional file or device I/O beyond LOAD/SAVE/CATALOG not implemented.
 

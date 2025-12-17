@@ -25,3 +25,6 @@ Value funcLeft(const Value& str, const Value& len);
 Value funcRight(const Value& str, const Value& len);
 Value funcMid(const Value& str, const Value& start, const Value& len);
 Value funcStr(const Value& arg);
+Value funcTab(const Value& arg);
+Value funcSpc(const Value& arg);
+Value funcPos(const Value& arg);
