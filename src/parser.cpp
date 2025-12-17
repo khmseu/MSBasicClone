@@ -110,7 +110,12 @@ public:
                 std::cout << "\n";
             }
         }
-        if (newlines_.empty() || newlines_.back()) {
+        // Print final newline unless last separator was ; or ,
+        if (!newlines_.empty() && newlines_.back()) {
+            // Already printed above
+        } else if (!exprs_.empty() && (newlines_.empty() || !newlines_.back())) {
+            // Ended with separator, no final newline
+        } else {
             std::cout << "\n";
         }
     }
@@ -328,24 +333,35 @@ std::shared_ptr<Statement> Parser::parsePrint(const std::vector<Token>& tokens, 
     
     std::vector<std::shared_ptr<Expression>> exprs;
     std::vector<bool> newlines;
+    bool endsWithSeparator = false;
     
     while (pos < tokens.size() && tokens[pos].type != TokenType::COLON && 
            tokens[pos].type != TokenType::NEWLINE) {
         auto expr = parseExpression(tokens, pos);
         exprs.push_back(expr);
         
+        endsWithSeparator = false;
         if (pos < tokens.size()) {
             if (tokens[pos].type == TokenType::SEMICOLON) {
                 newlines.push_back(false);
+                endsWithSeparator = true;
                 pos++;
             } else if (tokens[pos].type == TokenType::COMMA) {
                 newlines.push_back(false);
+                endsWithSeparator = true;
                 pos++;
             } else {
                 newlines.push_back(true);
                 break;
             }
+        } else {
+            newlines.push_back(true);
         }
+    }
+    
+    // If the statement ended with a separator, don't add final newline
+    if (endsWithSeparator && !newlines.empty()) {
+        newlines.back() = false;
     }
     
     return std::make_shared<PrintStmt>(exprs, newlines);
@@ -503,14 +519,15 @@ std::shared_ptr<Expression> Parser::parsePrimaryExpression(const std::vector<Tok
         return expr;
     }
     
-    // Built-in functions
+    // Built-in functions - single argument
     if (token.type == TokenType::SIN || token.type == TokenType::COS ||
         token.type == TokenType::TAN || token.type == TokenType::ATN ||
         token.type == TokenType::EXP || token.type == TokenType::LOG ||
         token.type == TokenType::SQR || token.type == TokenType::ABS ||
         token.type == TokenType::INT || token.type == TokenType::SGN ||
         token.type == TokenType::RND || token.type == TokenType::LEN ||
-        token.type == TokenType::VAL || token.type == TokenType::ASC) {
+        token.type == TokenType::VAL || token.type == TokenType::ASC ||
+        token.type == TokenType::CHR || token.type == TokenType::STR) {
         TokenType func = token.type;
         pos++;
         
@@ -520,6 +537,69 @@ std::shared_ptr<Expression> Parser::parsePrimaryExpression(const std::vector<Tok
         pos++;
         
         std::vector<std::shared_ptr<Expression>> args;
+        args.push_back(parseExpression(tokens, pos));
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::RPAREN) {
+            throw std::runtime_error("SYNTAX ERROR: MISSING )");
+        }
+        pos++;
+        
+        return std::make_shared<FunctionCallExpr>(func, args);
+    }
+    
+    // Built-in functions - two arguments
+    if (token.type == TokenType::LEFT || token.type == TokenType::RIGHT) {
+        TokenType func = token.type;
+        pos++;
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::LPAREN) {
+            throw std::runtime_error("SYNTAX ERROR");
+        }
+        pos++;
+        
+        std::vector<std::shared_ptr<Expression>> args;
+        args.push_back(parseExpression(tokens, pos));
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+            throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+        }
+        pos++;
+        
+        args.push_back(parseExpression(tokens, pos));
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::RPAREN) {
+            throw std::runtime_error("SYNTAX ERROR: MISSING )");
+        }
+        pos++;
+        
+        return std::make_shared<FunctionCallExpr>(func, args);
+    }
+    
+    // MID$ - three arguments
+    if (token.type == TokenType::MID) {
+        TokenType func = token.type;
+        pos++;
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::LPAREN) {
+            throw std::runtime_error("SYNTAX ERROR");
+        }
+        pos++;
+        
+        std::vector<std::shared_ptr<Expression>> args;
+        args.push_back(parseExpression(tokens, pos));
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+            throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+        }
+        pos++;
+        
+        args.push_back(parseExpression(tokens, pos));
+        
+        if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+            throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+        }
+        pos++;
+        
         args.push_back(parseExpression(tokens, pos));
         
         if (pos >= tokens.size() || tokens[pos].type != TokenType::RPAREN) {
