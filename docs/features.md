@@ -1,6 +1,7 @@
 # Features
 
 ## Implemented
+
 - Core flow: tokenizer → parser → interpreter sharing the same AST for interactive and program execution.
 - Numeric runtime: custom 40-bit floating point (`src/float40.*`) with number/string `Value` type; expression support for +, -, *, /, ^, MOD, unary ±, comparisons, AND/OR.
 - Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; END; REM comment; COLON separators.
@@ -11,6 +12,7 @@
 - CLI commands: RUN, LIST, NEW, LOAD <file>, SAVE <file>, CATALOG; immediate-mode statements use the same parser/interpreter.
 
 ## Yet to Implement / Missing
+
 - Error trapping: ONERR/RESUME tokens exist but no parser/interpreter handling.
 - Low-level system calls: PEEK/POKE/GET/CALL tokens exist but no execution support.
 - Screen/graphics: HOME, TEXT, GR, HIRES tokens not interpreted.
@@ -19,6 +21,7 @@
 - Additional file or device I/O beyond LOAD/SAVE/CATALOG not implemented.
 
 ## Notes
+
 - Variable names are significant to the first two characters (case-insensitive); `$` suffix denotes strings; `%` suffix reserved but not separately handled yet.
 - DATA is pre-collected before program execution; READ on exhausted data raises OUT OF DATA.
 - Keep new tests as `.bas` programs under `tests/` and run with `ctest --test-dir build`.
