@@ -105,6 +105,7 @@ void Interpreter::newProgram() {
   program_.clear();
   variables_.clear();
   dataValues_.clear();
+  dataOffsets_.clear();
   dataPointer_ = 0;
   resetOutputPosition();
 }
@@ -115,6 +116,9 @@ void Interpreter::clearState() {
   while (!gosubStack_.empty()) {
     gosubStack_.pop();
   }
+  dataValues_.clear();
+  dataOffsets_.clear();
+  dataPointer_ = 0;
   errorHandlerLine_ = -1;
   errorLine_ = -1;
   lastError_.clear();
@@ -141,9 +145,16 @@ void Interpreter::runFrom(LineNumber lineNum) {
   // flow.
   dataPointer_ = 0;
   dataValues_.clear();
+  dataOffsets_.clear();
   for (const auto &pair : program_) {
+    bool recorded = false;
     for (const auto &stmt : pair.second.statements) {
+      size_t before = dataValues_.size();
       stmt->collectData(dataValues_);
+      if (!recorded && dataValues_.size() > before) {
+        dataOffsets_.push_back({pair.first, before});
+        recorded = true;
+      }
     }
   }
 
@@ -458,7 +469,20 @@ Value Interpreter::readData() {
   return dataValues_[dataPointer_++];
 }
 
-void Interpreter::restoreData() { dataPointer_ = 0; }
+void Interpreter::restoreData(int line) {
+  if (line < 0) {
+    dataPointer_ = 0;
+    return;
+  }
+
+  dataPointer_ = dataValues_.size();
+  for (const auto &entry : dataOffsets_) {
+    if (entry.first >= line) {
+      dataPointer_ = entry.second;
+      break;
+    }
+  }
+}
 
 void Interpreter::htab(int col1) {
   int targetCol = std::max(0, col1 - 1);

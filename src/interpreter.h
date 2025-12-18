@@ -60,7 +60,7 @@ public:
   // Data statements
   void addDataValue(const Value &value);
   Value readData();
-  void restoreData();
+  void restoreData(int line = -1);
 
   // FOR loops
   void pushForLoop(const std::string &varName, double endValue,
@@ -107,6 +107,7 @@ private:
   // DATA/READ support
   std::vector<Value> dataValues_;
   size_t dataPointer_;
+  std::vector<std::pair<int, size_t>> dataOffsets_;
 
   // Error handling
   LineNumber errorHandlerLine_;

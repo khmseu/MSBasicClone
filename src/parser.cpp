@@ -679,7 +679,19 @@ private:
 
 class RestoreStmt : public Statement {
 public:
-  void execute(Interpreter *interp) override { interp->restoreData(); }
+  explicit RestoreStmt(std::shared_ptr<Expression> target)
+      : target_(std::move(target)) {}
+
+  void execute(Interpreter *interp) override {
+    int line = -1;
+    if (target_) {
+      line = static_cast<int>(target_->evaluate(interp).getNumber());
+    }
+    interp->restoreData(line);
+  }
+
+private:
+  std::shared_ptr<Expression> target_;
 };
 
 class PokeStmt : public Statement {
@@ -886,9 +898,15 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return parseData(tokens, pos);
   case TokenType::READ:
     return parseRead(tokens, pos);
-  case TokenType::RESTORE:
-    pos++;
-    return std::make_shared<RestoreStmt>();
+  case TokenType::RESTORE: {
+    pos++; // Skip RESTORE
+    std::shared_ptr<Expression> target;
+    if (pos < tokens.size() && tokens[pos].type != TokenType::COLON &&
+        tokens[pos].type != TokenType::NEWLINE) {
+      target = parseExpression(tokens, pos);
+    }
+    return std::make_shared<RestoreStmt>(target);
+  }
   case TokenType::DEF:
     return parseDef(tokens, pos);
   case TokenType::ON:

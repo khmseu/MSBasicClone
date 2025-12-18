@@ -6,7 +6,7 @@
 - Numeric runtime: custom 40-bit floating point (`src/float40.*`) with number/string `Value` type; expression support for +, -, \*, /, ^, MOD, unary ±/NOT, comparisons, AND/OR; integer variables (`%` suffix) clamp to 16-bit signed range.
 - Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; CLR to reset variables/loops; END; REM comment; COLON separators.
 - Error trapping: ONERR GOTO line; RESUME to continue after handler.
-- Data handling: DATA collected before run; READ consumes sequentially across control flow; RESTORE resets the DATA cursor; DATA honored in immediate mode.
+- Data handling: DATA collected before run; READ consumes sequentially across control flow; RESTORE resets the DATA cursor (optionally to a target line); DATA honored in immediate mode.
 - Arrays: DIM with expression subscripts; auto-dimension to size 10 per dimension if undeclared; shared access/assign path; bounds checks yield BAD SUBSCRIPT.
 - User-defined functions: DEF FNname(arg)=expr parsed to AST; functions stored in `Variables`; one-argument calls `FNx(expr)` evaluated with local parameter substitution.
 - Built-in functions: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, LEN, VAL, ASC, CHR$, LEFT$, RIGHT$, MID$, STR$.
