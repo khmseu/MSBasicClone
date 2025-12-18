@@ -810,6 +810,29 @@ public:
   }
 };
 
+class TraceStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->setTrace(true); }
+};
+
+class NoTraceStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->setTrace(false); }
+};
+
+class RandomizeStmt : public Statement {
+public:
+  explicit RandomizeStmt(std::shared_ptr<Expression> seed)
+      : seed_(std::move(seed)) {}
+  void execute(Interpreter *interp) override {
+    double s = seed_ ? seed_->evaluate(interp).getNumber() : 1.0;
+    interp->randomize(s);
+  }
+
+private:
+  std::shared_ptr<Expression> seed_;
+};
+
 // Parser implementation
 Parser::Parser() {}
 
@@ -1019,6 +1042,14 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   case TokenType::RESUME:
     pos++;
     return std::make_shared<ResumeStmt>();
+  case TokenType::TRACE:
+    pos++;
+    return std::make_shared<TraceStmt>();
+  case TokenType::NOTRACE:
+    pos++;
+    return std::make_shared<NoTraceStmt>();
+  case TokenType::RANDOMIZE:
+    return parseRandomize(tokens, pos);
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);
   default:
@@ -1775,6 +1806,17 @@ std::shared_ptr<Statement> Parser::parseOnErr(const std::vector<Token> &tokens,
   pos++;
 
   return std::make_shared<OnErrStmt>(lineNum);
+}
+
+std::shared_ptr<Statement>
+Parser::parseRandomize(const std::vector<Token> &tokens, size_t &pos) {
+  pos++; // Skip RANDOMIZE
+  std::shared_ptr<Expression> seed;
+  if (pos < tokens.size() && tokens[pos].type != TokenType::COLON &&
+      tokens[pos].type != TokenType::NEWLINE) {
+    seed = parseExpression(tokens, pos);
+  }
+  return std::make_shared<RandomizeStmt>(seed);
 }
 
 bool Parser::match(const std::vector<Token> &tokens, size_t pos,

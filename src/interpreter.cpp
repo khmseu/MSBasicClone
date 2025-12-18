@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "filesystem.h"
+#include "float40.h"
 #include "interactive.h"
 #include "parser.h"
 #include "tokenizer.h"
@@ -172,6 +173,11 @@ void Interpreter::runFrom(LineNumber lineNum) {
     while (running_ && programCounter_ != program_.end()) {
       currentLine_ = programCounter_->first;
       jumped_ = false;
+
+      // TRACE output if enabled
+      if (tracing_) {
+        std::cout << "[" << currentLine_ << "]";
+      }
 
       for (auto &stmt : programCounter_->second.statements) {
         stmt->execute(this);
@@ -389,6 +395,11 @@ void Interpreter::cont() {
     while (running_ && programCounter_ != program_.end()) {
       currentLine_ = programCounter_->first;
       jumped_ = false;
+
+      // TRACE output if enabled
+      if (tracing_) {
+        std::cout << "[" << currentLine_ << "]";
+      }
 
       for (auto &stmt : programCounter_->second.statements) {
         stmt->execute(this);
@@ -645,6 +656,12 @@ void Interpreter::resume() {
   }
   gotoLine(errorLine_);
   errorLine_ = -1;
+}
+
+void Interpreter::randomize(double seed) {
+  // Initialize random number generator using Float40 for consistency
+  Float40 f(seed);
+  Float40::setSeed(f);
 }
 
 void Interpreter::interactive() {

@@ -69,7 +69,8 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"POS", TokenType::POS},         {"FRE", TokenType::FRE},
       {"PDL", TokenType::PDL},         {"AND", TokenType::AND},
       {"OR", TokenType::OR},           {"NOT", TokenType::NOT},
-      {"MOD", TokenType::MOD}};
+      {"MOD", TokenType::MOD},         {"TRACE", TokenType::TRACE},
+      {"NOTRACE", TokenType::NOTRACE}, {"RANDOMIZE", TokenType::RANDOMIZE}};
 
   std::string upper = word;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
@@ -118,7 +119,8 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"POS", TokenType::POS},         {"FRE", TokenType::FRE},
       {"PDL", TokenType::PDL},         {"AND", TokenType::AND},
       {"OR", TokenType::OR},           {"NOT", TokenType::NOT},
-      {"MOD", TokenType::MOD}};
+      {"MOD", TokenType::MOD},         {"TRACE", TokenType::TRACE},
+      {"NOTRACE", TokenType::NOTRACE}, {"RANDOMIZE", TokenType::RANDOMIZE}};
 
   std::string upper = word;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);

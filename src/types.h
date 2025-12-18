@@ -79,6 +79,9 @@ enum class TokenType {
   // Additional statements
   STOP,
   ON,
+  TRACE,
+  NOTRACE,
+  RANDOMIZE,
 
   // Graphics primitives
   PLOT,

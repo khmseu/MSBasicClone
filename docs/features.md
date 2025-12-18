@@ -4,7 +4,7 @@
 
 - Core flow: tokenizer → parser → interpreter sharing the same AST for interactive and program execution.
 - Numeric runtime: custom 40-bit floating point (`src/float40.*`) with number/string `Value` type; expression support for +, -, \*, /, ^, MOD, unary ±/NOT, comparisons, AND/OR; integer variables (`%` suffix) clamp to 16-bit signed range.
-- Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; CLR to reset variables/loops; END; REM comment; COLON separators.
+- Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; CLR to reset variables/loops; END; REM comment; COLON separators; TRACE/NOTRACE to echo executed line numbers; RANDOMIZE seed to initialize RND.
 - Error trapping: ONERR GOTO line; RESUME to continue after handler.
 - Data handling: DATA collected before run; READ consumes sequentially across control flow; RESTORE resets the DATA cursor (optionally to a target line); DATA honored in immediate mode.
 - Arrays: DIM with expression subscripts; auto-dimension to size 10 per dimension if undeclared; shared access/assign path; bounds checks yield BAD SUBSCRIPT.

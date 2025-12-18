@@ -73,6 +73,13 @@ public:
   void handleError(const std::string &message);
   void resume();
 
+  // Debugging
+  void setTrace(bool on) { tracing_ = on; }
+  bool isTracing() const { return tracing_; }
+
+  // Random number seeding
+  void randomize(double seed);
+
   // File system operations
   void catalog();
 
@@ -113,6 +120,9 @@ private:
   LineNumber errorHandlerLine_;
   std::string lastError_;
   LineNumber errorLine_;
+
+  // Debugging
+  bool tracing_ = false;
 
   // Output state
   int outputColumn_ = 0;
