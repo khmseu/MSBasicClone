@@ -1,5 +1,6 @@
 #include "variables.h"
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 Variables::Variables() {}
@@ -24,7 +25,24 @@ std::string Variables::normalizeName(const std::string &name) const {
   return normalized;
 }
 
+namespace {
+Value coerceInteger(const Value &value) {
+  double n = value.getNumber();
+  // Applesoft integer variables are 16-bit signed; clamp to range.
+  double clamped = std::llround(n);
+  if (clamped > 32767.0)
+    clamped = 32767.0;
+  if (clamped < -32768.0)
+    clamped = -32768.0;
+  return Value(clamped);
+}
+} // namespace
+
 void Variables::setVariable(const std::string &name, const Value &value) {
+  if (!name.empty() && name.back() == '%') {
+    variables_[normalizeName(name)] = coerceInteger(value);
+    return;
+  }
   variables_[normalizeName(name)] = value;
 }
 
@@ -84,7 +102,11 @@ void Variables::setArrayElement(const std::string &name,
     }
   }
 
-  arr.data[indices] = value;
+  if (!name.empty() && name.back() == '%') {
+    arr.data[indices] = coerceInteger(value);
+  } else {
+    arr.data[indices] = value;
+  }
 }
 
 Value Variables::getArrayElement(const std::string &name,
