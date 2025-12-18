@@ -7,10 +7,43 @@
 #include <cctype>
 #include <iostream>
 #include <sstream>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 Interpreter::Interpreter()
     : currentLine_(0), running_(false), immediate_(false), jumped_(false),
-      dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1) {}
+      dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1) {
+#ifdef _WIN32
+  auto enableVirtualTerminal = []() -> bool {
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == nullptr || hOut == INVALID_HANDLE_VALUE)
+      return false;
+
+    DWORD outMode = 0;
+    if (!GetConsoleMode(hOut, &outMode))
+      return false;
+
+    DWORD desiredOut = outMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, desiredOut))
+      return false;
+
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn != nullptr && hIn != INVALID_HANDLE_VALUE) {
+      DWORD inMode = 0;
+      if (GetConsoleMode(hIn, &inMode)) {
+        SetConsoleMode(hIn, inMode | ENABLE_VIRTUAL_TERMINAL_INPUT);
+      }
+    }
+
+    return true;
+  };
+
+  vtEnabled_ = enableVirtualTerminal();
+#else
+  vtEnabled_ = true;
+#endif
+}
 
 void Interpreter::parseLine(const std::string &line, LineNumber &lineNum,
                             std::string &code) {
@@ -461,6 +494,11 @@ void Interpreter::setNormal() {
 }
 
 void Interpreter::updateTextAttributes() {
+#ifdef _WIN32
+  if (!vtEnabled_) {
+    return; // Fall back silently if VT sequences are unavailable.
+  }
+#endif
   // Apply ANSI styling for inverse/flash; fall back silently if unsupported.
   if (!inverse_ && !flash_) {
     std::cout << "\x1b[0m";

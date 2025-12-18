@@ -118,6 +118,7 @@ private:
   int outputRow_ = 0;
   bool inverse_ = false;
   bool flash_ = false;
+  bool vtEnabled_ = true;
 
   // Helper methods
   void parseLine(const std::string &line, LineNumber &lineNum,
