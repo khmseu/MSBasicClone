@@ -148,6 +148,7 @@ void Interpreter::runFrom(LineNumber lineNum) {
   }
 
   running_ = false;
+  paused_ = false;
 }
 
 void Interpreter::executeImmediate(const std::string &line) {
@@ -226,6 +227,31 @@ void Interpreter::executeImmediate(const std::string &line) {
       }
     } else if (command == "NEW") {
       newProgram();
+    } else if (command == "CONT") {
+      try {
+        cont();
+      } catch (...) {
+        std::cout << "?CAN'T CONTINUE\n";
+      }
+    } else if (command.rfind("DEL", 0) == 0) {
+      // DEL start,end
+      std::string argsTrim = args;
+      auto commaPos = argsTrim.find(',');
+      if (commaPos == std::string::npos) {
+        std::cout << "?SYNTAX ERROR\n";
+      } else {
+        try {
+          int start = std::stoi(argsTrim.substr(0, commaPos));
+          int end = std::stoi(argsTrim.substr(commaPos + 1));
+          if (start > end)
+            std::swap(start, end);
+          for (int ln = start; ln <= end; ++ln) {
+            deleteLine(ln);
+          }
+        } catch (...) {
+          std::cout << "?SYNTAX ERROR\n";
+        }
+      }
     } else if (command.rfind("LOAD", 0) == 0) {
       std::string filename = trim(code.substr(4));
       loadProgram(filename);
@@ -289,6 +315,55 @@ void Interpreter::returnFromGosub() {
 }
 
 void Interpreter::endProgram() { running_ = false; }
+
+void Interpreter::stop() {
+  // Stop execution but remember where to continue
+  paused_ = true;
+  continueAfterLine_ = currentLine_;
+  running_ = false;
+}
+
+void Interpreter::cont() {
+  if (!paused_ || program_.empty() || continueAfterLine_ < 0) {
+    throw std::runtime_error("CANT CONTINUE");
+  }
+  // Position to the line after the one that STOPped
+  auto it = program_.find(continueAfterLine_);
+  if (it == program_.end()) {
+    throw std::runtime_error("CANT CONTINUE");
+  }
+  ++it; // next line
+  programCounter_ = it;
+  running_ = true;
+  immediate_ = false;
+  paused_ = false;
+
+  try {
+    while (running_ && programCounter_ != program_.end()) {
+      currentLine_ = programCounter_->first;
+      jumped_ = false;
+
+      for (auto &stmt : programCounter_->second.statements) {
+        stmt->execute(this);
+        if (!running_ || jumped_)
+          break;
+      }
+
+      if (!jumped_) {
+        ++programCounter_;
+      }
+    }
+  } catch (const std::exception &e) {
+    if (errorHandlerLine_ >= 0) {
+      errorLine_ = currentLine_;
+      lastError_ = e.what();
+      gotoLine(errorHandlerLine_);
+    } else {
+      std::cout << "?" << e.what() << " IN LINE " << currentLine_ << "\n";
+      running_ = false;
+    }
+  }
+}
 
 void Interpreter::loadProgram(const std::string &filename) {
   try {

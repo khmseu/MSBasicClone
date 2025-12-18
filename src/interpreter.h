@@ -40,6 +40,8 @@ public:
   void gosub(LineNumber lineNum);
   void returnFromGosub();
   void endProgram();
+  void stop();
+  void cont();
 
   // Mode helpers
   bool isImmediateMode() const { return immediate_; }
@@ -76,6 +78,8 @@ private:
   bool immediate_;
   bool jumped_; // Flag to prevent auto-increment after GOTO/GOSUB
   std::map<LineNumber, ProgramLine>::iterator programCounter_;
+  bool paused_ = false;
+  LineNumber continueAfterLine_ = -1;
 
   // GOSUB stack
   std::stack<LineNumber> gosubStack_;

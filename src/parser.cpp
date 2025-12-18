@@ -18,6 +18,92 @@ std::string toUpper(const std::string &s) {
 }
 } // namespace
 
+// Forward declarations for statements used in parseStatement
+class StopStmt;
+class PlotStmt;
+class HlinStmt;
+class VlinStmt;
+class OnTransferStmt;
+
+// Statements used by parser
+class StopStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->stop(); }
+};
+
+class PlotStmt : public Statement {
+public:
+  PlotStmt(std::shared_ptr<Expression> x, std::shared_ptr<Expression> y)
+      : x_(std::move(x)), y_(std::move(y)) {}
+  void execute(Interpreter *interp) override {
+    graphics().plot(x_->evaluate(interp).getNumber(),
+                    y_->evaluate(interp).getNumber());
+  }
+
+private:
+  std::shared_ptr<Expression> x_;
+  std::shared_ptr<Expression> y_;
+};
+
+class HlinStmt : public Statement {
+public:
+  HlinStmt(std::shared_ptr<Expression> x1, std::shared_ptr<Expression> x2,
+           std::shared_ptr<Expression> y)
+      : x1_(std::move(x1)), x2_(std::move(x2)), y_(std::move(y)) {}
+  void execute(Interpreter *interp) override {
+    graphics().hlin(x1_->evaluate(interp).getNumber(),
+                    x2_->evaluate(interp).getNumber(),
+                    y_->evaluate(interp).getNumber());
+  }
+
+private:
+  std::shared_ptr<Expression> x1_;
+  std::shared_ptr<Expression> x2_;
+  std::shared_ptr<Expression> y_;
+};
+
+class VlinStmt : public Statement {
+public:
+  VlinStmt(std::shared_ptr<Expression> y1, std::shared_ptr<Expression> y2,
+           std::shared_ptr<Expression> x)
+      : y1_(std::move(y1)), y2_(std::move(y2)), x_(std::move(x)) {}
+  void execute(Interpreter *interp) override {
+    graphics().vlin(y1_->evaluate(interp).getNumber(),
+                    y2_->evaluate(interp).getNumber(),
+                    x_->evaluate(interp).getNumber());
+  }
+
+private:
+  std::shared_ptr<Expression> y1_;
+  std::shared_ptr<Expression> y2_;
+  std::shared_ptr<Expression> x_;
+};
+
+class OnTransferStmt : public Statement {
+public:
+  enum Kind { Goto, Gosub };
+  OnTransferStmt(std::shared_ptr<Expression> index, Kind kind,
+                 std::vector<int> lines)
+      : index_(std::move(index)), kind_(kind), lines_(std::move(lines)) {}
+  void execute(Interpreter *interp) override {
+    int n = static_cast<int>(index_->evaluate(interp).getNumber());
+    if (n < 1 || n > static_cast<int>(lines_.size())) {
+      return; // Do nothing if out of range (Applesoft behavior)
+    }
+    int line = lines_[static_cast<size_t>(n - 1)];
+    if (kind_ == Goto) {
+      interp->gotoLine(line);
+    } else {
+      interp->gosub(line);
+    }
+  }
+
+private:
+  std::shared_ptr<Expression> index_;
+  Kind kind_;
+  std::vector<int> lines_;
+};
+
 // Expression classes
 class LiteralExpr : public Expression {
 public:
@@ -666,6 +752,9 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   case TokenType::RETURN:
     pos++;
     return std::make_shared<ReturnStmt>();
+  case TokenType::STOP:
+    pos++;
+    return std::make_shared<StopStmt>();
   case TokenType::FOR:
     return parseFor(tokens, pos);
   case TokenType::NEXT:
@@ -683,6 +772,8 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return std::make_shared<RestoreStmt>();
   case TokenType::DEF:
     return parseDef(tokens, pos);
+  case TokenType::ON:
+    return parseOn(tokens, pos);
   case TokenType::POKE: {
     pos++; // Skip POKE
     auto addr = parseExpression(tokens, pos);
@@ -713,6 +804,46 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   case TokenType::HIRES:
     pos++;
     return std::make_shared<HiresStmt>();
+  case TokenType::PLOT: {
+    pos++; // Skip PLOT
+    auto x = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto y = parseExpression(tokens, pos);
+    return std::make_shared<PlotStmt>(x, y);
+  }
+  case TokenType::HLIN: {
+    pos++; // Skip HLIN
+    auto x1 = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto x2 = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto y = parseExpression(tokens, pos);
+    return std::make_shared<HlinStmt>(x1, x2, y);
+  }
+  case TokenType::VLIN: {
+    pos++; // Skip VLIN
+    auto y1 = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto y2 = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto x = parseExpression(tokens, pos);
+    return std::make_shared<VlinStmt>(y1, y2, x);
+  }
   case TokenType::GET: {
     pos++; // Skip GET
     if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
@@ -1110,6 +1241,41 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   }
 
   throw std::runtime_error("SYNTAX ERROR");
+}
+
+// (moved class definitions earlier)
+
+std::shared_ptr<Statement> Parser::parseOn(const std::vector<Token> &tokens,
+                                           size_t &pos) {
+  pos++; // Skip ON
+  auto index = parseExpression(tokens, pos);
+  if (pos >= tokens.size() || (tokens[pos].type != TokenType::GOTO &&
+                               tokens[pos].type != TokenType::GOSUB)) {
+    throw std::runtime_error("SYNTAX ERROR: EXPECTED GOTO OR GOSUB");
+  }
+  TokenType kindTok = tokens[pos].type;
+  pos++;
+
+  std::vector<int> lines;
+  while (pos < tokens.size() && tokens[pos].type != TokenType::NEWLINE &&
+         tokens[pos].type != TokenType::COLON) {
+    if (tokens[pos].type != TokenType::NUMBER) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED LINE NUMBER");
+    }
+    int line = static_cast<int>(tokens[pos].value.getNumber());
+    lines.push_back(line);
+    pos++;
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++;
+      continue;
+    }
+    break;
+  }
+
+  OnTransferStmt::Kind kind = (kindTok == TokenType::GOTO)
+                                  ? OnTransferStmt::Goto
+                                  : OnTransferStmt::Gosub;
+  return std::make_shared<OnTransferStmt>(index, kind, lines);
 }
 
 std::shared_ptr<Statement> Parser::parseInput(const std::vector<Token> &tokens,

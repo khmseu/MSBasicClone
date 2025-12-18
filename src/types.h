@@ -1,10 +1,10 @@
 #pragma once
 
-#include <string>
-#include <memory>
 #include <map>
-#include <vector>
+#include <memory>
+#include <string>
 #include <variant>
+#include <vector>
 
 // Forward declarations
 class Float40;
@@ -20,81 +20,162 @@ using LineNumber = int;
 
 // Token types
 enum class TokenType {
-    // Literals
-    NUMBER,
-    STRING,
-    
-    // Identifiers
-    IDENTIFIER,
-    
-    // Keywords
-    PRINT, INPUT, LET, IF, THEN, ELSE, GOTO, GOSUB, RETURN,
-    FOR, TO, STEP, NEXT, DIM, DATA, READ, RESTORE,
-    REM, END, NEW, RUN, LIST, LOAD, SAVE, CATALOG,
-    DEF, FN, ONERR, RESUME, CLR, HOME, TEXT, GR, HIRES,
-    CALL, PEEK, POKE, GET,
-    
-    // Operators
-    PLUS, MINUS, MULTIPLY, DIVIDE, POWER, MOD,
-    EQUAL, NOT_EQUAL, LESS, GREATER, LESS_EQUAL, GREATER_EQUAL,
-    AND, OR, NOT,
-    
-    // Delimiters
-    LPAREN, RPAREN, COMMA, SEMICOLON, COLON,
-    DOLLAR, PERCENT,
-    
-    // Special
-    NEWLINE, END_OF_FILE,
-    
-    // Built-in functions
-    SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND,
-    LEN, VAL, ASC, CHR, LEFT, RIGHT, MID, STR,
-    TAB, SPC, POS, FRE, PDL
+  // Literals
+  NUMBER,
+  STRING,
+
+  // Identifiers
+  IDENTIFIER,
+
+  // Keywords
+  PRINT,
+  INPUT,
+  LET,
+  IF,
+  THEN,
+  ELSE,
+  GOTO,
+  GOSUB,
+  RETURN,
+  FOR,
+  TO,
+  STEP,
+  NEXT,
+  DIM,
+  DATA,
+  READ,
+  RESTORE,
+  REM,
+  END,
+  NEW,
+  RUN,
+  LIST,
+  LOAD,
+  SAVE,
+  CATALOG,
+  DEF,
+  FN,
+  ONERR,
+  RESUME,
+  CLR,
+  HOME,
+  TEXT,
+  GR,
+  HIRES,
+  CALL,
+  PEEK,
+  POKE,
+  GET,
+
+  // Additional statements
+  STOP,
+  ON,
+
+  // Graphics primitives
+  PLOT,
+  HLIN,
+  VLIN,
+
+  // Operators
+  PLUS,
+  MINUS,
+  MULTIPLY,
+  DIVIDE,
+  POWER,
+  MOD,
+  EQUAL,
+  NOT_EQUAL,
+  LESS,
+  GREATER,
+  LESS_EQUAL,
+  GREATER_EQUAL,
+  AND,
+  OR,
+  NOT,
+
+  // Delimiters
+  LPAREN,
+  RPAREN,
+  COMMA,
+  SEMICOLON,
+  COLON,
+  DOLLAR,
+  PERCENT,
+
+  // Special
+  NEWLINE,
+  END_OF_FILE,
+
+  // Built-in functions
+  SIN,
+  COS,
+  TAN,
+  ATN,
+  EXP,
+  LOG,
+  SQR,
+  ABS,
+  INT,
+  SGN,
+  RND,
+  LEN,
+  VAL,
+  ASC,
+  CHR,
+  LEFT,
+  RIGHT,
+  MID,
+  STR,
+  TAB,
+  SPC,
+  POS,
+  FRE,
+  PDL
 };
 
 // Value type - represents either a number or string
 class Value {
 public:
-    Value();
-    explicit Value(double num);
-    explicit Value(const std::string& str);
-    explicit Value(const Float40& f40);
-    
-    bool isNumber() const;
-    bool isString() const;
-    
-    double getNumber() const;
-    std::string getString() const;
-    
-    Value operator+(const Value& other) const;
-    Value operator-(const Value& other) const;
-    Value operator*(const Value& other) const;
-    Value operator/(const Value& other) const;
-    
-    bool operator==(const Value& other) const;
-    bool operator!=(const Value& other) const;
-    bool operator<(const Value& other) const;
-    bool operator>(const Value& other) const;
-    bool operator<=(const Value& other) const;
-    bool operator>=(const Value& other) const;
-    
+  Value();
+  explicit Value(double num);
+  explicit Value(const std::string &str);
+  explicit Value(const Float40 &f40);
+
+  bool isNumber() const;
+  bool isString() const;
+
+  double getNumber() const;
+  std::string getString() const;
+
+  Value operator+(const Value &other) const;
+  Value operator-(const Value &other) const;
+  Value operator*(const Value &other) const;
+  Value operator/(const Value &other) const;
+
+  bool operator==(const Value &other) const;
+  bool operator!=(const Value &other) const;
+  bool operator<(const Value &other) const;
+  bool operator>(const Value &other) const;
+  bool operator<=(const Value &other) const;
+  bool operator>=(const Value &other) const;
+
 private:
-    std::variant<double, std::string> data;
+  std::variant<double, std::string> data;
 };
 
 // Token structure
 struct Token {
-    TokenType type;
-    std::string text;
-    Value value;
-    int line;
-    int column;
+  TokenType type;
+  std::string text;
+  Value value;
+  int line;
+  int column;
 };
 
 // Program line structure
 struct ProgramLine {
-    LineNumber lineNumber;
-    std::string text;
-    std::vector<Token> tokens;
-    std::vector<std::shared_ptr<Statement>> statements;
+  LineNumber lineNumber;
+  std::string text;
+  std::vector<Token> tokens;
+  std::vector<std::shared_ptr<Statement>> statements;
 };

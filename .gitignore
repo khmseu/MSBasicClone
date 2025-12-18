@@ -111,8 +111,7 @@ Thumbs.db
 *.swp
 *~
 commit-message.txt
-Research/.venv/lib64
-Research/.venv/pyvenv.cfg
-Research/.venv/bin/python
-Research/.venv/bin/python3
-Research/.venv/bin/python3.12
+Research/.venv/
+
+.fake
+.cache/
