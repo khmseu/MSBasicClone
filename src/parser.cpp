@@ -242,6 +242,20 @@ private:
   std::shared_ptr<Expression> operand_;
 };
 
+class NotExpr : public Expression {
+public:
+  explicit NotExpr(std::shared_ptr<Expression> operand)
+      : operand_(std::move(operand)) {}
+
+  Value evaluate(Interpreter *interp) override {
+    double v = operand_->evaluate(interp).getNumber();
+    return Value(v == 0.0 ? 1.0 : 0.0);
+  }
+
+private:
+  std::shared_ptr<Expression> operand_;
+};
+
 class BinaryExpr : public Expression {
 public:
   BinaryExpr(std::shared_ptr<Expression> left, TokenType op,
@@ -1089,11 +1103,11 @@ Parser::parseOrExpression(const std::vector<Token> &tokens, size_t &pos) {
 
 std::shared_ptr<Expression>
 Parser::parseAndExpression(const std::vector<Token> &tokens, size_t &pos) {
-  auto left = parseRelationalExpression(tokens, pos);
+  auto left = parseNotExpression(tokens, pos);
 
   while (pos < tokens.size() && tokens[pos].type == TokenType::AND) {
     pos++;
-    auto right = parseRelationalExpression(tokens, pos);
+    auto right = parseNotExpression(tokens, pos);
     left = std::make_shared<BinaryExpr>(left, TokenType::AND, right);
   }
 
@@ -1102,6 +1116,12 @@ Parser::parseAndExpression(const std::vector<Token> &tokens, size_t &pos) {
 
 std::shared_ptr<Expression>
 Parser::parseNotExpression(const std::vector<Token> &tokens, size_t &pos) {
+  if (pos < tokens.size() && tokens[pos].type == TokenType::NOT) {
+    pos++;
+    auto operand = parseNotExpression(tokens, pos);
+    return std::make_shared<NotExpr>(operand);
+  }
+
   return parseRelationalExpression(tokens, pos);
 }
 
