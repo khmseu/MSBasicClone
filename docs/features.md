@@ -23,6 +23,6 @@
 
 ## Notes
 
-- Variable names are significant to the first two characters (case-insensitive); `$` suffix denotes strings; `%` suffix reserved but not separately handled yet.
+- Variable names are significant to the first two characters (case-insensitive); `$` suffix denotes strings; `%` suffix clamps to 16-bit signed integer.
 - DATA is pre-collected before program execution; READ on exhausted data raises OUT OF DATA.
 - Keep new tests as `.bas` programs under `tests/` and run with `ctest --test-dir build`.
