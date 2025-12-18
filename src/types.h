@@ -82,6 +82,9 @@ enum class TokenType {
   TRACE,
   NOTRACE,
   RANDOMIZE,
+  SPEED,
+  PR,
+  IN,
 
   // Graphics primitives
   PLOT,
@@ -111,6 +114,7 @@ enum class TokenType {
   COMMA,
   SEMICOLON,
   COLON,
+  HASH,
   DOLLAR,
   PERCENT,
 

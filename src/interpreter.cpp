@@ -6,8 +6,10 @@
 #include "tokenizer.h"
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <iostream>
 #include <sstream>
+#include <thread>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -183,6 +185,7 @@ void Interpreter::runFrom(LineNumber lineNum) {
         stmt->execute(this);
         if (!running_ || jumped_)
           break;
+        applySpeedDelay();
       }
 
       if (!jumped_) {
@@ -325,6 +328,7 @@ void Interpreter::executeImmediate(const std::string &line) {
 
       for (auto &stmt : statements) {
         stmt->execute(this);
+        applySpeedDelay();
       }
 
       immediate_ = false;
@@ -405,6 +409,7 @@ void Interpreter::cont() {
         stmt->execute(this);
         if (!running_ || jumped_)
           break;
+        applySpeedDelay();
       }
 
       if (!jumped_) {
@@ -558,6 +563,9 @@ void Interpreter::updateTextAttributes() {
 void Interpreter::printText(const std::string &text) {
   for (char ch : text) {
     std::cout << ch;
+    if (ch == '\a') {
+      std::cout << std::flush;
+    }
     if (ch == '\n') {
       outputColumn_ = 0;
       outputRow_++;
@@ -662,6 +670,32 @@ void Interpreter::randomize(double seed) {
   // Initialize random number generator using Float40 for consistency
   Float40 f(seed);
   Float40::setSeed(f);
+}
+
+void Interpreter::setSpeedDelay(int delayMs) {
+  if (delayMs < 0)
+    delayMs = 0;
+  if (delayMs > 255)
+    delayMs = 255;
+  speedDelayMs_ = delayMs;
+}
+
+void Interpreter::setOutputDevice(int slot) {
+  if (slot < 0)
+    slot = 0;
+  outputDevice_ = slot;
+}
+
+void Interpreter::setInputDevice(int slot) {
+  if (slot < 0)
+    slot = 0;
+  inputDevice_ = slot;
+}
+
+void Interpreter::applySpeedDelay() {
+  if (speedDelayMs_ <= 0)
+    return;
+  std::this_thread::sleep_for(std::chrono::milliseconds(speedDelayMs_));
 }
 
 void Interpreter::interactive() {

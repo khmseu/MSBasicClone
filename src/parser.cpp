@@ -833,6 +833,51 @@ private:
   std::shared_ptr<Expression> seed_;
 };
 
+class SpeedStmt : public Statement {
+public:
+  explicit SpeedStmt(std::shared_ptr<Expression> delay)
+      : delay_(std::move(delay)) {}
+  void execute(Interpreter *interp) override {
+    int raw = static_cast<int>(delay_->evaluate(interp).getNumber());
+    if (raw < 0)
+      raw = 0;
+    if (raw > 255)
+      raw = 255;
+    interp->setSpeedDelay(raw);
+  }
+
+private:
+  std::shared_ptr<Expression> delay_;
+};
+
+class PrStmt : public Statement {
+public:
+  explicit PrStmt(std::shared_ptr<Expression> slot) : slot_(std::move(slot)) {}
+  void execute(Interpreter *interp) override {
+    int device = static_cast<int>(slot_->evaluate(interp).getNumber());
+    if (device < 0)
+      device = 0;
+    interp->setOutputDevice(device);
+  }
+
+private:
+  std::shared_ptr<Expression> slot_;
+};
+
+class InStmt : public Statement {
+public:
+  explicit InStmt(std::shared_ptr<Expression> slot) : slot_(std::move(slot)) {}
+  void execute(Interpreter *interp) override {
+    int device = static_cast<int>(slot_->evaluate(interp).getNumber());
+    if (device < 0)
+      device = 0;
+    interp->setInputDevice(device);
+  }
+
+private:
+  std::shared_ptr<Expression> slot_;
+};
+
 // Parser implementation
 Parser::Parser() {}
 
@@ -1050,6 +1095,12 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return std::make_shared<NoTraceStmt>();
   case TokenType::RANDOMIZE:
     return parseRandomize(tokens, pos);
+  case TokenType::SPEED:
+    return parseSpeed(tokens, pos);
+  case TokenType::PR:
+    return parseDeviceRedirect(tokens, pos, true);
+  case TokenType::IN:
+    return parseDeviceRedirect(tokens, pos, false);
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);
   default:
@@ -1817,6 +1868,30 @@ Parser::parseRandomize(const std::vector<Token> &tokens, size_t &pos) {
     seed = parseExpression(tokens, pos);
   }
   return std::make_shared<RandomizeStmt>(seed);
+}
+
+std::shared_ptr<Statement> Parser::parseSpeed(const std::vector<Token> &tokens,
+                                              size_t &pos) {
+  pos++; // Skip SPEED
+  if (pos < tokens.size() && tokens[pos].type == TokenType::EQUAL) {
+    pos++; // Optional '='
+  }
+  auto delay = parseExpression(tokens, pos);
+  return std::make_shared<SpeedStmt>(delay);
+}
+
+std::shared_ptr<Statement>
+Parser::parseDeviceRedirect(const std::vector<Token> &tokens, size_t &pos,
+                            bool isOutput) {
+  pos++; // Skip PR or IN
+  if (pos < tokens.size() && tokens[pos].type == TokenType::HASH) {
+    pos++; // Optional '#'
+  }
+  auto slot = parseExpression(tokens, pos);
+  if (isOutput) {
+    return std::make_shared<PrStmt>(slot);
+  }
+  return std::make_shared<InStmt>(slot);
 }
 
 bool Parser::match(const std::vector<Token> &tokens, size_t pos,

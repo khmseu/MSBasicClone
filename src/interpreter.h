@@ -80,6 +80,16 @@ public:
   // Random number seeding
   void randomize(double seed);
 
+  // SPEED delay control (milliseconds, clamped 0-255)
+  void setSpeedDelay(int delayMs);
+  int getSpeedDelay() const { return speedDelayMs_; }
+
+  // Device redirection stubs
+  void setOutputDevice(int slot);
+  void setInputDevice(int slot);
+  int getOutputDevice() const { return outputDevice_; }
+  int getInputDevice() const { return inputDevice_; }
+
   // File system operations
   void catalog();
 
@@ -131,9 +141,15 @@ private:
   bool flash_ = false;
   bool vtEnabled_ = true;
 
+  // SPEED delay (ms), PR#/IN# slot tracking
+  int speedDelayMs_ = 0;
+  int outputDevice_ = 0;
+  int inputDevice_ = 0;
+
   // Helper methods
   void parseLine(const std::string &line, LineNumber &lineNum,
                  std::string &code);
   bool isLineNumber(const std::string &text) const;
   void updateTextAttributes();
+  void applySpeedDelay();
 };

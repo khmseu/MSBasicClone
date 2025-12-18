@@ -88,6 +88,11 @@ private:
                                      size_t &pos);
   std::shared_ptr<Statement> parseRandomize(const std::vector<Token> &tokens,
                                             size_t &pos);
+  std::shared_ptr<Statement> parseSpeed(const std::vector<Token> &tokens,
+                                        size_t &pos);
+  std::shared_ptr<Statement>
+  parseDeviceRedirect(const std::vector<Token> &tokens, size_t &pos,
+                      bool isOutput);
 
   bool match(const std::vector<Token> &tokens, size_t pos,
              TokenType type) const;
