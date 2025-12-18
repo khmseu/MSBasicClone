@@ -110,6 +110,24 @@ void Graphics::vlin(double y1, double y2, double x) {
   recordPoint(x, y2);
 }
 
+void Graphics::hplot(double x, double y) { recordPoint(x, y); }
+
+void Graphics::hplot_to(double x, double y) { recordPoint(x, y); }
+
+void Graphics::move(double x, double y) { recordPoint(x, y); }
+
+void Graphics::setRotate(int angle) {
+  // Rotation parameter for shape drawing (stub)
+  // Real implementation would store angle for DRAW/XDRAW
+  (void)angle;
+}
+
+void Graphics::setScale(int scale) {
+  // Scale parameter for shape drawing (stub)
+  // Real implementation would store scale for DRAW/XDRAW
+  (void)scale;
+}
+
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {
 #ifdef PLATFORM_WINDOWS
   HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);

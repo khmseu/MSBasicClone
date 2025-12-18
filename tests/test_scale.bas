@@ -1,0 +1,6 @@
+10 REM Test SCALE - Set shape scale factor
+20 SCALE 1
+30 SCALE 2
+40 SCALE 4
+50 SCALE 8
+60 PRINT "SCALE OK"

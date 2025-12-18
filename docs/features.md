@@ -4,7 +4,7 @@
 
 - Core flow: tokenizer → parser → interpreter sharing the same AST for interactive and program execution.
 - Numeric runtime: custom 40-bit floating point (`src/float40.*`) with number/string `Value` type; expression support for +, -, \*, /, ^, MOD, unary ±/NOT, comparisons, AND/OR; integer variables (`%` suffix) clamp to 16-bit signed range.
-- Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; WHILE/WEND for conditional loops; CLR to reset variables/loops; END; REM comment; COLON separators; TRACE/NOTRACE to echo executed line numbers; RANDOMIZE seed to initialize RND; SPEED n (clamped 0–255 ms) to insert per-statement delay; PR#n/IN#n stubs store device slots while keeping screen/keyboard active; POP to remove entry from GOSUB stack; WAIT addr,mask to poll I/O; HIMEM=/LOMEM= to set memory boundaries.
+- Statements: PRINT/? with separators; INPUT with optional prompt; LET/assign; IF/THEN[/ELSE] inline or to line numbers; GOTO; GOSUB/RETURN; FOR/NEXT with STEP; WHILE/WEND for conditional loops; CLR to reset variables/loops; END; REM comment; COLON separators; TRACE/NOTRACE to echo executed line numbers; RANDOMIZE seed to initialize RND; SPEED n (clamped 0–255 ms) to insert per-statement delay; PR#n/IN#n stubs store device slots while keeping screen/keyboard active; POP to remove entry from GOSUB stack; WAIT addr,mask to poll I/O; HIMEM=/LOMEM= to set memory boundaries; HPLOT for high-resolution graphics plotting (points and lines); MOVE x,y for cursor positioning in hi-res graphics; ROTATE angle and SCALE n for shape parameters (stubs).
 - Error trapping: ONERR GOTO line; RESUME to continue after handler.
 - Data handling: DATA collected before run; READ consumes sequentially across control flow; RESTORE resets the DATA cursor (optionally to a target line); DATA honored in immediate mode.
 - Arrays: DIM with expression subscripts; auto-dimension to size 10 per dimension if undeclared; shared access/assign path; bounds checks yield BAD SUBSCRIPT.
@@ -18,7 +18,8 @@
 
 ## Yet to Implement / Missing
 
-- Screen/graphics: No on-screen rendering for graphics commands or plotting primitives yet; SCRN(x,y) stub returns 0.
+- Advanced graphics: DRAW and XDRAW for shape table drawing with rotation/scale (stubs parse but don't render); Shape table loading and management not implemented.
+- Screen/graphics rendering: No on-screen rendering for graphics commands or plotting primitives yet (coordinates are recorded but not displayed); SCRN(x,y) stub returns 0.
 - Memory/state queries: FRE returns fixed free-memory placeholder; PDL returns 0; HIMEM/LOMEM track boundaries but don't enforce allocation.
 - Additional file or device I/O beyond LOAD/SAVE/CATALOG not implemented.
 - WAIT addr,mask polls indefinitely; real Applesoft would support timeout and external I/O events.

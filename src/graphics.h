@@ -38,6 +38,11 @@ public:
   void plot(double x, double y);
   void hlin(double x1, double x2, double y);
   void vlin(double y1, double y2, double x);
+  void hplot(double x, double y);
+  void hplot_to(double x, double y);
+  void move(double x, double y);
+  void setRotate(int angle);
+  void setScale(int scale);
 
 private:
   Graphics();

@@ -98,6 +98,12 @@ enum class TokenType {
   PLOT,
   HLIN,
   VLIN,
+  HPLOT,
+  XDRAW,
+  DRAW,
+  MOVE,
+  ROTATE,
+  SCALE,
 
   // Operators
   PLUS,

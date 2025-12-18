@@ -89,6 +89,73 @@ private:
   std::shared_ptr<Expression> x_;
 };
 
+class HplotStmt : public Statement {
+public:
+  HplotStmt(std::vector<
+            std::pair<std::shared_ptr<Expression>, std::shared_ptr<Expression>>>
+                coords)
+      : coords_(std::move(coords)) {}
+  void execute(Interpreter *interp) override {
+    // HPLOT plots points in high-resolution graphics mode
+    if (!coords_.empty()) {
+      double x = coords_[0].first->evaluate(interp).getNumber();
+      double y = coords_[0].second->evaluate(interp).getNumber();
+      graphics().hplot(x, y);
+
+      for (size_t i = 1; i < coords_.size(); ++i) {
+        x = coords_[i].first->evaluate(interp).getNumber();
+        y = coords_[i].second->evaluate(interp).getNumber();
+        graphics().hplot_to(x, y);
+      }
+    }
+  }
+
+private:
+  std::vector<
+      std::pair<std::shared_ptr<Expression>, std::shared_ptr<Expression>>>
+      coords_;
+};
+
+class MoveStmt : public Statement {
+public:
+  MoveStmt(std::shared_ptr<Expression> x, std::shared_ptr<Expression> y)
+      : x_(std::move(x)), y_(std::move(y)) {}
+  void execute(Interpreter *interp) override {
+    graphics().move(x_->evaluate(interp).getNumber(),
+                    y_->evaluate(interp).getNumber());
+  }
+
+private:
+  std::shared_ptr<Expression> x_;
+  std::shared_ptr<Expression> y_;
+};
+
+class RotateStmt : public Statement {
+public:
+  explicit RotateStmt(std::shared_ptr<Expression> angle)
+      : angle_(std::move(angle)) {}
+  void execute(Interpreter *interp) override {
+    int angle = static_cast<int>(angle_->evaluate(interp).getNumber());
+    graphics().setRotate(angle);
+  }
+
+private:
+  std::shared_ptr<Expression> angle_;
+};
+
+class ScaleStmt : public Statement {
+public:
+  explicit ScaleStmt(std::shared_ptr<Expression> scale)
+      : scale_(std::move(scale)) {}
+  void execute(Interpreter *interp) override {
+    int s = static_cast<int>(scale_->evaluate(interp).getNumber());
+    graphics().setScale(s);
+  }
+
+private:
+  std::shared_ptr<Expression> scale_;
+};
+
 class OnTransferStmt : public Statement {
 public:
   enum Kind { Goto, Gosub };
@@ -1148,6 +1215,56 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     pos++;
     auto x = parseExpression(tokens, pos);
     return std::make_shared<VlinStmt>(y1, y2, x);
+  }
+  case TokenType::HPLOT: {
+    pos++; // Skip HPLOT
+    std::vector<
+        std::pair<std::shared_ptr<Expression>, std::shared_ptr<Expression>>>
+        coords;
+    auto x = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto y = parseExpression(tokens, pos);
+    coords.push_back({x, y});
+
+    // Handle additional coordinate pairs separated by commas or TO
+    while (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      // Check for TO keyword for line drawing
+      if (pos < tokens.size() && tokens[pos].type == TokenType::TO) {
+        pos++; // Skip TO
+      }
+      x = parseExpression(tokens, pos);
+      if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+      }
+      pos++;
+      y = parseExpression(tokens, pos);
+      coords.push_back({x, y});
+    }
+    return std::make_shared<HplotStmt>(coords);
+  }
+  case TokenType::MOVE: {
+    pos++; // Skip MOVE
+    auto x = parseExpression(tokens, pos);
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++;
+    auto y = parseExpression(tokens, pos);
+    return std::make_shared<MoveStmt>(x, y);
+  }
+  case TokenType::ROTATE: {
+    pos++; // Skip ROTATE
+    auto angle = parseExpression(tokens, pos);
+    return std::make_shared<RotateStmt>(angle);
+  }
+  case TokenType::SCALE: {
+    pos++; // Skip SCALE
+    auto scale = parseExpression(tokens, pos);
+    return std::make_shared<ScaleStmt>(scale);
   }
   case TokenType::GET: {
     pos++; // Skip GET
