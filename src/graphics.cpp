@@ -21,7 +21,9 @@ int clampToInt(double value) { return static_cast<int>(std::lround(value)); }
 Graphics::Graphics()
     : mode_(GraphicsMode::None),
       window_{0, 0, kDefaultColumns, kDefaultRows, 1.0, 1.0}, frame_(),
-      windowOpen_(false), color_(0) {}
+      windowOpen_(false), color_(0) {
+  defineDefaultShapes();
+}
 
 Graphics &Graphics::instance() {
   static Graphics g;
@@ -98,7 +100,12 @@ void Graphics::recordPoint(double x, double y) {
   frame_.push_back({clampedX, clampedY, scaledX, scaledY, color_});
 }
 
-void Graphics::plot(double x, double y) { recordPoint(x, y); }
+void Graphics::plot(double x, double y) {
+  recordPoint(x, y);
+  lastX_ = x;
+  lastY_ = y;
+  lastValid_ = true;
+}
 
 void Graphics::hlin(double x1, double x2, double y) {
   recordPoint(x1, y);
@@ -110,42 +117,77 @@ void Graphics::vlin(double y1, double y2, double x) {
   recordPoint(x, y2);
 }
 
-void Graphics::hplot(double x, double y) { recordPoint(x, y); }
-
-void Graphics::hplot_to(double x, double y) { recordPoint(x, y); }
-
-void Graphics::move(double x, double y) { recordPoint(x, y); }
-
-void Graphics::setRotate(int angle) {
-  // Rotation parameter for shape drawing (stub)
-  // Real implementation would store angle for DRAW/XDRAW
-  (void)angle;
+void Graphics::hplot(double x, double y) {
+  recordPoint(x, y);
+  lastX_ = x;
+  lastY_ = y;
+  lastValid_ = true;
 }
 
+void Graphics::hplot_to(double x, double y) {
+  recordPoint(x, y);
+  lastX_ = x;
+  lastY_ = y;
+  lastValid_ = true;
+}
+
+void Graphics::move(double x, double y) {
+  recordPoint(x, y);
+  lastX_ = x;
+  lastY_ = y;
+  lastValid_ = true;
+}
+
+void Graphics::setRotate(int angle) { rotateAngle_ = angle; }
+
 void Graphics::setScale(int scale) {
-  // Scale parameter for shape drawing (stub)
-  // Real implementation would store scale for DRAW/XDRAW
-  (void)scale;
+  if (scale < 1)
+    scale = 1;
+  scaleFactor_ = scale;
 }
 
 void Graphics::draw(int shapeNum, double x, double y) {
-  // DRAW shape from shape table
-  // Draws shape at specified coordinates using current color, scale, and
-  // rotation Shape table management not yet implemented (stub)
-  if (x >= 0 && y >= 0) {
-    recordPoint(x, y);
+  auto it = shapeTable_.find(shapeNum);
+  if (it == shapeTable_.end()) {
+    return; // unknown shape
   }
-  (void)shapeNum;
+
+  double originX = x;
+  double originY = y;
+  if (!(originX >= 0 && originY >= 0)) {
+    if (lastValid_) {
+      originX = lastX_;
+      originY = lastY_;
+    } else {
+      originX = 0.0;
+      originY = 0.0;
+    }
+  }
+
+  // Record origin for context
+  recordPoint(originX, originY);
+
+  for (const auto &pt : it->second) {
+    // Apply rotation + scale to relative point
+    double rad = static_cast<double>(rotateAngle_) * M_PI / 180.0;
+    double sx = static_cast<double>(scaleFactor_);
+    double rx = pt.first * std::cos(rad) - pt.second * std::sin(rad);
+    double ry = pt.first * std::sin(rad) + pt.second * std::cos(rad);
+    double finalX = originX + rx * sx;
+    double finalY = originY + ry * sx;
+    recordPoint(finalX, finalY);
+    lastX_ = finalX;
+    lastY_ = finalY;
+    lastValid_ = true;
+  }
 }
 
-void Graphics::xdraw(int shapeNum, double x, double y) {
-  // XDRAW shape from shape table
-  // XOR-draws shape (erase effect) at specified coordinates
-  // Shape table management not yet implemented (stub)
-  if (x >= 0 && y >= 0) {
-    recordPoint(x, y);
-  }
-  (void)shapeNum;
+void Graphics::xdraw(int shapeNum, double x, double y) { draw(shapeNum, x, y); }
+
+void Graphics::defineDefaultShapes() {
+  // Basic default shapes for testing: triangle and square, relative coordinates
+  shapeTable_[1] = {{0, 0}, {10, 0}, {5, 8}, {0, 0}};
+  shapeTable_[2] = {{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}};
 }
 
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {

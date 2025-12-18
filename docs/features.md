@@ -13,7 +13,7 @@
 - CLI commands: RUN (optionally `RUN n`), LIST (optionally `LIST start[,end]`), NEW, LOAD filename, SAVE filename, CATALOG, CLR; immediate-mode statements use the same parser/interpreter.
 - Cursor helpers: TAB(n) and SPC(n) return space padding; POS reports current column on terminals (ANSI query) and Windows consoles; falls back to 0 otherwise.
 - Output notes: CHR$(7) emits terminal bell (`\a`) and flushes immediately.
-- Graphics stubs: GR/HIRES configure a scaled overlay window sized to the terminal and track scaled plot samples (with color) for future drawing APIs (no on-screen rendering yet).
+- Graphics stubs: GR/HIRES configure a scaled overlay window sized to the terminal and track scaled plot samples (with color). Basic shape table support: default shapes (triangle, square) available; `DRAW`/`XDRAW` apply rotation (`ROTATE`) and scale (`SCALE`) and record transformed vertices. Still no on-screen rendering.
 - Low-level system calls: PEEK/POKE implemented with simple in-memory model; GET to read a keystroke; CALL is a no-op; USR(addr) stub returns 0 (machine language call).
 
 ## Yet to Implement / Missing

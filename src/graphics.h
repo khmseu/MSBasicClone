@@ -1,6 +1,9 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
+
+#include <utility>
 
 enum class GraphicsMode { None, LowRes, HighRes };
 
@@ -51,12 +54,22 @@ private:
   void configureWindow(int logicalWidth, int logicalHeight);
   void recordPoint(double x, double y);
   bool queryTerminalSize(int &columns, int &rows) const;
+  void defineDefaultShapes();
+  std::pair<double, double> applyTransform(double px, double py) const;
 
   GraphicsMode mode_;
   GraphicsWindow window_;
   std::vector<PlotSample> frame_;
   bool windowOpen_;
   int color_;
+  // Shape drawing state
+  int rotateAngle_ = 0; // degrees
+  int scaleFactor_ = 1; // unit scale multiplier
+  double lastX_ = 0.0;
+  double lastY_ = 0.0;
+  bool lastValid_ = false;
+  // Minimal shape table: polyline points relative to origin
+  std::unordered_map<int, std::vector<std::pair<double, double>>> shapeTable_;
 };
 
 Graphics &graphics();
