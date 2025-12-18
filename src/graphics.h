@@ -48,14 +48,20 @@ public:
   void setScale(int scale);
   void draw(int shapeNum, double x = -1, double y = -1);
   void xdraw(int shapeNum, double x = -1, double y = -1);
+  int scrn(double x, double y) const;
 
 private:
   Graphics();
   void configureWindow(int logicalWidth, int logicalHeight);
   void recordPoint(double x, double y);
+  void updatePixel(double x, double y, bool xorMode);
   bool queryTerminalSize(int &columns, int &rows) const;
   void defineDefaultShapes();
   std::pair<double, double> applyTransform(double px, double py) const;
+  static long long packKey(int xi, int yi) {
+    return (static_cast<long long>(xi) << 32) ^
+           static_cast<unsigned long long>(yi);
+  }
 
   GraphicsMode mode_;
   GraphicsWindow window_;
@@ -70,6 +76,8 @@ private:
   bool lastValid_ = false;
   // Minimal shape table: polyline points relative to origin
   std::unordered_map<int, std::vector<std::pair<double, double>>> shapeTable_;
+  // Simple pixel buffer keyed by integer logical coordinates
+  std::unordered_map<long long, int> pixels_;
 };
 
 Graphics &graphics();

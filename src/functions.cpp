@@ -1,5 +1,6 @@
 #include "functions.h"
 #include "float40.h"
+#include "graphics.h"
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -234,11 +235,10 @@ Value funcPeek(const Value &arg) {
   return Value(static_cast<double>(peekMemory(addr)));
 }
 Value funcScrn(const Value &x, const Value &y) {
-  // SCRN(x,y) returns the color of pixel at coordinates (x,y)
-  // Stub implementation: return 0 (no graphics mode support)
-  (void)x;
-  (void)y;
-  return Value(0.0);
+  double dx = x.getNumber();
+  double dy = y.getNumber();
+  int color = graphics().scrn(dx, dy);
+  return Value(static_cast<double>(color));
 }
 
 Value funcUsr(const Value &addr) {

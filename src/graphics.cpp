@@ -55,7 +55,10 @@ void Graphics::setColor(int color) {
   color_ = std::clamp(color, 0, 255);
 }
 
-void Graphics::clearFrame() { frame_.clear(); }
+void Graphics::clearFrame() {
+  frame_.clear();
+  pixels_.clear();
+}
 
 void Graphics::configureWindow(int logicalWidth, int logicalHeight) {
   int columns = kDefaultColumns;
@@ -98,6 +101,7 @@ void Graphics::recordPoint(double x, double y) {
   int scaledY = clampToInt(clampedY * window_.scaleY);
 
   frame_.push_back({clampedX, clampedY, scaledX, scaledY, color_});
+  updatePixel(clampedX, clampedY, false);
 }
 
 void Graphics::plot(double x, double y) {
@@ -182,12 +186,86 @@ void Graphics::draw(int shapeNum, double x, double y) {
   }
 }
 
-void Graphics::xdraw(int shapeNum, double x, double y) { draw(shapeNum, x, y); }
+void Graphics::xdraw(int shapeNum, double x, double y) {
+  auto it = shapeTable_.find(shapeNum);
+  if (it == shapeTable_.end()) {
+    return; // unknown shape
+  }
+
+  double originX = x;
+  double originY = y;
+  if (!(originX >= 0 && originY >= 0)) {
+    if (lastValid_) {
+      originX = lastX_;
+      originY = lastY_;
+    } else {
+      originX = 0.0;
+      originY = 0.0;
+    }
+  }
+
+  // Record origin for context and XOR it
+  recordPoint(originX, originY);
+  updatePixel(originX, originY, true);
+
+  for (const auto &pt : it->second) {
+    double rad = static_cast<double>(rotateAngle_) * M_PI / 180.0;
+    double sx = static_cast<double>(scaleFactor_);
+    double rx = pt.first * std::cos(rad) - pt.second * std::sin(rad);
+    double ry = pt.first * std::sin(rad) + pt.second * std::cos(rad);
+    double finalX = originX + rx * sx;
+    double finalY = originY + ry * sx;
+    recordPoint(finalX, finalY);
+    updatePixel(finalX, finalY, true);
+    lastX_ = finalX;
+    lastY_ = finalY;
+    lastValid_ = true;
+  }
+}
 
 void Graphics::defineDefaultShapes() {
   // Basic default shapes for testing: triangle and square, relative coordinates
   shapeTable_[1] = {{0, 0}, {10, 0}, {5, 8}, {0, 0}};
   shapeTable_[2] = {{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}};
+}
+
+void Graphics::updatePixel(double x, double y, bool xorMode) {
+  if (!windowOpen_)
+    return;
+  double maxX = static_cast<double>(window_.logicalWidth - 1);
+  double maxY = static_cast<double>(window_.logicalHeight - 1);
+  double clampedX = std::clamp(x, 0.0, maxX);
+  double clampedY = std::clamp(y, 0.0, maxY);
+  int xi = clampToInt(clampedX);
+  int yi = clampToInt(clampedY);
+  long long key = packKey(xi, yi);
+  if (xorMode) {
+    auto it = pixels_.find(key);
+    if (it != pixels_.end() && it->second != 0) {
+      it->second = 0; // toggle off
+    } else {
+      pixels_[key] =
+          color_ == 0
+              ? 1
+              : color_; // toggle on with current color (use 1 if color is 0)
+    }
+  } else {
+    pixels_[key] = color_;
+  }
+}
+
+int Graphics::scrn(double x, double y) const {
+  double maxX = static_cast<double>(window_.logicalWidth - 1);
+  double maxY = static_cast<double>(window_.logicalHeight - 1);
+  double clampedX = std::clamp(x, 0.0, maxX);
+  double clampedY = std::clamp(y, 0.0, maxY);
+  int xi = clampToInt(clampedX);
+  int yi = clampToInt(clampedY);
+  long long key = packKey(xi, yi);
+  auto it = pixels_.find(key);
+  if (it == pixels_.end())
+    return 0;
+  return it->second;
 }
 
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {
