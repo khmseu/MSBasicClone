@@ -105,6 +105,7 @@ enum class TokenType {
   MOVE,
   ROTATE,
   SCALE,
+  SHLOAD,
 
   // Operators
   PLUS,

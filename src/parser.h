@@ -101,6 +101,8 @@ private:
                                         size_t &pos);
   std::shared_ptr<Statement> parseLomem(const std::vector<Token> &tokens,
                                         size_t &pos);
+  std::shared_ptr<Statement> parseShload(const std::vector<Token> &tokens,
+                                         size_t &pos);
 
   bool match(const std::vector<Token> &tokens, size_t pos,
              TokenType type) const;

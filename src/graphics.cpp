@@ -268,6 +268,11 @@ int Graphics::scrn(double x, double y) const {
   return it->second;
 }
 
+void Graphics::loadShape(int shapeNum,
+                         const std::vector<std::pair<double, double>> &points) {
+  shapeTable_[shapeNum] = points;
+}
+
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {
 #ifdef PLATFORM_WINDOWS
   HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);

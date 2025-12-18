@@ -49,6 +49,8 @@ public:
   void draw(int shapeNum, double x = -1, double y = -1);
   void xdraw(int shapeNum, double x = -1, double y = -1);
   int scrn(double x, double y) const;
+  void loadShape(int shapeNum,
+                 const std::vector<std::pair<double, double>> &points);
 
 private:
   Graphics();

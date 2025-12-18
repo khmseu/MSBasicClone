@@ -156,6 +156,31 @@ private:
   std::shared_ptr<Expression> scale_;
 };
 
+class ShloadStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override {
+    // Read shape number
+    Value shapeNumVal = interp->readData();
+    int shapeNum = static_cast<int>(shapeNumVal.getNumber());
+
+    // Read number of points
+    Value numPointsVal = interp->readData();
+    int numPoints = static_cast<int>(numPointsVal.getNumber());
+
+    // Read point pairs
+    std::vector<std::pair<double, double>> points;
+    points.reserve(static_cast<size_t>(numPoints));
+    for (int i = 0; i < numPoints; ++i) {
+      Value xVal = interp->readData();
+      Value yVal = interp->readData();
+      points.push_back({xVal.getNumber(), yVal.getNumber()});
+    }
+
+    // Load shape into graphics
+    graphics().loadShape(shapeNum, points);
+  }
+};
+
 class DrawStmt : public Statement {
 public:
   DrawStmt(std::shared_ptr<Expression> shape,
@@ -1312,6 +1337,8 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     auto scale = parseExpression(tokens, pos);
     return std::make_shared<ScaleStmt>(scale);
   }
+  case TokenType::SHLOAD:
+    return parseShload(tokens, pos);
   case TokenType::DRAW: {
     pos++; // Skip DRAW
     auto shapeNum = parseExpression(tokens, pos);
@@ -2235,6 +2262,12 @@ std::shared_ptr<Statement> Parser::parseLomem(const std::vector<Token> &tokens,
   pos++;
   auto addr = parseExpression(tokens, pos);
   return std::make_shared<LomemStmt>(addr);
+}
+
+std::shared_ptr<Statement> Parser::parseShload(const std::vector<Token> &tokens,
+                                               size_t &pos) {
+  pos++; // Skip SHLOAD
+  return std::make_shared<ShloadStmt>();
 }
 
 bool Parser::match(const std::vector<Token> &tokens, size_t pos,

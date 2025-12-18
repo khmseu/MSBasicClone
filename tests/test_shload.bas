@@ -1,0 +1,5 @@
+10 REM Test SHLOAD - Load custom shape from DATA
+20 DATA 5,3,0,0,10,0,5,10
+30 SHLOAD
+40 DRAW 5
+50 PRINT "SHAPE LOADED"
