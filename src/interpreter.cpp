@@ -73,6 +73,7 @@ void Interpreter::newProgram() {
   variables_.clear();
   dataValues_.clear();
   dataPointer_ = 0;
+  resetOutputPosition();
 }
 
 void Interpreter::clearState() {
@@ -84,6 +85,7 @@ void Interpreter::clearState() {
   errorHandlerLine_ = -1;
   errorLine_ = -1;
   lastError_.clear();
+  resetOutputPosition();
 }
 
 void Interpreter::listProgram(int startLine, int endLine) {
@@ -100,6 +102,7 @@ void Interpreter::run() { runFrom(-1); }
 void Interpreter::runFrom(LineNumber lineNum) {
   running_ = true;
   immediate_ = false;
+  resetOutputPosition();
 
   // Prepare DATA cache before execution so READ works regardless of control
   // flow.
@@ -423,6 +426,65 @@ Value Interpreter::readData() {
 }
 
 void Interpreter::restoreData() { dataPointer_ = 0; }
+
+void Interpreter::htab(int col1) {
+  int targetCol = std::max(0, col1 - 1);
+  if (targetCol <= outputColumn_) {
+    return;
+  }
+
+  int spaces = targetCol - outputColumn_;
+  printText(std::string(static_cast<size_t>(spaces), ' '));
+}
+
+void Interpreter::vtab(int row1) {
+  int targetRow = std::max(0, row1 - 1);
+  while (outputRow_ < targetRow) {
+    printNewline();
+  }
+}
+
+void Interpreter::setInverse(bool on) { inverse_ = on; }
+
+void Interpreter::setFlash(bool on) { flash_ = on; }
+
+void Interpreter::setNormal() {
+  inverse_ = false;
+  flash_ = false;
+}
+
+void Interpreter::printText(const std::string &text) {
+  for (char ch : text) {
+    std::cout << ch;
+    if (ch == '\n') {
+      outputColumn_ = 0;
+      outputRow_++;
+    } else {
+      outputColumn_++;
+    }
+  }
+}
+
+void Interpreter::printNewline() {
+  std::cout << "\n";
+  outputColumn_ = 0;
+  outputRow_++;
+}
+
+void Interpreter::printToNextZone() {
+  constexpr int kZoneWidth = 14;
+  int nextZoneStart = ((outputColumn_ / kZoneWidth) + 1) * kZoneWidth;
+  int spaces = std::max(0, nextZoneStart - outputColumn_);
+  if (spaces > 0) {
+    printText(std::string(static_cast<size_t>(spaces), ' '));
+  }
+}
+
+void Interpreter::resetOutputPosition() {
+  outputColumn_ = 0;
+  outputRow_ = 0;
+  setNormal();
+}
 
 void Interpreter::pushForLoop(const std::string &varName, double endValue,
                               double stepValue, LineNumber returnLine) {

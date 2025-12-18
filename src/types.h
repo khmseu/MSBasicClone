@@ -66,6 +66,14 @@ enum class TokenType {
   PEEK,
   POKE,
   GET,
+  HTAB,
+  VTAB,
+  INVERSE,
+  NORMAL,
+  FLASH,
+  HGR,
+  HGR2,
+  HCOLOR,
 
   // Additional statements
   STOP,

@@ -21,7 +21,7 @@ int clampToInt(double value) { return static_cast<int>(std::lround(value)); }
 Graphics::Graphics()
     : mode_(GraphicsMode::None),
       window_{0, 0, kDefaultColumns, kDefaultRows, 1.0, 1.0}, frame_(),
-      windowOpen_(false) {}
+      windowOpen_(false), color_(0) {}
 
 Graphics &Graphics::instance() {
   static Graphics g;
@@ -47,6 +47,8 @@ void Graphics::enterHighRes() {
   configureWindow(280, 192);
   clearFrame();
 }
+
+void Graphics::setColor(int color) { color_ = color; }
 
 void Graphics::clearFrame() { frame_.clear(); }
 

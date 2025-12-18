@@ -43,6 +43,17 @@ public:
   void stop();
   void cont();
 
+  // Output helpers
+  void htab(int col1); // horizontal tab to column (1-based)
+  void vtab(int row1); // vertical tab to row (1-based)
+  void setInverse(bool on);
+  void setFlash(bool on);
+  void setNormal();
+  void printText(const std::string &text);
+  void printNewline();
+  void printToNextZone();
+  void resetOutputPosition();
+
   // Mode helpers
   bool isImmediateMode() const { return immediate_; }
 
@@ -101,6 +112,12 @@ private:
   LineNumber errorHandlerLine_;
   std::string lastError_;
   LineNumber errorLine_;
+
+  // Output state
+  int outputColumn_ = 0;
+  int outputRow_ = 0;
+  bool inverse_ = false;
+  bool flash_ = false;
 
   // Helper methods
   void parseLine(const std::string &line, LineNumber &lineNum,

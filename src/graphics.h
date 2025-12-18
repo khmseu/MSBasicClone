@@ -26,6 +26,8 @@ public:
 
   void enterLowRes();
   void enterHighRes();
+  void setColor(int color);
+  int color() const { return color_; }
 
   GraphicsMode mode() const;
   const GraphicsWindow &window() const;
@@ -46,6 +48,7 @@ private:
   GraphicsWindow window_;
   std::vector<PlotSample> frame_;
   bool windowOpen_;
+  int color_;
 };
 
 Graphics &graphics();

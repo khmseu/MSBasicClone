@@ -7,6 +7,7 @@
 #include <cctype>
 #include <iostream>
 #include <memory>
+#include <utility>
 
 namespace {
 std::string toUpper(const std::string &s) {
@@ -24,6 +25,13 @@ class PlotStmt;
 class HlinStmt;
 class VlinStmt;
 class OnTransferStmt;
+class HtabStmt;
+class VtabStmt;
+class InverseStmt;
+class NormalStmt;
+class FlashStmt;
+class HgrStmt;
+class HcolorStmt;
 
 // Statements used by parser
 class StopStmt : public Statement {
@@ -102,6 +110,63 @@ private:
   std::shared_ptr<Expression> index_;
   Kind kind_;
   std::vector<int> lines_;
+};
+
+class HtabStmt : public Statement {
+public:
+  explicit HtabStmt(std::shared_ptr<Expression> col) : col_(std::move(col)) {}
+  void execute(Interpreter *interp) override {
+    int target = static_cast<int>(col_->evaluate(interp).getNumber());
+    interp->htab(target);
+  }
+
+private:
+  std::shared_ptr<Expression> col_;
+};
+
+class VtabStmt : public Statement {
+public:
+  explicit VtabStmt(std::shared_ptr<Expression> row) : row_(std::move(row)) {}
+  void execute(Interpreter *interp) override {
+    int target = static_cast<int>(row_->evaluate(interp).getNumber());
+    interp->vtab(target);
+  }
+
+private:
+  std::shared_ptr<Expression> row_;
+};
+
+class InverseStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->setInverse(true); }
+};
+
+class NormalStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->setNormal(); }
+};
+
+class FlashStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override { interp->setFlash(true); }
+};
+
+class HgrStmt : public Statement {
+public:
+  void execute(Interpreter *) override { graphics().enterHighRes(); }
+};
+
+class HcolorStmt : public Statement {
+public:
+  explicit HcolorStmt(std::shared_ptr<Expression> color)
+      : color_(std::move(color)) {}
+  void execute(Interpreter *interp) override {
+    int c = static_cast<int>(color_->evaluate(interp).getNumber());
+    graphics().setColor(c);
+  }
+
+private:
+  std::shared_ptr<Expression> color_;
 };
 
 // Expression classes
@@ -317,31 +382,39 @@ private:
 // Statement classes
 class PrintStmt : public Statement {
 public:
+  enum class Separator { None, Semicolon, Comma };
+
   PrintStmt(std::vector<std::shared_ptr<Expression>> exprs,
-            std::vector<bool> newlines)
-      : exprs_(exprs), newlines_(newlines) {}
+            std::vector<Separator> separators)
+      : exprs_(std::move(exprs)), separators_(std::move(separators)) {}
 
   void execute(Interpreter *interp) override {
+    if (exprs_.empty()) {
+      interp->printNewline();
+      return;
+    }
+
     for (size_t i = 0; i < exprs_.size(); ++i) {
       Value val = exprs_[i]->evaluate(interp);
-      std::cout << val.getString();
-      if (i < newlines_.size() && newlines_[i]) {
-        std::cout << "\n";
+      interp->printText(val.getString());
+
+      Separator sep = i < separators_.size() ? separators_[i] : Separator::None;
+      switch (sep) {
+      case Separator::Comma:
+        interp->printToNextZone();
+        break;
+      case Separator::Semicolon:
+        break;
+      case Separator::None:
+        interp->printNewline();
+        break;
       }
-    }
-    // Print final newline unless last separator was ; or ,
-    if (!newlines_.empty() && newlines_.back()) {
-      // Already printed above
-    } else if (!exprs_.empty() && (newlines_.empty() || !newlines_.back())) {
-      // Ended with separator, no final newline
-    } else {
-      std::cout << "\n";
     }
   }
 
 private:
   std::vector<std::shared_ptr<Expression>> exprs_;
-  std::vector<bool> newlines_;
+  std::vector<Separator> separators_;
 };
 
 class LetStmt : public Statement {
@@ -755,6 +828,25 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   case TokenType::STOP:
     pos++;
     return std::make_shared<StopStmt>();
+  case TokenType::HTAB: {
+    pos++; // Skip HTAB
+    auto col = parseExpression(tokens, pos);
+    return std::make_shared<HtabStmt>(col);
+  }
+  case TokenType::VTAB: {
+    pos++; // Skip VTAB
+    auto row = parseExpression(tokens, pos);
+    return std::make_shared<VtabStmt>(row);
+  }
+  case TokenType::INVERSE:
+    pos++;
+    return std::make_shared<InverseStmt>();
+  case TokenType::NORMAL:
+    pos++;
+    return std::make_shared<NormalStmt>();
+  case TokenType::FLASH:
+    pos++;
+    return std::make_shared<FlashStmt>();
   case TokenType::FOR:
     return parseFor(tokens, pos);
   case TokenType::NEXT:
@@ -804,6 +896,17 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   case TokenType::HIRES:
     pos++;
     return std::make_shared<HiresStmt>();
+  case TokenType::HGR:
+    pos++;
+    return std::make_shared<HgrStmt>();
+  case TokenType::HGR2:
+    pos++;
+    return std::make_shared<HgrStmt>();
+  case TokenType::HCOLOR: {
+    pos++; // Skip HCOLOR=
+    auto color = parseExpression(tokens, pos);
+    return std::make_shared<HcolorStmt>(color);
+  }
   case TokenType::PLOT: {
     pos++; // Skip PLOT
     auto x = parseExpression(tokens, pos);
@@ -879,39 +982,31 @@ std::shared_ptr<Statement> Parser::parsePrint(const std::vector<Token> &tokens,
   pos++; // Skip PRINT
 
   std::vector<std::shared_ptr<Expression>> exprs;
-  std::vector<bool> newlines;
-  bool endsWithSeparator = false;
+  std::vector<PrintStmt::Separator> separators;
 
   while (pos < tokens.size() && tokens[pos].type != TokenType::COLON &&
          tokens[pos].type != TokenType::NEWLINE) {
     auto expr = parseExpression(tokens, pos);
     exprs.push_back(expr);
 
-    endsWithSeparator = false;
+    PrintStmt::Separator sep = PrintStmt::Separator::None;
     if (pos < tokens.size()) {
       if (tokens[pos].type == TokenType::SEMICOLON) {
-        newlines.push_back(false);
-        endsWithSeparator = true;
+        sep = PrintStmt::Separator::Semicolon;
         pos++;
       } else if (tokens[pos].type == TokenType::COMMA) {
-        newlines.push_back(false);
-        endsWithSeparator = true;
+        sep = PrintStmt::Separator::Comma;
         pos++;
-      } else {
-        newlines.push_back(true);
-        break;
       }
-    } else {
-      newlines.push_back(true);
+    }
+
+    separators.push_back(sep);
+    if (sep == PrintStmt::Separator::None) {
+      break;
     }
   }
 
-  // If the statement ended with a separator, don't add final newline
-  if (endsWithSeparator && !newlines.empty()) {
-    newlines.back() = false;
-  }
-
-  return std::make_shared<PrintStmt>(exprs, newlines);
+  return std::make_shared<PrintStmt>(exprs, separators);
 }
 
 std::shared_ptr<Statement>
