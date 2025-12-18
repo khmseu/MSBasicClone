@@ -233,3 +233,17 @@ Value funcPeek(const Value &arg) {
   int addr = static_cast<int>(arg.getNumber());
   return Value(static_cast<double>(peekMemory(addr)));
 }
+Value funcScrn(const Value &x, const Value &y) {
+  // SCRN(x,y) returns the color of pixel at coordinates (x,y)
+  // Stub implementation: return 0 (no graphics mode support)
+  (void)x;
+  (void)y;
+  return Value(0.0);
+}
+
+Value funcUsr(const Value &addr) {
+  // USR(addr) calls machine language code at address
+  // Stub implementation: return 0
+  (void)addr;
+  return Value(0.0);
+}

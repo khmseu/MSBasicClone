@@ -90,6 +90,20 @@ public:
   int getOutputDevice() const { return outputDevice_; }
   int getInputDevice() const { return inputDevice_; }
 
+  // WHILE loops
+  void pushWhileLoop(std::shared_ptr<Expression> condition,
+                     LineNumber returnLine);
+  void nextWhileLoop();
+
+  // Memory management
+  void setHimem(int val) { himem_ = val; }
+  void setLomem(int val) { lomem_ = val; }
+  int getHimem() const { return himem_; }
+  int getLomem() const { return lomem_; }
+
+  // GOSUB stack manipulation (for POP)
+  void popGosub();
+
   // File system operations
   void catalog();
 
@@ -145,6 +159,17 @@ private:
   int speedDelayMs_ = 0;
   int outputDevice_ = 0;
   int inputDevice_ = 0;
+
+  // Memory boundaries (HIMEM/LOMEM)
+  int himem_ = 49152; // Default to $C000
+  int lomem_ = 2048;  // Default to $800
+
+  // WHILE loop tracking
+  struct WhileLoopInfo {
+    std::shared_ptr<Expression> condition;
+    LineNumber returnLine;
+  };
+  std::vector<WhileLoopInfo> whileStack_;
 
   // Helper methods
   void parseLine(const std::string &line, LineNumber &lineNum,

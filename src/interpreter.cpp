@@ -698,6 +698,43 @@ void Interpreter::applySpeedDelay() {
   std::this_thread::sleep_for(std::chrono::milliseconds(speedDelayMs_));
 }
 
+void Interpreter::pushWhileLoop(std::shared_ptr<Expression> condition,
+                                LineNumber returnLine) {
+  WhileLoopInfo info;
+  info.condition = condition;
+  info.returnLine = returnLine;
+  whileStack_.push_back(info);
+}
+
+void Interpreter::nextWhileLoop() {
+  if (whileStack_.empty()) {
+    throw std::runtime_error("WEND WITHOUT WHILE ERROR");
+  }
+
+  WhileLoopInfo &loop = whileStack_.back();
+  Value val = loop.condition->evaluate(this);
+
+  if (val.getNumber() != 0) {
+    // Condition still true, jump back to line after WHILE
+    auto it = program_.find(loop.returnLine);
+    if (it != program_.end()) {
+      ++it;
+      programCounter_ = it;
+      jumped_ = true;
+    }
+  } else {
+    // Condition false, exit loop
+    whileStack_.pop_back();
+  }
+}
+
+void Interpreter::popGosub() {
+  if (gosubStack_.empty()) {
+    throw std::runtime_error("POP WITHOUT GOSUB ERROR");
+  }
+  gosubStack_.pop();
+}
+
 void Interpreter::interactive() {
   InteractiveMode interactive;
   interactive.run();

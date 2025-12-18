@@ -93,6 +93,14 @@ private:
   std::shared_ptr<Statement>
   parseDeviceRedirect(const std::vector<Token> &tokens, size_t &pos,
                       bool isOutput);
+  std::shared_ptr<Statement> parseWhile(const std::vector<Token> &tokens,
+                                        size_t &pos);
+  std::shared_ptr<Statement> parseWait(const std::vector<Token> &tokens,
+                                       size_t &pos);
+  std::shared_ptr<Statement> parseHimem(const std::vector<Token> &tokens,
+                                        size_t &pos);
+  std::shared_ptr<Statement> parseLomem(const std::vector<Token> &tokens,
+                                        size_t &pos);
 
   bool match(const std::vector<Token> &tokens, size_t pos,
              TokenType type) const;

@@ -5,8 +5,10 @@
 #include "interpreter.h"
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <iostream>
 #include <memory>
+#include <thread>
 #include <utility>
 
 namespace {
@@ -396,6 +398,10 @@ public:
       return funcMid(argValues[0], argValues[1], argValues[2]);
     case TokenType::STR:
       return funcStr(argValues[0]);
+    case TokenType::SCRN:
+      return funcScrn(argValues[0], argValues[1]);
+    case TokenType::USR:
+      return funcUsr(argValues[0]);
     default:
       return Value(0.0);
     }
@@ -878,6 +884,84 @@ private:
   std::shared_ptr<Expression> slot_;
 };
 
+class WhileStmt : public Statement {
+public:
+  WhileStmt(std::shared_ptr<Expression> condition, LineNumber returnLine)
+      : condition_(std::move(condition)), returnLine_(returnLine) {}
+  void execute(Interpreter *interp) override;
+
+private:
+  std::shared_ptr<Expression> condition_;
+  LineNumber returnLine_;
+};
+
+class WendStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override;
+};
+
+class PopStmt : public Statement {
+public:
+  void execute(Interpreter *interp) override;
+};
+
+class WaitStmt : public Statement {
+public:
+  WaitStmt(std::shared_ptr<Expression> addr, std::shared_ptr<Expression> mask)
+      : addr_(std::move(addr)), mask_(std::move(mask)) {}
+  void execute(Interpreter *interp) override {
+    int a = static_cast<int>(addr_->evaluate(interp).getNumber());
+    int m = static_cast<int>(mask_->evaluate(interp).getNumber());
+    // Busy-wait for bit test: wait until (PEEK(addr) AND mask) != 0
+    while (true) {
+      int val = peekMemory(a);
+      if ((val & m) != 0)
+        break;
+      // Yield to avoid busy-loop; in real Applesoft would poll I/O
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+  }
+
+private:
+  std::shared_ptr<Expression> addr_;
+  std::shared_ptr<Expression> mask_;
+};
+
+class HimemStmt : public Statement {
+public:
+  explicit HimemStmt(std::shared_ptr<Expression> addr)
+      : addr_(std::move(addr)) {}
+  void execute(Interpreter *interp) override {
+    int val = static_cast<int>(addr_->evaluate(interp).getNumber());
+    interp->setHimem(val);
+  }
+
+private:
+  std::shared_ptr<Expression> addr_;
+};
+
+class LomemStmt : public Statement {
+public:
+  explicit LomemStmt(std::shared_ptr<Expression> addr)
+      : addr_(std::move(addr)) {}
+  void execute(Interpreter *interp) override {
+    int val = static_cast<int>(addr_->evaluate(interp).getNumber());
+    interp->setLomem(val);
+  }
+
+private:
+  std::shared_ptr<Expression> addr_;
+};
+
+// Statement implementations for WHILE/WEND/POP
+void WhileStmt::execute(Interpreter *interp) {
+  interp->pushWhileLoop(condition_, interp->getCurrentLine());
+}
+
+void WendStmt::execute(Interpreter *interp) { interp->nextWhileLoop(); }
+
+void PopStmt::execute(Interpreter *interp) { interp->popGosub(); }
+
 // Parser implementation
 Parser::Parser() {}
 
@@ -1101,6 +1185,20 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return parseDeviceRedirect(tokens, pos, true);
   case TokenType::IN:
     return parseDeviceRedirect(tokens, pos, false);
+  case TokenType::WHILE:
+    return parseWhile(tokens, pos);
+  case TokenType::WEND:
+    pos++;
+    return std::make_shared<WendStmt>();
+  case TokenType::POP:
+    pos++;
+    return std::make_shared<PopStmt>();
+  case TokenType::WAIT:
+    return parseWait(tokens, pos);
+  case TokenType::HIMEM:
+    return parseHimem(tokens, pos);
+  case TokenType::LOMEM:
+    return parseLomem(tokens, pos);
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);
   default:
@@ -1390,7 +1488,8 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
       token.type == TokenType::CHR || token.type == TokenType::STR ||
       token.type == TokenType::TAB || token.type == TokenType::SPC ||
       token.type == TokenType::POS || token.type == TokenType::FRE ||
-      token.type == TokenType::PDL || token.type == TokenType::PEEK) {
+      token.type == TokenType::PDL || token.type == TokenType::PEEK ||
+      token.type == TokenType::USR) {
     TokenType func = token.type;
     pos++;
 
@@ -1411,7 +1510,8 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   }
 
   // Built-in functions - two arguments
-  if (token.type == TokenType::LEFT || token.type == TokenType::RIGHT) {
+  if (token.type == TokenType::LEFT || token.type == TokenType::RIGHT ||
+      token.type == TokenType::SCRN) {
     TokenType func = token.type;
     pos++;
 
@@ -1892,6 +1992,48 @@ Parser::parseDeviceRedirect(const std::vector<Token> &tokens, size_t &pos,
     return std::make_shared<PrStmt>(slot);
   }
   return std::make_shared<InStmt>(slot);
+}
+
+std::shared_ptr<Statement> Parser::parseWhile(const std::vector<Token> &tokens,
+                                              size_t &pos) {
+  pos++; // Skip WHILE
+  auto condition = parseExpression(tokens, pos);
+  return std::make_shared<WhileStmt>(condition,
+                                     -1); // returnLine set at runtime
+}
+
+std::shared_ptr<Statement> Parser::parseWait(const std::vector<Token> &tokens,
+                                             size_t &pos) {
+  pos++; // Skip WAIT
+  auto addr = parseExpression(tokens, pos);
+  if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+    throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+  }
+  pos++;
+  auto mask = parseExpression(tokens, pos);
+  return std::make_shared<WaitStmt>(addr, mask);
+}
+
+std::shared_ptr<Statement> Parser::parseHimem(const std::vector<Token> &tokens,
+                                              size_t &pos) {
+  pos++; // Skip HIMEM
+  if (pos >= tokens.size() || tokens[pos].type != TokenType::EQUAL) {
+    throw std::runtime_error("SYNTAX ERROR: EXPECTED =");
+  }
+  pos++;
+  auto addr = parseExpression(tokens, pos);
+  return std::make_shared<HimemStmt>(addr);
+}
+
+std::shared_ptr<Statement> Parser::parseLomem(const std::vector<Token> &tokens,
+                                              size_t &pos) {
+  pos++; // Skip LOMEM
+  if (pos >= tokens.size() || tokens[pos].type != TokenType::EQUAL) {
+    throw std::runtime_error("SYNTAX ERROR: EXPECTED =");
+  }
+  pos++;
+  auto addr = parseExpression(tokens, pos);
+  return std::make_shared<LomemStmt>(addr);
 }
 
 bool Parser::match(const std::vector<Token> &tokens, size_t pos,

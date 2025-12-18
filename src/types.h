@@ -85,6 +85,14 @@ enum class TokenType {
   SPEED,
   PR,
   IN,
+  WHILE,
+  WEND,
+  POP,
+  WAIT,
+  HIMEM,
+  LOMEM,
+  SCRN,
+  USR,
 
   // Graphics primitives
   PLOT,

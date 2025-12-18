@@ -31,7 +31,8 @@ Value funcPos(const Value &arg);
 Value funcFre(const Value &arg);
 Value funcPdl(const Value &arg);
 Value funcPeek(const Value &arg);
-
+Value funcScrn(const Value &x, const Value &y);
+Value funcUsr(const Value &addr);
 // Simplified memory model used by PEEK/POKE helpers.
 void pokeMemory(int addr, int val);
 int peekMemory(int addr);
