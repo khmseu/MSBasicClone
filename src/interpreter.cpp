@@ -444,13 +444,42 @@ void Interpreter::vtab(int row1) {
   }
 }
 
-void Interpreter::setInverse(bool on) { inverse_ = on; }
+void Interpreter::setInverse(bool on) {
+  inverse_ = on;
+  updateTextAttributes();
+}
 
-void Interpreter::setFlash(bool on) { flash_ = on; }
+void Interpreter::setFlash(bool on) {
+  flash_ = on;
+  updateTextAttributes();
+}
 
 void Interpreter::setNormal() {
   inverse_ = false;
   flash_ = false;
+  updateTextAttributes();
+}
+
+void Interpreter::updateTextAttributes() {
+  // Apply ANSI styling for inverse/flash; fall back silently if unsupported.
+  if (!inverse_ && !flash_) {
+    std::cout << "\x1b[0m";
+    return;
+  }
+
+  std::cout << "\x1b[";
+  bool first = true;
+  if (inverse_) {
+    std::cout << "7";
+    first = false;
+  }
+  if (flash_) {
+    if (!first) {
+      std::cout << ";";
+    }
+    std::cout << "5";
+  }
+  std::cout << "m";
 }
 
 void Interpreter::printText(const std::string &text) {

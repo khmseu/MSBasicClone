@@ -123,4 +123,5 @@ private:
   void parseLine(const std::string &line, LineNumber &lineNum,
                  std::string &code);
   bool isLineNumber(const std::string &text) const;
+  void updateTextAttributes();
 };

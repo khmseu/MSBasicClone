@@ -48,7 +48,10 @@ void Graphics::enterHighRes() {
   clearFrame();
 }
 
-void Graphics::setColor(int color) { color_ = color; }
+void Graphics::setColor(int color) {
+  // Clamp to a byte range; Applesoft color tables used small ints.
+  color_ = std::clamp(color, 0, 255);
+}
 
 void Graphics::clearFrame() { frame_.clear(); }
 
@@ -92,7 +95,7 @@ void Graphics::recordPoint(double x, double y) {
   int scaledX = clampToInt(clampedX * window_.scaleX);
   int scaledY = clampToInt(clampedY * window_.scaleY);
 
-  frame_.push_back({clampedX, clampedY, scaledX, scaledY});
+  frame_.push_back({clampedX, clampedY, scaledX, scaledY, color_});
 }
 
 void Graphics::plot(double x, double y) { recordPoint(x, y); }

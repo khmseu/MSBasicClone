@@ -169,11 +169,24 @@ private:
   std::shared_ptr<Expression> color_;
 };
 
+class ColorStmt : public Statement {
+public:
+  explicit ColorStmt(std::shared_ptr<Expression> color)
+      : color_(std::move(color)) {}
+  void execute(Interpreter *interp) override {
+    int c = static_cast<int>(color_->evaluate(interp).getNumber());
+    graphics().setColor(c);
+  }
+
+private:
+  std::shared_ptr<Expression> color_;
+};
+
 // Expression classes
 class LiteralExpr : public Expression {
 public:
   explicit LiteralExpr(const Value &val) : value_(val) {}
-  Value evaluate(Interpreter *interp) override { return value_; }
+  Value evaluate(Interpreter *) override { return value_; }
 
 private:
   Value value_;
@@ -906,6 +919,11 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     pos++; // Skip HCOLOR=
     auto color = parseExpression(tokens, pos);
     return std::make_shared<HcolorStmt>(color);
+  }
+  case TokenType::COLOR: {
+    pos++; // Skip COLOR=
+    auto color = parseExpression(tokens, pos);
+    return std::make_shared<ColorStmt>(color);
   }
   case TokenType::PLOT: {
     pos++; // Skip PLOT

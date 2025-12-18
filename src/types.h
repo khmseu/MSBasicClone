@@ -74,6 +74,7 @@ enum class TokenType {
   HGR,
   HGR2,
   HCOLOR,
+  COLOR,
 
   // Additional statements
   STOP,

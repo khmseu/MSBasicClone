@@ -18,6 +18,7 @@ struct PlotSample {
   double logicalY;
   int scaledX;
   int scaledY;
+  int color;
 };
 
 class Graphics {
