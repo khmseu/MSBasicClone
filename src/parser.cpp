@@ -156,6 +156,52 @@ private:
   std::shared_ptr<Expression> scale_;
 };
 
+class DrawStmt : public Statement {
+public:
+  DrawStmt(std::shared_ptr<Expression> shape,
+           std::shared_ptr<Expression> x = nullptr,
+           std::shared_ptr<Expression> y = nullptr)
+      : shape_(std::move(shape)), x_(std::move(x)), y_(std::move(y)) {}
+  void execute(Interpreter *interp) override {
+    int shapeNum = static_cast<int>(shape_->evaluate(interp).getNumber());
+    if (x_ && y_) {
+      double xVal = x_->evaluate(interp).getNumber();
+      double yVal = y_->evaluate(interp).getNumber();
+      graphics().draw(shapeNum, xVal, yVal);
+    } else {
+      graphics().draw(shapeNum);
+    }
+  }
+
+private:
+  std::shared_ptr<Expression> shape_;
+  std::shared_ptr<Expression> x_;
+  std::shared_ptr<Expression> y_;
+};
+
+class XdrawStmt : public Statement {
+public:
+  XdrawStmt(std::shared_ptr<Expression> shape,
+            std::shared_ptr<Expression> x = nullptr,
+            std::shared_ptr<Expression> y = nullptr)
+      : shape_(std::move(shape)), x_(std::move(x)), y_(std::move(y)) {}
+  void execute(Interpreter *interp) override {
+    int shapeNum = static_cast<int>(shape_->evaluate(interp).getNumber());
+    if (x_ && y_) {
+      double xVal = x_->evaluate(interp).getNumber();
+      double yVal = y_->evaluate(interp).getNumber();
+      graphics().xdraw(shapeNum, xVal, yVal);
+    } else {
+      graphics().xdraw(shapeNum);
+    }
+  }
+
+private:
+  std::shared_ptr<Expression> shape_;
+  std::shared_ptr<Expression> x_;
+  std::shared_ptr<Expression> y_;
+};
+
 class OnTransferStmt : public Statement {
 public:
   enum Kind { Goto, Gosub };
@@ -1265,6 +1311,44 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     pos++; // Skip SCALE
     auto scale = parseExpression(tokens, pos);
     return std::make_shared<ScaleStmt>(scale);
+  }
+  case TokenType::DRAW: {
+    pos++; // Skip DRAW
+    auto shapeNum = parseExpression(tokens, pos);
+    std::shared_ptr<Expression> x = nullptr;
+    std::shared_ptr<Expression> y = nullptr;
+
+    // Check for AT clause
+    if (pos < tokens.size() && tokens[pos].type == TokenType::AT) {
+      pos++; // Skip AT
+      x = parseExpression(tokens, pos);
+      if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+      }
+      pos++;
+      y = parseExpression(tokens, pos);
+    }
+
+    return std::make_shared<DrawStmt>(shapeNum, x, y);
+  }
+  case TokenType::XDRAW: {
+    pos++; // Skip XDRAW
+    auto shapeNum = parseExpression(tokens, pos);
+    std::shared_ptr<Expression> x = nullptr;
+    std::shared_ptr<Expression> y = nullptr;
+
+    // Check for AT clause
+    if (pos < tokens.size() && tokens[pos].type == TokenType::AT) {
+      pos++; // Skip AT
+      x = parseExpression(tokens, pos);
+      if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+      }
+      pos++;
+      y = parseExpression(tokens, pos);
+    }
+
+    return std::make_shared<XdrawStmt>(shapeNum, x, y);
   }
   case TokenType::GET: {
     pos++; // Skip GET

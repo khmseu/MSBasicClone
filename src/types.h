@@ -79,6 +79,7 @@ enum class TokenType {
   // Additional statements
   STOP,
   ON,
+  AT,
   TRACE,
   NOTRACE,
   RANDOMIZE,

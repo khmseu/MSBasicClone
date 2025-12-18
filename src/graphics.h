@@ -43,6 +43,8 @@ public:
   void move(double x, double y);
   void setRotate(int angle);
   void setScale(int scale);
+  void draw(int shapeNum, double x = -1, double y = -1);
+  void xdraw(int shapeNum, double x = -1, double y = -1);
 
 private:
   Graphics();

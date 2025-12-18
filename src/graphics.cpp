@@ -128,6 +128,26 @@ void Graphics::setScale(int scale) {
   (void)scale;
 }
 
+void Graphics::draw(int shapeNum, double x, double y) {
+  // DRAW shape from shape table
+  // Draws shape at specified coordinates using current color, scale, and
+  // rotation Shape table management not yet implemented (stub)
+  if (x >= 0 && y >= 0) {
+    recordPoint(x, y);
+  }
+  (void)shapeNum;
+}
+
+void Graphics::xdraw(int shapeNum, double x, double y) {
+  // XDRAW shape from shape table
+  // XOR-draws shape (erase effect) at specified coordinates
+  // Shape table management not yet implemented (stub)
+  if (x >= 0 && y >= 0) {
+    recordPoint(x, y);
+  }
+  (void)shapeNum;
+}
+
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {
 #ifdef PLATFORM_WINDOWS
   HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
