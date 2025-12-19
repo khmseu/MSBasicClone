@@ -104,12 +104,11 @@
 - Memory/state queries:
   - FRE remains a fixed placeholder
   - PDL returns 0
-  - HIMEM/LOMEM boundaries are tracked but not enforced
+  - HIMEM/LOMEM boundaries are enforced for `PEEK/POKE/WAIT` using the configured range
 - Extended I/O:
   Additional file/device I/O beyond LOAD/SAVE/CATALOG.
 - WAIT behavior:
-  - WAIT addr,mask polls indefinitely
-  - real Applesoft supports timeout/external events.
+  - WAIT addr,mask[,timeoutMs] now supports an optional timeout (milliseconds) and exits gracefully when the timeout elapses.
 
 ## Notes
 

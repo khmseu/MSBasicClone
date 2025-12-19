@@ -36,3 +36,7 @@ Value funcUsr(const Value &addr);
 // Simplified memory model used by PEEK/POKE helpers.
 void pokeMemory(int addr, int val);
 int peekMemory(int addr);
+
+// Configure memory bounds used by peek/poke and WAIT.
+// Addresses outside [lomem, himem] will trigger a runtime error.
+void setMemoryBounds(int lomem, int himem);

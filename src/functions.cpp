@@ -17,17 +17,36 @@ std::unordered_map<int, int> &memoryMap() {
   static std::unordered_map<int, int> mem;
   return mem;
 }
+// Memory bounds used by peek/poke and WAIT; defaults align with interpreter.
+static int gLomem = 2048;  // $0800
+static int gHimem = 49152; // $C000
 } // namespace
 
-void pokeMemory(int addr, int val) { memoryMap()[addr] = val & 0xFF; }
+void pokeMemory(int addr, int val) {
+  if (addr < gLomem || addr > gHimem) {
+    throw std::runtime_error("MEMORY RANGE ERROR");
+  }
+  memoryMap()[addr] = val & 0xFF;
+}
 
 int peekMemory(int addr) {
+  if (addr < gLomem || addr > gHimem) {
+    throw std::runtime_error("MEMORY RANGE ERROR");
+  }
   auto &mem = memoryMap();
   auto it = mem.find(addr);
   if (it == mem.end()) {
     return 0;
   }
   return it->second & 0xFF;
+}
+
+void setMemoryBounds(int lomem, int himem) {
+  // Ensure sane ordering; if invalid, keep existing.
+  if (lomem <= himem) {
+    gLomem = lomem;
+    gHimem = himem;
+  }
 }
 
 Value funcSin(const Value &arg) {

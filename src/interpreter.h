@@ -1,5 +1,6 @@
 #pragma once
 
+#include "functions.h"
 #include "parser.h"
 #include "types.h"
 #include "variables.h"
@@ -96,8 +97,15 @@ public:
   void nextWhileLoop();
 
   // Memory management
-  void setHimem(int val) { himem_ = val; }
-  void setLomem(int val) { lomem_ = val; }
+  void setHimem(int val) {
+    himem_ = val;
+    // Keep memory helpers in sync
+    setMemoryBounds(lomem_, himem_);
+  }
+  void setLomem(int val) {
+    lomem_ = val;
+    setMemoryBounds(lomem_, himem_);
+  }
   int getHimem() const { return himem_; }
   int getLomem() const { return lomem_; }
 

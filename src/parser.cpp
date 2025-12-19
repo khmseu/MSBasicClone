@@ -1045,16 +1045,35 @@ public:
 
 class WaitStmt : public Statement {
 public:
-  WaitStmt(std::shared_ptr<Expression> addr, std::shared_ptr<Expression> mask)
-      : addr_(std::move(addr)), mask_(std::move(mask)) {}
+  WaitStmt(std::shared_ptr<Expression> addr, std::shared_ptr<Expression> mask,
+           std::shared_ptr<Expression> timeout = nullptr)
+      : addr_(std::move(addr)), mask_(std::move(mask)),
+        timeout_(std::move(timeout)) {}
   void execute(Interpreter *interp) override {
     int a = static_cast<int>(addr_->evaluate(interp).getNumber());
     int m = static_cast<int>(mask_->evaluate(interp).getNumber());
-    // Busy-wait for bit test: wait until (PEEK(addr) AND mask) != 0
+    // Optional timeout in milliseconds; <=0 means no timeout
+    int timeoutMs = 0;
+    if (timeout_) {
+      timeoutMs = static_cast<int>(timeout_->evaluate(interp).getNumber());
+      if (timeoutMs < 0)
+        timeoutMs = 0;
+    }
+
+    auto start = std::chrono::steady_clock::now();
     while (true) {
       int val = peekMemory(a);
       if ((val & m) != 0)
         break;
+      if (timeoutMs > 0) {
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start);
+        if (elapsed.count() >= timeoutMs) {
+          // Timeout expires silently (Applesoft allowed external
+          // events/timeouts)
+          break;
+        }
+      }
       // Yield to avoid busy-loop; in real Applesoft would poll I/O
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -1063,6 +1082,7 @@ public:
 private:
   std::shared_ptr<Expression> addr_;
   std::shared_ptr<Expression> mask_;
+  std::shared_ptr<Expression> timeout_;
 };
 
 class HimemStmt : public Statement {
@@ -2239,7 +2259,13 @@ std::shared_ptr<Statement> Parser::parseWait(const std::vector<Token> &tokens,
   }
   pos++;
   auto mask = parseExpression(tokens, pos);
-  return std::make_shared<WaitStmt>(addr, mask);
+  // Optional third argument: timeout in milliseconds
+  std::shared_ptr<Expression> timeout;
+  if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+    pos++;
+    timeout = parseExpression(tokens, pos);
+  }
+  return std::make_shared<WaitStmt>(addr, mask, timeout);
 }
 
 std::shared_ptr<Statement> Parser::parseHimem(const std::vector<Token> &tokens,
