@@ -3,6 +3,8 @@
 ## Project Overview
 
 - C++20 Applesoft II BASIC interpreter (`msbasic`) with custom 40-bit float implementation (`src/float40.*`).
+- include ProDOS commands for file I/O; supports interactive and script modes.
+- Designed for portability across Linux, macOS, and Windows.
 - Core flow: tokenize → parse to AST → interpret; interactive shell uses same parser/interpreter.
 - Variables are significant to the first two characters and may have `$` suffix for strings; arrays and user-defined functions are supported.
 - DATA is pre-collected before program run; READ consumes in sequence; RESTORE resets the data pointer.
