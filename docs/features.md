@@ -105,7 +105,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] DRAW shape_number [AT x,y] - draw shape
 - [x] XDRAW shape_number [AT x,y] - XOR draw shape
 - [x] SHLOAD - load shapes from DATA statements
-- [ ] Shape table binary file loading
+- [x] Shape table binary file loading
 
 ### Low-Level System Access
 - [x] PEEK(address) - read memory byte
@@ -157,8 +157,8 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] PREFIX [pn] [,S#] [,D#] - set/show prefix
 - [x] READ pn [,Rrecord#] [,Bbyte#] - prepare file for reading
 - [x] RENAME pn1,pn2 [,S#] [,D#] - rename file
-- [ ] ProDOS RESTORE pn [,S#] [,D#] - load variables from file
-- [ ] ProDOS STORE pn [,S#] [,D#] - save variables to file
+- [x] ProDOS RESTORE pn [,S#] [,D#] - load variables from file
+- [x] ProDOS STORE pn [,S#] [,D#] - save variables to file
 - [x] WRITE pn [,Rrecord#] - prepare file for writing
 
 ## Built-in Functions
@@ -216,25 +216,25 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Error code 255: CONTROL-C interrupt attempted
 
 ### ProDOS Error Codes
-- [ ] Error codes 2-21: ProDOS-specific errors
-- [ ] RANGE ERROR (Code 2)
-- [ ] NO DEVICE CONNECTED (Code 3)
-- [ ] WRITE PROTECTED (Code 4)
-- [ ] END OF DATA (Code 5)
-- [ ] PATH NOT FOUND (Codes 6-7)
-- [ ] I/O ERROR (Code 8)
-- [ ] DISK FULL (Code 9)
-- [ ] FILE LOCKED (Code 10)
-- [ ] INVALID OPTION (Code 11)
-- [ ] NO BUFFERS AVAILABLE (Code 12)
-- [ ] FILE TYPE MISMATCH (Code 13)
-- [ ] PROGRAM TOO LARGE (Code 14)
-- [ ] NOT DIRECT COMMAND (Code 15)
-- [ ] DIRECTORY FULL (Code 17)
-- [ ] FILE NOT OPEN (Code 18)
-- [ ] DUPLICATE FILENAME (Code 19)
-- [ ] FILE BUSY (Code 20)
-- [ ] FILE(S) STILL OPEN (Code 21)
+- [x] Error codes 2-21: ProDOS-specific errors
+- [x] RANGE ERROR (Code 2)
+- [x] NO DEVICE CONNECTED (Code 3)
+- [x] WRITE PROTECTED (Code 4)
+- [x] END OF DATA (Code 5)
+- [x] PATH NOT FOUND (Codes 6-7)
+- [x] I/O ERROR (Code 8)
+- [x] DISK FULL (Code 9)
+- [x] FILE LOCKED (Code 10)
+- [x] INVALID OPTION (Code 11)
+- [x] NO BUFFERS AVAILABLE (Code 12)
+- [x] FILE TYPE MISMATCH (Code 13)
+- [x] PROGRAM TOO LARGE (Code 14)
+- [x] NOT DIRECT COMMAND (Code 15)
+- [x] DIRECTORY FULL (Code 17)
+- [x] FILE NOT OPEN (Code 18)
+- [x] DUPLICATE FILENAME (Code 19)
+- [x] FILE BUSY (Code 20)
+- [x] FILE(S) STILL OPEN (Code 21)
 
 ### Error Handling Memory Locations
 - [x] Location 216: Error handler control (POKE 216,0 to restore)
