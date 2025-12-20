@@ -84,6 +84,7 @@ set(HEADERS
     src/float40.h
     src/types.h
     src/graphics.h
+    src/graphics_config.h
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)

@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "types.h"
 #include "variables.h"
+#include "graphics_config.h"
 #include <map>
 #include <memory>
 #include <stack>
@@ -34,7 +35,7 @@ namespace ErrorCode {
 
 class Interpreter {
 public:
-  Interpreter();
+  Interpreter(const GraphicsConfig& config = GraphicsConfig());
 
   // Program management
   void loadProgram(const std::string &filename);
@@ -57,6 +58,10 @@ public:
   // Variable access (for expressions)
   Variables &getVariables() { return variables_; }
 
+  // Graphics configuration access
+  const GraphicsConfig& getGraphicsConfig() const { return graphicsConfig_; }
+  bool isGraphicsEnabled() const { return graphicsConfig_.isGraphicsEnabled(); }
+
   // Get current line number
   LineNumber getCurrentLine() const { return currentLine_; }
 
@@ -78,6 +83,9 @@ public:
   void printNewline();
   void printToNextZone();
   void resetOutputPosition();
+  
+  // Graphics mode checking
+  void requireGraphicsMode() const;
 
   // Mode helpers
   bool isImmediateMode() const { return immediate_; }
@@ -239,6 +247,9 @@ private:
   // Memory boundaries (HIMEM/LOMEM)
   int himem_ = 49152; // Default to $C000
   int lomem_ = 2048;  // Default to $800
+
+  // Graphics configuration
+  GraphicsConfig graphicsConfig_;
 
   // WHILE loop tracking
   struct WhileLoopInfo {

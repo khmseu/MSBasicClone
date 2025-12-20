@@ -46,6 +46,7 @@ public:
   PlotStmt(std::shared_ptr<Expression> x, std::shared_ptr<Expression> y)
       : x_(std::move(x)), y_(std::move(y)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     graphics().plot(x_->evaluate(interp).getNumber(),
                     y_->evaluate(interp).getNumber());
   }
@@ -61,6 +62,7 @@ public:
            std::shared_ptr<Expression> y)
       : x1_(std::move(x1)), x2_(std::move(x2)), y_(std::move(y)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     graphics().hlin(x1_->evaluate(interp).getNumber(),
                     x2_->evaluate(interp).getNumber(),
                     y_->evaluate(interp).getNumber());
@@ -78,6 +80,7 @@ public:
            std::shared_ptr<Expression> x)
       : y1_(std::move(y1)), y2_(std::move(y2)), x_(std::move(x)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     graphics().vlin(y1_->evaluate(interp).getNumber(),
                     y2_->evaluate(interp).getNumber(),
                     x_->evaluate(interp).getNumber());
@@ -96,6 +99,7 @@ public:
                 coords)
       : coords_(std::move(coords)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     // HPLOT plots points in high-resolution graphics mode
     if (!coords_.empty()) {
       double x = coords_[0].first->evaluate(interp).getNumber();
@@ -121,6 +125,7 @@ public:
   MoveStmt(std::shared_ptr<Expression> x, std::shared_ptr<Expression> y)
       : x_(std::move(x)), y_(std::move(y)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     graphics().move(x_->evaluate(interp).getNumber(),
                     y_->evaluate(interp).getNumber());
   }
@@ -135,6 +140,7 @@ public:
   explicit RotateStmt(std::shared_ptr<Expression> angle)
       : angle_(std::move(angle)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     int angle = static_cast<int>(angle_->evaluate(interp).getNumber());
     graphics().setRotate(angle);
   }
@@ -148,6 +154,7 @@ public:
   explicit ScaleStmt(std::shared_ptr<Expression> scale)
       : scale_(std::move(scale)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     int s = static_cast<int>(scale_->evaluate(interp).getNumber());
     graphics().setScale(s);
   }
@@ -161,6 +168,7 @@ public:
   explicit ShloadStmt(const std::string &filename = "")
       : filename_(filename) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     if (!filename_.empty()) {
       // Load from binary file
       interp->loadShapeTableFromFile(filename_);
@@ -199,6 +207,7 @@ public:
            std::shared_ptr<Expression> y = nullptr)
       : shape_(std::move(shape)), x_(std::move(x)), y_(std::move(y)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     int shapeNum = static_cast<int>(shape_->evaluate(interp).getNumber());
     if (x_ && y_) {
       double xVal = x_->evaluate(interp).getNumber();
@@ -222,6 +231,7 @@ public:
             std::shared_ptr<Expression> y = nullptr)
       : shape_(std::move(shape)), x_(std::move(x)), y_(std::move(y)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     int shapeNum = static_cast<int>(shape_->evaluate(interp).getNumber());
     if (x_ && y_) {
       double xVal = x_->evaluate(interp).getNumber();
@@ -304,7 +314,10 @@ public:
 
 class HgrStmt : public Statement {
 public:
-  void execute(Interpreter *) override { graphics().enterHighRes(); }
+  void execute(Interpreter *interp) override { 
+    interp->requireGraphicsMode();
+    graphics().enterHighRes(); 
+  }
 };
 
 class HcolorStmt : public Statement {
@@ -312,6 +325,7 @@ public:
   explicit HcolorStmt(std::shared_ptr<Expression> color)
       : color_(std::move(color)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     int c = static_cast<int>(color_->evaluate(interp).getNumber());
     graphics().setColor(c);
   }
@@ -325,6 +339,7 @@ public:
   explicit ColorStmt(std::shared_ptr<Expression> color)
       : color_(std::move(color)) {}
   void execute(Interpreter *interp) override {
+    interp->requireGraphicsMode();
     int c = static_cast<int>(color_->evaluate(interp).getNumber());
     graphics().setColor(c);
   }
@@ -903,12 +918,18 @@ public:
 
 class GrStmt : public Statement {
 public:
-  void execute(Interpreter *) override { graphics().enterLowRes(); }
+  void execute(Interpreter *interp) override { 
+    interp->requireGraphicsMode();
+    graphics().enterLowRes(); 
+  }
 };
 
 class HiresStmt : public Statement {
 public:
-  void execute(Interpreter *) override { graphics().enterHighRes(); }
+  void execute(Interpreter *interp) override { 
+    interp->requireGraphicsMode();
+    graphics().enterHighRes(); 
+  }
 };
 
 class ClrStmt : public Statement {

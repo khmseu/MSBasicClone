@@ -15,9 +15,9 @@
 #include <windows.h>
 #endif
 
-Interpreter::Interpreter()
+Interpreter::Interpreter(const GraphicsConfig& config)
     : currentLine_(0), running_(false), immediate_(false), jumped_(false),
-      dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1) {
+      dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1), graphicsConfig_(config) {
 #ifdef _WIN32
   auto enableVirtualTerminal = []() -> bool {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -192,11 +192,38 @@ void Interpreter::runFrom(LineNumber lineNum) {
         std::cout << "[" << currentLine_ << "]";
       }
 
-      for (auto &stmt : programCounter_->second.statements) {
-        stmt->execute(this);
-        if (!running_ || jumped_)
+      try {
+        for (auto &stmt : programCounter_->second.statements) {
+          stmt->execute(this);
+          if (!running_ || jumped_)
+            break;
+          applySpeedDelay();
+        }
+      } catch (const std::exception &e) {
+        if (errorHandlerLine_ >= 0) {
+          errorLine_ = currentLine_;
+          lastError_ = e.what();
+          
+          // Store error information in memory locations for PEEK
+          // Location 218: error line number (low byte)
+          // Location 219: error line number (high byte)
+          // Location 222: error code (only set if not already set by handleError)
+          pokeMemory(218, errorLine_ & 0xFF);
+          pokeMemory(219, (errorLine_ >> 8) & 0xFF);
+          
+          // Only set generic error code if no specific error code was set
+          int currentErrorCode = peekMemory(222);
+          if (currentErrorCode == 0) {
+            pokeMemory(222, 16);  // Generic error code
+          }
+          
+          gotoLine(errorHandlerLine_);
+          continue;  // Continue executing from error handler
+        } else {
+          std::cout << "?" << e.what() << " IN LINE " << currentLine_ << "\n";
+          running_ = false;
           break;
-        applySpeedDelay();
+        }
       }
 
       if (!jumped_) {
@@ -204,23 +231,9 @@ void Interpreter::runFrom(LineNumber lineNum) {
       }
     }
   } catch (const std::exception &e) {
-    if (errorHandlerLine_ >= 0) {
-      errorLine_ = currentLine_;
-      lastError_ = e.what();
-      
-      // Store error information in memory locations for PEEK
-      // Location 218: error line number (low byte)
-      // Location 219: error line number (high byte)
-      // Location 222: error code (simplified - using 16 for all syntax errors)
-      pokeMemory(218, errorLine_ & 0xFF);
-      pokeMemory(219, (errorLine_ >> 8) & 0xFF);
-      pokeMemory(222, 16);  // Generic error code
-      
-      gotoLine(errorHandlerLine_);
-    } else {
-      std::cout << "?" << e.what() << " IN LINE " << currentLine_ << "\n";
-      running_ = false;
-    }
+    // Catch any unhandled exceptions from the main loop
+    std::cout << "?" << e.what() << "\n";
+    running_ = false;
   }
 
   running_ = false;
@@ -1628,6 +1641,13 @@ void Interpreter::popGosub() {
     throw std::runtime_error("POP WITHOUT GOSUB ERROR");
   }
   gosubStack_.pop();
+}
+
+void Interpreter::requireGraphicsMode() const {
+  if (!graphicsConfig_.isGraphicsEnabled()) {
+    // Use error code 255 (general error) for graphics not enabled
+    const_cast<Interpreter*>(this)->handleError("GRAPHICS NOT ENABLED ERROR", 255);
+  }
 }
 
 void Interpreter::interactive() {

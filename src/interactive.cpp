@@ -4,7 +4,8 @@
 #include <iostream>
 #include <string>
 
-InteractiveMode::InteractiveMode() {}
+InteractiveMode::InteractiveMode(const GraphicsConfig& config) 
+    : graphicsConfig_(config) {}
 
 void InteractiveMode::printBanner() {
   std::cout << "\n";
@@ -27,7 +28,7 @@ std::string InteractiveMode::readLine() {
 void InteractiveMode::run() {
   printBanner();
 
-  Interpreter interp;
+  Interpreter interp(graphicsConfig_);
 
   while (true) {
     printPrompt();
