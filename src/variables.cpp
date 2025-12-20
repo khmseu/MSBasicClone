@@ -11,9 +11,9 @@ std::string Variables::normalizeName(const std::string &name) const {
   std::transform(normalized.begin(), normalized.end(), normalized.begin(),
                  ::toupper);
 
-  // Preserve the distinguishing character of user-defined functions (FNx)
+  // Preserve two significant characters in the name part of user-defined functions (FNxy)
   if (normalized.rfind("FN", 0) == 0 && normalized.length() > 2) {
-    return normalized.substr(0, 3);
+    return normalized.substr(0, std::min(normalized.length(), size_t(4)));
   }
 
   // For non-string, non-integer variables, use first 2 chars
