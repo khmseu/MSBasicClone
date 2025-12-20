@@ -44,7 +44,7 @@ private:
     int windowHeight_;  // Scaled window height
     
 #ifdef HAVE_RAYLIB
-    Font* font_;        // Apple II font (pointer to handle optional loading)
+    Font font_;         // Apple II font (default-constructed if not loaded)
     bool fontLoaded_;   // Track if font was successfully loaded
 #endif
 

@@ -18,7 +18,7 @@
 GraphicsRenderer::GraphicsRenderer(const GraphicsConfig& config)
     : config_(config), initialized_(false), windowWidth_(0), windowHeight_(0)
 #ifdef HAVE_RAYLIB
-    , font_(nullptr), fontLoaded_(false)
+    , font_(), fontLoaded_(false)
 #endif
 {
 }
@@ -84,10 +84,8 @@ void GraphicsRenderer::shutdown() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
         // Unload font if it was loaded
-        if (fontLoaded_ && font_) {
-            UnloadFont(*font_);
-            delete font_;
-            font_ = nullptr;
+        if (fontLoaded_) {
+            UnloadFont(font_);
             fontLoaded_ = false;
         }
         CloseWindow();
@@ -160,7 +158,7 @@ void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color
             255
         };
         
-        if (fontLoaded_ && font_) {
+        if (fontLoaded_) {
             // Use loaded Apple II font
             // Apple II character cell is 7×8 pixels
             float fontSize = 8.0f * config_.scaleFactor;
@@ -179,17 +177,19 @@ void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color
             
             // If we're in 80-column mode, we need to scale the text horizontally
             if (horizontalScale != 1.0f) {
+                // Pre-allocate character buffer for efficiency
+                char charBuffer[2] = {'\0', '\0'};
                 // Draw each character with adjusted spacing for horizontal compression
                 float currentX = position.x;
                 for (char ch : text) {
-                    char str[2] = {ch, '\0'};
-                    DrawTextEx(*font_, str, (Vector2){currentX, position.y}, fontSize, 0, c);
+                    charBuffer[0] = ch;
+                    DrawTextEx(font_, charBuffer, (Vector2){currentX, position.y}, fontSize, 0, c);
                     // In 80-column mode, characters are compressed horizontally
                     currentX += (7.0f * config_.scaleFactor * horizontalScale);
                 }
             } else {
                 // Normal 40-column mode rendering
-                DrawTextEx(*font_, text.c_str(), position, fontSize, spacing, c);
+                DrawTextEx(font_, text.c_str(), position, fontSize, spacing, c);
             }
         } else {
             // Fallback to built-in font
@@ -210,7 +210,7 @@ void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
             255
         };
         
-        if (fontLoaded_ && font_) {
+        if (fontLoaded_) {
             // Use loaded Apple II font for single character
             // Apple II character cell is 7×8 pixels
             float fontSize = 8.0f * config_.scaleFactor;
@@ -227,7 +227,7 @@ void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
             };
             
             char str[2] = {ch, '\0'};
-            DrawTextEx(*font_, str, position, fontSize, 0, c);
+            DrawTextEx(font_, str, position, fontSize, 0, c);
         } else {
             // Fallback to built-in drawing
             char str[2] = {ch, '\0'};
@@ -266,29 +266,22 @@ void GraphicsRenderer::loadApple2Font() {
         try {
             // Load font at 8 pixels (Apple II character cell is 7×8)
             // We use 8 here as the fontSize to get proper glyph rendering
-            font_ = new Font();
-            *font_ = LoadFontEx(foundPath, 8, nullptr, 0);
+            font_ = LoadFontEx(foundPath, 8, nullptr, 0);
             
-            // Check if font loaded successfully
-            if (font_->texture.id > 0) {
+            // Check if font loaded successfully using IsFontReady()
+            if (IsFontReady(font_)) {
                 // Apply bilinear filtering for better quality when scaling
-                SetTextureFilter(font_->texture, TEXTURE_FILTER_BILINEAR);
+                SetTextureFilter(font_.texture, TEXTURE_FILTER_BILINEAR);
                 
                 fontLoaded_ = true;
                 std::cout << "Successfully loaded Apple II font from: " << foundPath << "\n";
-                std::cout << "Font base size: " << font_->baseSize << " pixels\n";
+                std::cout << "Font base size: " << font_.baseSize << " pixels\n";
             } else {
                 std::cerr << "Warning: Font file found but failed to load from: " << foundPath << "\n";
-                delete font_;
-                font_ = nullptr;
                 fontLoaded_ = false;
             }
         } catch (...) {
             std::cerr << "Warning: Exception while loading font from: " << foundPath << "\n";
-            if (font_) {
-                delete font_;
-                font_ = nullptr;
-            }
             fontLoaded_ = false;
         }
     }
