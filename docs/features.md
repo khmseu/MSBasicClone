@@ -11,10 +11,12 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Variable name normalization (2 chars significant, case-insensitive)
 - [x] String variables (`$` suffix)
 - [x] Integer variables (`%` suffix, 16-bit signed range)
+- [x] Multiple statements per line (colon `:` separator)
 
 ## Expression Evaluation
 
 - [x] Arithmetic operators: `+`, `-`, `*`, `/`, `^`
+- [x] String concatenation: `+` operator for strings
 - [x] MOD operator
 - [x] Unary operators: `+`, `-`, `NOT`
 - [x] Comparison operators: `=`, `<>`, `<`, `>`, `<=`, `>=`
@@ -92,6 +94,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] VLIN y1,y2 AT x - vertical line
 
 ### Graphics - High Resolution
+- [x] HIRES - enable high-resolution graphics mode
 - [x] HGR - 280x192 hi-res graphics (mixed mode)
 - [x] HGR2 - 280x192 hi-res graphics (full screen)
 - [x] HCOLOR= expression - set hi-res color
