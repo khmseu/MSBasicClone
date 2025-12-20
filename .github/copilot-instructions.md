@@ -2,6 +2,13 @@
 
 ## Big Picture
 
+This repository implements an Applesoft II–compatible BASIC interpreter (`msbasic`) with the following goals:
+
+- Faithful Applesoft semantics (DEF FN, DATA/READ/RESTORE, arrays, integer/string handling).
+- Support for ProDOS-style commands and simple file I/O so scripts and examples behave like classic Applesoft.
+- Portability across Linux, macOS and Windows with predictable behavior and minimal platform-specific code.
+- Test-driven correctness: a comprehensive `.bas` test suite in `tests/` exercises language and runtime behavior.
+
 ## Reference Sources
 
 - [Applesoft BASIC Commands — command & ProDOS command reference](../Research/applesoft_basic_commands.md)
