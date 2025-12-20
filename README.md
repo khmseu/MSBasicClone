@@ -52,7 +52,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - HTAB/VTAB (cursor positioning)
   - INVERSE/NORMAL/FLASH (text attributes)
   - TAB(), SPC(), POS() functions
-- **Graphics Commands** (off-screen buffer, no rendering yet):
+- **Graphics Commands** (offscreen buffer, no rendering yet):
   - GR, HIRES, HGR, HGR2 (mode switching)
   - COLOR=, HCOLOR= (color selection)
   - PLOT, HPLOT (plotting points)
@@ -191,7 +191,7 @@ File system commands are implemented with modern cross-platform file I/O:
 
 This is a working interpreter with comprehensive Applesoft BASIC features implemented. The following areas are still in development or stubbed:
 
-- **Graphics Rendering**: Graphics commands (GR, HIRES, PLOT, HPLOT, DRAW, XDRAW, etc.) maintain internal state and off-screen buffers but do not render to screen yet
+- **Graphics Rendering**: Graphics commands (GR, HIRES, PLOT, HPLOT, DRAW, XDRAW, etc.) maintain internal state and offscreen buffers but do not render to screen yet
 - **Sound Commands**: BELL is implemented; other sound/audio commands not yet supported
 - **Hardware-Specific Features**: Some Apple II-specific hardware commands are stubbed (PDL returns 0, USR returns 0, etc.)
 
