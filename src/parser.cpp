@@ -158,27 +158,38 @@ private:
 
 class ShloadStmt : public Statement {
 public:
+  explicit ShloadStmt(const std::string &filename = "")
+      : filename_(filename) {}
   void execute(Interpreter *interp) override {
-    // Read shape number
-    Value shapeNumVal = interp->readData();
-    int shapeNum = static_cast<int>(shapeNumVal.getNumber());
+    if (!filename_.empty()) {
+      // Load from binary file
+      interp->loadShapeTableFromFile(filename_);
+    } else {
+      // Load from DATA statements (existing behavior)
+      // Read shape number
+      Value shapeNumVal = interp->readData();
+      int shapeNum = static_cast<int>(shapeNumVal.getNumber());
 
-    // Read number of points
-    Value numPointsVal = interp->readData();
-    int numPoints = static_cast<int>(numPointsVal.getNumber());
+      // Read number of points
+      Value numPointsVal = interp->readData();
+      int numPoints = static_cast<int>(numPointsVal.getNumber());
 
-    // Read point pairs
-    std::vector<std::pair<double, double>> points;
-    points.reserve(static_cast<size_t>(numPoints));
-    for (int i = 0; i < numPoints; ++i) {
-      Value xVal = interp->readData();
-      Value yVal = interp->readData();
-      points.push_back({xVal.getNumber(), yVal.getNumber()});
+      // Read point pairs
+      std::vector<std::pair<double, double>> points;
+      points.reserve(static_cast<size_t>(numPoints));
+      for (int i = 0; i < numPoints; ++i) {
+        Value xVal = interp->readData();
+        Value yVal = interp->readData();
+        points.push_back({xVal.getNumber(), yVal.getNumber()});
+      }
+
+      // Load shape into graphics
+      graphics().loadShape(shapeNum, points);
     }
-
-    // Load shape into graphics
-    graphics().loadShape(shapeNum, points);
   }
+
+private:
+  std::string filename_;
 };
 
 class DrawStmt : public Statement {
@@ -2678,6 +2689,15 @@ std::shared_ptr<Statement> Parser::parseLomem(const std::vector<Token> &tokens,
 std::shared_ptr<Statement> Parser::parseShload(const std::vector<Token> &tokens,
                                                size_t &pos) {
   pos++; // Skip SHLOAD
+  
+  // Check if there's a filename parameter
+  if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    return std::make_shared<ShloadStmt>(filename);
+  }
+  
+  // No filename, use DATA statements
   return std::make_shared<ShloadStmt>();
 }
 

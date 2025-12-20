@@ -1305,6 +1305,60 @@ void Interpreter::restoreVariables(const std::string &filename) {
   }
 }
 
+void Interpreter::loadShapeTableFromFile(const std::string &filename) {
+  // Load shape table from binary file in Apple II format
+  std::ifstream file(filename, std::ios::binary);
+  if (!file) {
+    throw std::runtime_error("PATH NOT FOUND ERROR");
+  }
+
+  try {
+    // Read number of shapes (first byte)
+    uint8_t numShapes;
+    file.read(reinterpret_cast<char*>(&numShapes), 1);
+    if (!file || numShapes == 0) {
+      throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+    }
+
+    // Read shape table index (2 bytes per shape)
+    std::vector<uint16_t> shapeOffsets(numShapes);
+    for (size_t i = 0; i < numShapes; ++i) {
+      uint8_t lowByte, highByte;
+      file.read(reinterpret_cast<char*>(&lowByte), 1);
+      file.read(reinterpret_cast<char*>(&highByte), 1);
+      if (!file) {
+        throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+      }
+      shapeOffsets[i] = lowByte | (highByte << 8);
+    }
+
+    // Read all remaining data
+    std::vector<uint8_t> shapeData;
+    char byte;
+    while (file.read(&byte, 1)) {
+      shapeData.push_back(static_cast<uint8_t>(byte));
+    }
+
+    // For now, we'll store the shape table pointer in memory locations 232-233
+    // This is a simplified implementation that just validates the file format
+    // Full implementation would parse the shape vectors and load them into graphics
+    
+    // Store shape table pointer (using a simplified approach)
+    // In real Apple II, this would be the memory address of the shape table
+    // For our implementation, we just acknowledge the file was loaded
+    pokeMemory(232, 0);  // Low byte of shape table pointer
+    pokeMemory(233, 0);  // High byte of shape table pointer
+    
+    // Note: Full shape table parsing and rendering would require decoding
+    // the vector plotting commands in each shape definition. This is a
+    // stub implementation that validates file format but doesn't fully
+    // parse the shapes.
+    
+  } catch (const std::exception &e) {
+    throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+  }
+}
+
 void Interpreter::addDataValue(const Value &value) {
   dataValues_.push_back(value);
 }

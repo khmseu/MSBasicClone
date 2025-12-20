@@ -180,6 +180,9 @@ public:
   void storeVariables(const std::string &filename);
   void restoreVariables(const std::string &filename);
 
+  // Shape table loading
+  void loadShapeTableFromFile(const std::string &filename);
+
   // State reset
   void clearState();
 
