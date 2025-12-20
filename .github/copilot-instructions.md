@@ -1,54 +1,55 @@
 # Copilot Instructions
 
-## Project Overview
+## Big Picture
 
-- C++20 Applesoft II BASIC interpreter (`msbasic`) with custom 40-bit float implementation (`src/float40.*`).
-- include ProDOS commands for file I/O; supports interactive and script modes.
-- Designed for portability across Linux, macOS, and Windows.
-- Core flow: tokenize → parse to AST → interpret; interactive shell uses same parser/interpreter.
-- Variables are significant to the first two characters and may have `$` suffix for strings; arrays and user-defined functions are supported.
-- DATA is pre-collected before program run; READ consumes in sequence; RESTORE resets the data pointer.
+## Reference Sources
 
-## Key Components
+- [Applesoft BASIC Commands — command & ProDOS command reference](../Research/applesoft_basic_commands.md)
+- [Applesoft BASIC Functions — builtin function reference (SIN, RND, PEEK, etc.)](../Research/applesoft_basic_functions.md)
+- [Applesoft BASIC Language Features — syntax, arrays, and control flow](../Research/applesoft_basic_language_features.md)
+- [Applesoft BASIC Error Messages — error codes and handling guidance](../Research/applesoft_error_messages.md)
+- [Applesoft PEEK/POKE/CALL Addresses — memory locations and ROM calls map](../Research/applesoft_peek_poke_call_addresses.md)
 
-- Tokenizer: [src/tokenizer.cpp](../src/tokenizer.cpp) – converts BASIC source to tokens.
-- Parser/AST: [src/parser.cpp](../src/parser.cpp) – parses statements/expressions, handles arrays, DEF FN, DATA/READ/RESTORE.
-- Interpreter: [src/interpreter.cpp](../src/interpreter.cpp) – executes AST, manages DATA cursor and immediate mode.
-- Variables & Functions: [src/variables.cpp](../src/variables.cpp) – storage for scalars, arrays, and user-defined functions.
-- Runtime helpers: filesystem ([src/filesystem.cpp](../src/filesystem.cpp)), statements ([src/statements.cpp](../src/statements.cpp)), functions ([src/functions.cpp](../src/functions.cpp)).
+## Key Behaviors & Conventions
 
-## Build and Test
+- Variable names: first two characters significant; `$` for strings, `%` for integers (clamped to 16‑bit).
+- Arrays: auto‑DIM to size 10 per dimension if undeclared; subscripts are expressions; shared get/set path.
+- DATA/READ/RESTORE: DATA collected pre‑run; READ is sequential across control flow; RESTORE optionally accepts a target line.
+- Memory: `LOMEM`/`HIMEM` define valid range; `PEEK/POKE/WAIT` enforce bounds and raise “MEMORY RANGE ERROR” when out of range.
+- WAIT: `WAIT addr,mask[,timeoutMs]` supports optional millisecond timeout; exits silently when elapsed.
+- Output helpers: `TAB(n)`, `SPC(n)`, `POS()` (ANSI query on POSIX; Windows console via API, fallback to 0).
+- Graphics: GR/HIRES/HPLOT/MOVE/ROTATE/SCALE/DRAW/XDRAW are implemented with an off‑screen buffer (no on‑screen rendering yet).
+- Tracing & delays: `TRACE/NOTRACE` echo line numbers; `SPEED n` adds per‑statement delay (0–255 ms).
 
-- Configure/build: `cmake -S . -B build && cmake --build build`.
-- Tests: `ctest --test-dir build` executes `.bas` programs in `tests/` via the built `msbasic` binary.
-- Generated version header: `build/generated/version.h` is produced from `src/version.h.in` at configure time.
+## Typical Change Recipes
 
-## Coding Practices
+- Add a statement/keyword:
+  1.  Register in tokenizer keyword maps ([src/tokenizer.cpp](../src/tokenizer.cpp)).
+  2.  Parse in `Parser::parseStatement()` and helpers ([src/parser.cpp](../src/parser.cpp)).
+  3.  Implement runtime in a `Statement` subclass or `Interpreter` method ([src/interpreter.cpp](../src/interpreter.cpp)).
+  4.  Add a `.bas` test under `tests/`.
+- Add a built‑in function: implement in [src/functions.cpp](../src/functions.cpp) and parse in `FunctionCallExpr` paths.
+- Extend variables/arrays: respect normalization in [src/variables.cpp](../src/variables.cpp); keep `%` coercion and auto‑DIM rules.
 
-- Keep code portable across Linux/macOS/Windows; avoid OS-specific APIs unless guarded.
-- Prefer clear, small helpers over complex macros; follow existing style in neighboring code.
-- Add brief comments only for non-obvious logic (e.g., parser/interpreter edge cases); keep files ASCII.
+## Build, Run, Test
 
-## Feature Behaviors to Preserve
+- Fast path: `cmake -S . -B build && cmake --build build`.
+- VS Code task: `build-msbasic` builds target `msbasic`.
+- Tests: `ctest --test-dir build --output-on-failure` executes all `.bas` programs in `tests/` via `msbasic`.
+- Versioning: header generated from `src/version.h.in` → `build/generated/version.h` using `git describe` or override.
+- REPL: `./build/msbasic` starts interactive mode; `./build/msbasic path/to/program.bas` runs a script.
 
-- Variable name normalization to first two characters, string suffix `$` kept.
-- Array subscripts are expressions; assignment and access use the same path.
-- DATA list is collected before execution; RESTORE resets pointer; READ errors on exhaustion.
-- DEF FN stores parsed expression; arguments resolved at call; function names share variable normalization rules.
-- Cursor helpers: TAB/SPC return space padding; POS queries terminal cursor column (ANSI escape on POSIX, `GetConsoleScreenBufferInfo` on Windows) and falls back to 0 when unknown. Tests assume an xterm-like terminal.
+## Project‑Specific Gotchas
 
-## Testing Guidance
+- User functions `DEF FNx(a)=expr`: stored in `Variables`; calls like `FNx(expr)` substitute parameter then evaluate.
+- Name normalization: `FN` names preserve 3 chars (`FNx`) significance; other names 2 chars (except `$`/`%`).
+- Tests assume xterm‑like terminals for `POS`; Windows VT fallback is handled.
+- Keep changes portable; guard OS‑specific code and avoid non‑ASCII.
 
-- Add `.bas` repros to `tests/`; keep them small and deterministic.
-- Prefer exercising new syntax/behavior via `.bas` programs rather than C++ unit tests.
+## Hygiene
 
-## When Changing the Interface
+- Conventional commits (e.g., `feat: add WAIT timeout`).
+- Prefer small, isolated patches matching existing style.
+- Add `.bas` repros instead of C++ unit tests for language behavior.
 
-- Keep CLI behavior of `msbasic` stable; it loads files or enters interactive mode when no file is given.
-- Update README and add tests when language surface or runtime behavior changes.
-
-## Repository Hygiene
-
-- When committing, unless instructed differently, include all changes since the last commit
-- use a GitHub/Common Commit-style conventional message (e.g., `feat: add DATA handling`).
-- Pass the commit message explicitly via the commit command as a file parameter (e.g., `git commit -F message.txt`).
+Feedback: If any workflow or behavior above is unclear (e.g., adding a new command or graphics behavior), tell me which area to detail further and I’ll refine this guide.
