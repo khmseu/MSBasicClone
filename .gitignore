@@ -110,6 +110,7 @@ Thumbs.db
 *.bak
 *.swp
 *~
+*.arr
 commit-message.txt
 Research/.venv/
 

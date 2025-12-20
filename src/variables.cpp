@@ -161,3 +161,35 @@ const Variables::FunctionInfo &Variables::getFunction(const std::string &name) {
   }
   return it->second;
 }
+
+bool Variables::hasArray(const std::string &name) const {
+  return arrays_.find(normalizeName(name)) != arrays_.end();
+}
+
+const std::vector<int> &Variables::getArrayDimensions(const std::string &name) const {
+  std::string normalized = normalizeName(name);
+  auto it = arrays_.find(normalized);
+  if (it == arrays_.end()) {
+    throw std::runtime_error("UNDEFINED ARRAY ERROR");
+  }
+  return it->second.dimensions;
+}
+
+const std::map<std::vector<int>, Value> &
+Variables::getArrayData(const std::string &name) const {
+  std::string normalized = normalizeName(name);
+  auto it = arrays_.find(normalized);
+  if (it == arrays_.end()) {
+    throw std::runtime_error("UNDEFINED ARRAY ERROR");
+  }
+  return it->second.data;
+}
+
+void Variables::setArrayData(const std::string &name,
+                             const std::vector<int> &dimensions,
+                             const std::map<std::vector<int>, Value> &data) {
+  std::string normalized = normalizeName(name);
+  ArrayInfo &arr = arrays_[normalized];
+  arr.dimensions = dimensions;
+  arr.data = data;
+}

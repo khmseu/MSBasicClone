@@ -55,6 +55,8 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"LOAD", TokenType::LOAD},
       {"SAVE", TokenType::SAVE},
       {"CATALOG", TokenType::CATALOG},
+      {"CONT", TokenType::CONT},
+      {"DEL", TokenType::DEL},
       {"DEF", TokenType::DEF},
       {"FN", TokenType::FN},
       {"ONERR", TokenType::ONERR},
@@ -63,6 +65,7 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"AT", TokenType::AT},
       {"CLR", TokenType::CLR},
       {"HOME", TokenType::HOME},
+      {"TEXT", TokenType::TEXT},
       {"GR", TokenType::GR},
       {"HIRES", TokenType::HIRES},
       {"COLOR=", TokenType::COLOR},
@@ -130,6 +133,8 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"HIMEM", TokenType::HIMEM},
       {"LOMEM", TokenType::LOMEM},
       {"SCRN", TokenType::SCRN},
+      {"RECALL", TokenType::RECALL},
+      {"STORE", TokenType::STORE},
       {"USR", TokenType::USR}};
 
   std::string upper = word;
@@ -165,6 +170,8 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"LOAD", TokenType::LOAD},
       {"SAVE", TokenType::SAVE},
       {"CATALOG", TokenType::CATALOG},
+      {"CONT", TokenType::CONT},
+      {"DEL", TokenType::DEL},
       {"DEF", TokenType::DEF},
       {"FN", TokenType::FN},
       {"ONERR", TokenType::ONERR},
@@ -173,6 +180,7 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"AT", TokenType::AT},
       {"CLR", TokenType::CLR},
       {"HOME", TokenType::HOME},
+      {"TEXT", TokenType::TEXT},
       {"GR", TokenType::GR},
       {"HIRES", TokenType::HIRES},
       {"COLOR=", TokenType::COLOR},
@@ -240,6 +248,8 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"HIMEM", TokenType::HIMEM},
       {"LOMEM", TokenType::LOMEM},
       {"SCRN", TokenType::SCRN},
+      {"RECALL", TokenType::RECALL},
+      {"STORE", TokenType::STORE},
       {"USR", TokenType::USR}};
 
   std::string upper = word;

@@ -30,8 +30,10 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
 - **User-Defined Functions**: DEF FN with parameters
 - **Error Handling**: ONERR GOTO and RESUME statements
 - **Built-in Commands**:
-  - NEW, RUN, LIST, END, STOP
+  - NEW, RUN, LIST, END, STOP, CONT (continue after STOP)
   - LOAD, SAVE, CATALOG
+  - DEL (delete line range)
+  - RECALL/STORE (load/save arrays to files)
   - PRINT (with semicolon, comma separators, TAB, SPC)
   - INPUT (with optional prompts)
   - GET (single character input)
@@ -39,6 +41,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - CLR (clear variables and control stacks)
   - REM (comments)
   - HOME (clear screen)
+  - TEXT (switch to text mode)
 - **Math Functions**: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, RANDOMIZE
 - **String Functions**: LEFT$, RIGHT$, MID$, LEN, CHR$, ASC, VAL, STR$
 - **Memory Commands**: 

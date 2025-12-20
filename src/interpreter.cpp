@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -472,6 +473,160 @@ void Interpreter::catalog() {
     }
   }
   std::cout << "\n";
+}
+
+namespace {
+// Maximum number of array dimensions supported in array files
+// 255 is chosen to match typical BASIC array dimension limits while
+// being large enough for any practical use case
+constexpr size_t kMaxArrayDimensions = 255;
+
+// Helper function to sanitize array name for use as filename
+std::string sanitizeArrayName(const std::string &arrayName) {
+  std::string filename = arrayName;
+  // Remove problematic characters for filenames
+  filename.erase(
+      std::remove_if(filename.begin(), filename.end(),
+                    [](char c) {
+                      return c == '$' || c == '%' || c == '/' || c == '\\' ||
+                             c == ':' || c == '*' || c == '?' || c == '"' ||
+                             c == '<' || c == '>' || c == '|';
+                    }),
+      filename.end());
+  return filename + ".arr";
+}
+} // namespace
+
+void Interpreter::storeArray(const std::string &arrayName) {
+  if (!variables_.hasArray(arrayName)) {
+    throw std::runtime_error("UNDEFINED ARRAY ERROR");
+  }
+
+  std::string filename = sanitizeArrayName(arrayName);
+
+  std::ofstream file(filename);
+  if (!file) {
+    throw std::runtime_error("FILE ERROR");
+  }
+
+  const auto &dimensions = variables_.getArrayDimensions(arrayName);
+  const auto &data = variables_.getArrayData(arrayName);
+
+  // Write dimensions
+  file << dimensions.size();
+  for (int dim : dimensions) {
+    file << " " << dim;
+  }
+  file << "\n";
+
+  // Write data
+  file << data.size() << "\n";
+  for (const auto &entry : data) {
+    const auto &indices = entry.first;
+    const auto &value = entry.second;
+    
+    // Write indices
+    for (size_t i = 0; i < indices.size(); ++i) {
+      if (i > 0) file << ",";
+      file << indices[i];
+    }
+    file << " ";
+    
+    // Write value
+    if (value.isString()) {
+      file << "S " << value.getString() << "\n";
+    } else {
+      file << "N " << value.getNumber() << "\n";
+    }
+  }
+}
+
+void Interpreter::recallArray(const std::string &arrayName) {
+  std::string filename = sanitizeArrayName(arrayName);
+
+  std::ifstream file(filename);
+  if (!file) {
+    throw std::runtime_error("FILE NOT FOUND ERROR");
+  }
+
+  try {
+    // Read dimensions
+    size_t numDims;
+    file >> numDims;
+    if (!file || numDims == 0 || numDims > kMaxArrayDimensions) {
+      throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+    }
+    
+    std::vector<int> dimensions(numDims);
+    for (size_t i = 0; i < numDims; ++i) {
+      file >> dimensions[i];
+      if (!file || dimensions[i] < 0) {
+        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      }
+    }
+
+    // Read data count
+    size_t dataCount;
+    file >> dataCount;
+    if (!file) {
+      throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+    }
+    file.ignore(); // Skip newline
+
+    std::map<std::vector<int>, Value> data;
+    for (size_t i = 0; i < dataCount; ++i) {
+      std::string line;
+      std::getline(file, line);
+      if (!file || line.empty()) {
+        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      }
+      
+      // Parse indices
+      size_t spacePos = line.find(' ');
+      if (spacePos == std::string::npos) {
+        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      }
+      std::string indicesStr = line.substr(0, spacePos);
+      std::string valueStr = line.substr(spacePos + 1);
+      
+      std::vector<int> indices;
+      size_t start = 0;
+      while (start < indicesStr.length()) {
+        size_t commaPos = indicesStr.find(',', start);
+        if (commaPos == std::string::npos) {
+          indices.push_back(std::stoi(indicesStr.substr(start)));
+          break;
+        } else {
+          indices.push_back(std::stoi(indicesStr.substr(start, commaPos - start)));
+          start = commaPos + 1;
+        }
+      }
+      
+      // Parse value
+      if (valueStr.length() < 2) {
+        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      }
+      char type = valueStr[0];
+      std::string valContent = valueStr.substr(2);
+      Value value;
+      if (type == 'S') {
+        value = Value(valContent);
+      } else if (type == 'N') {
+        value = Value(std::stod(valContent));
+      } else {
+        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      }
+      
+      data[indices] = value;
+    }
+
+    // Set the array
+    variables_.setArrayData(arrayName, dimensions, data);
+  } catch (const std::invalid_argument &) {
+    throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+  } catch (const std::out_of_range &) {
+    throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+  }
 }
 
 void Interpreter::addDataValue(const Value &value) {

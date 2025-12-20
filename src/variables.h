@@ -37,6 +37,13 @@ public:
 
   const FunctionInfo &getFunction(const std::string &name);
 
+  // Array persistence helpers
+  bool hasArray(const std::string &name) const;
+  const std::vector<int> &getArrayDimensions(const std::string &name) const;
+  const std::map<std::vector<int>, Value> &getArrayData(const std::string &name) const;
+  void setArrayData(const std::string &name, const std::vector<int> &dimensions,
+                   const std::map<std::vector<int>, Value> &data);
+
 private:
   std::map<std::string, Value> variables_;
 
