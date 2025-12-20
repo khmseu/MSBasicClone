@@ -93,9 +93,30 @@ cmake ..
 make
 ```
 
-#### Installing Raylib (Optional)
+#### Automatic Raylib Build
 
-For graphics rendering support, install Raylib 5.0 or later:
+By default, the build system will automatically download and build Raylib from source if it's not found on your system. This requires:
+
+**Linux:**
+```bash
+# Install X11 development libraries first
+sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
+```
+
+**macOS:**
+No additional dependencies needed - Raylib will build automatically.
+
+**Windows:**
+Raylib will build automatically with MinGW or MSVC.
+
+To disable automatic Raylib building:
+```bash
+cmake -DAUTO_BUILD_RAYLIB=OFF ..
+```
+
+#### Manual Raylib Installation (Alternative)
+
+If you prefer to install Raylib manually:
 
 **Ubuntu/Debian:**
 ```bash
@@ -116,7 +137,7 @@ sudo make install
 brew install raylib
 ```
 
-The build system will automatically detect Raylib and enable graphics rendering if it's available. Without Raylib, graphics commands will use off-screen buffers only.
+The build system will detect Raylib whether installed manually or built automatically. Without Raylib, graphics commands will use off-screen buffers only.
 
 ### Building with Clang
 
