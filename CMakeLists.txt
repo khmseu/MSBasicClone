@@ -99,13 +99,62 @@ configure_file(
 set(CPACK_PACKAGE_VERSION "${MSBASIC_VERSION_STRING}")
 include(CPack)
 
+# Option to build raylib from source if not found
+option(AUTO_BUILD_RAYLIB "Automatically build raylib from source if not found" ON)
+
 # Optional: Find Raylib for graphics support
 find_package(raylib QUIET)
 if(raylib_FOUND)
     message(STATUS "Raylib found - graphics rendering enabled")
     add_compile_definitions(HAVE_RAYLIB)
+    set(RAYLIB_AVAILABLE TRUE)
 else()
-    message(STATUS "Raylib not found - graphics will use off-screen buffer only")
+    message(STATUS "Raylib not found via find_package")
+    
+    if(AUTO_BUILD_RAYLIB)
+        message(STATUS "Attempting to build raylib from source...")
+        
+        # Check for X11 on Unix-like systems (required for raylib)
+        if(UNIX AND NOT APPLE)
+            find_package(X11)
+            if(NOT X11_FOUND)
+                message(WARNING "X11 development libraries not found. Raylib requires X11 on Linux.")
+                message(WARNING "Install with: sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev")
+                message(STATUS "Skipping raylib build - graphics will use off-screen buffer only")
+                set(RAYLIB_AVAILABLE FALSE)
+            endif()
+        endif()
+        
+        if(NOT DEFINED RAYLIB_AVAILABLE OR RAYLIB_AVAILABLE)
+            include(FetchContent)
+            
+            FetchContent_Declare(
+                raylib
+                GIT_REPOSITORY https://github.com/raysan5/raylib.git
+                GIT_TAG 5.0
+                GIT_SHALLOW TRUE
+            )
+            
+            # Configure raylib build options
+            set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+            set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+            
+            # Attempt to build raylib
+            FetchContent_MakeAvailable(raylib)
+            
+            if(TARGET raylib)
+                message(STATUS "Successfully built raylib from source - graphics rendering enabled")
+                add_compile_definitions(HAVE_RAYLIB)
+                set(RAYLIB_AVAILABLE TRUE)
+            else()
+                message(STATUS "Failed to build raylib - graphics will use off-screen buffer only")
+                set(RAYLIB_AVAILABLE FALSE)
+            endif()
+        endif()
+    else()
+        message(STATUS "AUTO_BUILD_RAYLIB is OFF - graphics will use off-screen buffer only")
+        set(RAYLIB_AVAILABLE FALSE)
+    endif()
 endif()
 
 # Create executable
@@ -133,8 +182,8 @@ if(UNIX)
     target_link_libraries(msbasic m)
 endif()
 
-# Link Raylib if found
-if(raylib_FOUND)
+# Link Raylib if available
+if(RAYLIB_AVAILABLE)
     target_link_libraries(msbasic raylib)
 endif()
 
