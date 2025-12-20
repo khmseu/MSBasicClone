@@ -30,6 +30,7 @@ When you run `cmake` to configure the build, the `cmake/FetchFont.cmake` module 
 - Charset Map: `https://www.kreativekorp.com/charset/map/apple2/`
 
 Both URLs can be overridden via CMake variables:
+
 ```bash
 cmake -DAPPLE2_FONT_URL="https://alternative-source/font.ttf" \
       -DAPPLE2_CHARSET_URL="https://alternative-source/map.html" ..
@@ -52,6 +53,7 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) includes caching for
 ```
 
 This cache:
+
 - **Avoids repeated downloads** in CI runs (important for frequent PRs and commits)
 - **Is invalidated only when** `FetchFont.cmake` changes (stable key)
 - **Restores from previous runs** via fallback key prefix `apple2-fonts-`
@@ -62,9 +64,9 @@ This cache:
 
 If automatic download fails (e.g., due to network restrictions or blocked domains), you can manually install the fonts:
 
-1. Download from: https://www.kreativekorp.com/software/fonts/apple2/
+1. Download from: <https://www.kreativekorp.com/software/fonts/apple2/>
 2. Save `PrintChar21.ttf` to `assets/fonts/PrintChar21.ttf`
-3. Optionally download charset map from: https://www.kreativekorp.com/charset/map/apple2/
+3. Optionally download charset map from: <https://www.kreativekorp.com/charset/map/apple2/>
 4. Save as `assets/fonts/apple2-charset.html`
 5. Re-run `cmake` - it will detect the existing files
 
@@ -84,18 +86,22 @@ If automatic download fails (e.g., due to network restrictions or blocked domain
 ### Download Fails
 
 If you see warnings like:
+
 ```
 CMake Warning: Failed to download font: "Could not resolve hostname"
 ```
 
 **Solutions**:
+
 1. Check your network connection
 2. Try manually downloading the font (see Manual Installation above)
 3. If kreativekorp.com is blocked, contact your network administrator
 4. Use an alternative font source by setting CMake variables:
+
    ```bash
    cmake -DAPPLE2_FONT_URL="https://alternative-source.com/PrintChar21.ttf" ..
    ```
+
 5. The build will continue without the font - graphics mode will use Raylib's default font
 
 ### Font Not Loading
@@ -139,6 +145,7 @@ cmake -DAPPLE2_FONT_URL="https://mirror.example.com/PrintChar21.ttf" \
 ```
 
 This is useful when:
+
 - The default source is blocked or unavailable
 - You have a local mirror or cache
 - Testing with alternative font files
