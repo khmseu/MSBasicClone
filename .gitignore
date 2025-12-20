@@ -116,3 +116,8 @@ Research/.venv/
 
 .fake
 .cache/
+
+# CodeQL artifacts
+*.sarif
+codeql-*
+.codeql/
