@@ -125,3 +125,10 @@ _codeql_detected_source_root
 *.sarif
 codeql-*
 binfile.dat
+
+# Test generated files
+*.dat
+*.tbl
+testfile.txt
+locktest.txt
+newfile.txt
