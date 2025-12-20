@@ -8,23 +8,61 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
 
 - **Interactive Mode**: Classic "]" prompt with immediate command execution
 - **Script Mode**: Execute BASIC programs from files
-- **Variables**: Numeric and string variables (with $ suffix for strings)
-- **Operators**: Arithmetic (+, -, \*, /, ^), comparison (=, <>, <, >, <=, >=), logical (AND, OR, NOT)
+- **Variables**: 
+  - Numeric and string variables (with $ suffix for strings)
+  - Integer variables (with % suffix, 16-bit clamped)
+  - First two characters significant for variable names
+- **Arrays**: 
+  - Multi-dimensional arrays with DIM
+  - Auto-DIM to size 10 per dimension if undeclared
+- **Operators**: Arithmetic (+, -, \*, /, ^, MOD), comparison (=, <>, <, >, <=, >=), logical (AND, OR, NOT)
 - **Control Flow**:
   - IF/THEN/ELSE statements
   - FOR/NEXT loops (with STEP support)
+  - WHILE/WEND loops
   - GOTO statements
   - GOSUB/RETURN subroutines
+  - ON...GOTO/GOSUB statements
+  - POP (clear GOSUB stack)
+- **Data Handling**:
+  - DATA/READ/RESTORE statements
+  - RESTORE with optional line number
+- **User-Defined Functions**: DEF FN with parameters
+- **Error Handling**: ONERR GOTO and RESUME statements
 - **Built-in Commands**:
-  - NEW, RUN, LIST, END
+  - NEW, RUN, LIST, END, STOP
   - LOAD, SAVE, CATALOG
-  - PRINT (with semicolon and comma separators)
+  - PRINT (with semicolon, comma separators, TAB, SPC)
   - INPUT (with optional prompts)
+  - GET (single character input)
   - LET (assignment, also works without LET keyword)
   - CLR (clear variables and control stacks)
   - REM (comments)
-- **Math Functions**: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND
+  - HOME (clear screen)
+- **Math Functions**: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, RANDOMIZE
 - **String Functions**: LEFT$, RIGHT$, MID$, LEN, CHR$, ASC, VAL, STR$
+- **Memory Commands**: 
+  - PEEK/POKE with bounds checking
+  - CALL (machine language call stub)
+  - WAIT with optional timeout
+  - LOMEM/HIMEM (memory bounds)
+  - FRE (free memory)
+  - USR (user machine code stub)
+- **Screen Control**:
+  - HTAB/VTAB (cursor positioning)
+  - INVERSE/NORMAL/FLASH (text attributes)
+  - TAB(), SPC(), POS() functions
+- **Graphics Commands** (offscreen buffer, no rendering yet):
+  - GR, HIRES, HGR, HGR2 (mode switching)
+  - COLOR=, HCOLOR= (color selection)
+  - PLOT, HPLOT (plotting points)
+  - HLIN, VLIN (line drawing)
+  - DRAW, XDRAW (shape drawing)
+  - MOVE, ROTATE, SCALE (shape transformations)
+  - SHLOAD (shape table loading)
+  - SCRN() function (read pixel color)
+- **Debugging**: TRACE/NOTRACE (line number display), SPEED (execution delay)
+- **ProDOS Support**: PR#n, IN#n (I/O redirection stubs)
 - **40-bit Floating Point**: Emulated Applesoft floating-point precision
 - **Cross-Platform**: Compiles on Linux, macOS, and Windows
 
@@ -151,14 +189,11 @@ File system commands are implemented with modern cross-platform file I/O:
 
 ## Development Status
 
-This is a working interpreter with core Applesoft BASIC features implemented. Some advanced features are still in development:
+This is a working interpreter with comprehensive Applesoft BASIC features implemented. The following areas are still in development or stubbed:
 
-- Arrays with DIM
-- DATA/READ/RESTORE statements
-- DEF FN (user-defined functions)
-- Error handling (ONERR GOTO, RESUME)
-- Graphics commands (GR, HIRES, PLOT, HPLOT, etc.) — window state tracked/stubbed, no rendering yet
-- Sound and hardware-specific commands
+- **Graphics Rendering**: Graphics commands (GR, HIRES, PLOT, HPLOT, DRAW, XDRAW, etc.) maintain internal state and offscreen buffers but do not render to screen yet
+- **Sound Commands**: BELL is implemented; other sound/audio commands not yet supported
+- **Hardware-Specific Features**: Some Apple II-specific hardware commands are stubbed (PDL returns 0, USR returns 0, etc.)
 
 ## License
 
