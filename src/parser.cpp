@@ -1278,6 +1278,30 @@ private:
   int address_;
 };
 
+class ProdosStoreStmt : public Statement {
+public:
+  explicit ProdosStoreStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->storeVariables(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class ProdosRestoreStmt : public Statement {
+public:
+  explicit ProdosRestoreStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->restoreVariables(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
 // Statement implementations for WHILE/WEND/POP
 void WhileStmt::execute(Interpreter *interp) {
   interp->pushWhileLoop(condition_, interp->getCurrentLine());
@@ -1377,12 +1401,22 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return parseRead(tokens, pos);
   case TokenType::RESTORE: {
     pos++; // Skip RESTORE
-    std::shared_ptr<Expression> target;
-    if (pos < tokens.size() && tokens[pos].type != TokenType::COLON &&
-        tokens[pos].type != TokenType::NEWLINE) {
-      target = parseExpression(tokens, pos);
+    // Check if it's ProDOS RESTORE (followed by string filename) or DATA RESTORE
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+      // ProDOS RESTORE pn
+      std::string filename = tokens[pos].value.getString();
+      pos++;
+      // TODO: Parse optional S# and D# parameters (slot and drive)
+      return std::make_shared<ProdosRestoreStmt>(filename);
+    } else {
+      // DATA RESTORE [line_number]
+      std::shared_ptr<Expression> target;
+      if (pos < tokens.size() && tokens[pos].type != TokenType::COLON &&
+          tokens[pos].type != TokenType::NEWLINE) {
+        target = parseExpression(tokens, pos);
+      }
+      return std::make_shared<RestoreStmt>(target);
     }
-    return std::make_shared<RestoreStmt>(target);
   }
   case TokenType::DEF:
     return parseDef(tokens, pos);
@@ -1625,12 +1659,22 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   }
   case TokenType::STORE: {
     pos++; // Skip STORE
-    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
-      throw std::runtime_error("SYNTAX ERROR: EXPECTED ARRAY NAME");
+    // Check if it's ProDOS STORE (followed by string filename) or array STORE
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+      // ProDOS STORE pn
+      std::string filename = tokens[pos].value.getString();
+      pos++;
+      // TODO: Parse optional S# and D# parameters (slot and drive)
+      return std::make_shared<ProdosStoreStmt>(filename);
+    } else {
+      // Array STORE arrayname
+      if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
+        throw std::runtime_error("SYNTAX ERROR: EXPECTED ARRAY NAME OR FILENAME");
+      }
+      std::string arrayName = tokens[pos].text;
+      pos++;
+      return std::make_shared<StoreStmt>(arrayName);
     }
-    std::string arrayName = tokens[pos].text;
-    pos++;
-    return std::make_shared<StoreStmt>(arrayName);
   }
   case TokenType::OPEN: {
     pos++; // Skip OPEN

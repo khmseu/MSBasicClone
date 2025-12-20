@@ -153,6 +153,10 @@ public:
   void storeArray(const std::string &arrayName);
   void recallArray(const std::string &arrayName);
 
+  // Variable persistence (ProDOS STORE/RESTORE)
+  void storeVariables(const std::string &filename);
+  void restoreVariables(const std::string &filename);
+
   // State reset
   void clearState();
 
