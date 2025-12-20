@@ -477,6 +477,8 @@ void Interpreter::catalog() {
 
 namespace {
 // Maximum number of array dimensions supported in array files
+// 255 is chosen to match typical BASIC array dimension limits while
+// being large enough for any practical use case
 constexpr size_t kMaxArrayDimensions = 255;
 
 // Helper function to sanitize array name for use as filename

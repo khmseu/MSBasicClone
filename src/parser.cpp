@@ -876,8 +876,9 @@ public:
 class TextStmt : public Statement {
 public:
   // TEXT switches to text mode (no graphics)
+  // In original Applesoft BASIC, TEXT would switch the display to text mode.
   // In this implementation, text mode is the default and graphics are
-  // offscreen-only, so TEXT is effectively a no-op that confirms text mode
+  // offscreen-only, so TEXT is effectively a no-op that confirms text mode.
   void execute(Interpreter *) override {}
 };
 
