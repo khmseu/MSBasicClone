@@ -136,6 +136,9 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"SCRN", TokenType::SCRN},
       {"RECALL", TokenType::RECALL},
       {"STORE", TokenType::STORE},
+      {"DELETE", TokenType::DELETE},
+      {"RENAME", TokenType::RENAME},
+      {"PREFIX", TokenType::PREFIX},
       {"USR", TokenType::USR}};
 
   std::string upper = word;
@@ -252,6 +255,9 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"SCRN", TokenType::SCRN},
       {"RECALL", TokenType::RECALL},
       {"STORE", TokenType::STORE},
+      {"DELETE", TokenType::DELETE},
+      {"RENAME", TokenType::RENAME},
+      {"PREFIX", TokenType::PREFIX},
       {"USR", TokenType::USR}};
 
   std::string upper = word;

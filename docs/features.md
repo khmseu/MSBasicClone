@@ -147,16 +147,16 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [ ] CHAIN pn [,@#] [,S#] [,D#] - run program keeping variables
 - [ ] CLOSE [pn] - close file(s)
 - [ ] CREATE pn [,Ttype] [,S#] [,D#] - create file/directory
-- [ ] DELETE pn [,S#] [,D#] - delete file
+- [x] DELETE pn [,S#] [,D#] - delete file
 - [ ] EXEC pn [,S#] [,D#] - execute text file commands
 - [ ] FLUSH [pn] - flush file buffers
 - [ ] LOCK pn [,S#] [,D#] - lock file
 - [ ] UNLOCK pn [,S#] [,D#] - unlock file
 - [ ] OPEN pn [,Llength] [,S#] [,D#] - open file
 - [ ] POSITION pn [,Rrecord#] [,Bbyte#] - position in file
-- [ ] PREFIX [pn] [,S#] [,D#] - set/show prefix
+- [x] PREFIX [pn] [,S#] [,D#] - set/show prefix
 - [ ] READ pn [,Rrecord#] [,Bbyte#] - prepare file for reading
-- [ ] RENAME pn1,pn2 [,S#] [,D#] - rename file
+- [x] RENAME pn1,pn2 [,S#] [,D#] - rename file
 - [ ] ProDOS RESTORE pn [,S#] [,D#] - load variables from file
 - [ ] ProDOS STORE pn [,S#] [,D#] - save variables to file
 - [ ] WRITE pn [,Rrecord#] - prepare file for writing

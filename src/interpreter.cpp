@@ -290,7 +290,7 @@ void Interpreter::executeImmediate(const std::string &line) {
       } catch (...) {
         std::cout << "?CAN'T CONTINUE\n";
       }
-    } else if (command.rfind("DEL", 0) == 0) {
+    } else if (command == "DEL") {
       // DEL start,end
       std::string argsTrim = args;
       auto commaPos = argsTrim.find(',');
@@ -317,6 +317,32 @@ void Interpreter::executeImmediate(const std::string &line) {
       saveProgram(filename);
     } else if (command == "CATALOG" || command == "CAT") {
       catalog();
+    } else if (command == "DELETE") {
+      if (!args.empty()) {
+        deleteFile(args);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "RENAME") {
+      // RENAME oldname,newname
+      if (!args.empty()) {
+        size_t commaPos = args.find(',');
+        if (commaPos != std::string::npos) {
+          std::string oldName = trim(args.substr(0, commaPos));
+          std::string newName = trim(args.substr(commaPos + 1));
+          renameFile(oldName, newName);
+        } else {
+          handleError("SYNTAX ERROR");
+        }
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "PREFIX") {
+      if (args.empty()) {
+        showPrefix();
+      } else {
+        changePrefix(args);
+      }
     } else {
       // Execute as immediate statement
       immediate_ = true;
@@ -473,6 +499,44 @@ void Interpreter::catalog() {
     }
   }
   std::cout << "\n";
+}
+
+void Interpreter::deleteFile(const std::string &filename) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  if (!::deleteFile(filename)) {
+    handleError("FILE NOT FOUND ERROR");
+  }
+}
+
+void Interpreter::renameFile(const std::string &oldName, const std::string &newName) {
+  if (oldName.empty() || newName.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  if (!::renameFile(oldName, newName)) {
+    handleError("I/O ERROR");
+  }
+}
+
+void Interpreter::showPrefix() {
+  std::string prefix = getCurrentPrefix();
+  std::cout << prefix << "\n";
+}
+
+void Interpreter::changePrefix(const std::string &path) {
+  if (path.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  if (!setPrefix(path)) {
+    handleError("PATH NOT FOUND ERROR");
+  }
 }
 
 namespace {
