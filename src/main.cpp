@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include "interactive.h"
 #include "graphics_config.h"
+#include "version.h"
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -11,6 +12,7 @@ void printUsage(const char* progName) {
               << "  --no-graphics    Terminal-only mode (errors on graphics commands)\n"
               << "  --graphics       Enable graphics mode (default)\n"
               << "  --scale N        Window scale factor (default: 2)\n"
+              << "  --version        Show version information\n"
               << "  --help           Show this help message\n";
 }
 
@@ -38,6 +40,9 @@ int main(int argc, char* argv[]) {
                 printUsage(argv[0]);
                 return 1;
             }
+        } else if (strcmp(argv[i], "--version") == 0) {
+            std::cout << "MSBasic " << msbasic::kVersion << "\n";
+            return 0;
         } else if (strcmp(argv[i], "--help") == 0) {
             printUsage(argv[0]);
             return 0;
