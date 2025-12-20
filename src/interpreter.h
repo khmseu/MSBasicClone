@@ -17,6 +17,8 @@ public:
   // Program management
   void loadProgram(const std::string &filename);
   void saveProgram(const std::string &filename);
+  void chainProgram(const std::string &filename);  // Load and run keeping variables
+  void dashProgram(const std::string &filename);   // Run program without clearing variables
   void newProgram();
   void listProgram(int startLine = -1, int endLine = -1);
   void addLine(LineNumber lineNum, const std::string &text);
@@ -114,6 +116,7 @@ public:
 
   // File system operations
   void catalog();
+  void execFile(const std::string &filename);  // Execute commands from text file
   
   // ProDOS commands
   void deleteFile(const std::string &filename);

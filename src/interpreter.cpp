@@ -315,6 +315,17 @@ void Interpreter::executeImmediate(const std::string &line) {
     } else if (command.rfind("SAVE", 0) == 0) {
       std::string filename = trim(code.substr(4));
       saveProgram(filename);
+    } else if (command.rfind("CHAIN", 0) == 0) {
+      std::string filename = trim(code.substr(5));
+      chainProgram(filename);
+    } else if (command == "-" || trimmed.substr(0, 1) == "-") {
+      // DASH command: - filename
+      std::string filename = trim(trimmed.substr(1));
+      if (!filename.empty()) {
+        dashProgram(filename);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
     } else if (command == "CATALOG" || command == "CAT") {
       catalog();
     } else if (command == "DELETE") {
@@ -342,6 +353,13 @@ void Interpreter::executeImmediate(const std::string &line) {
         showPrefix();
       } else {
         changePrefix(args);
+      }
+    } else if (command.rfind("EXEC", 0) == 0) {
+      std::string filename = trim(code.substr(4));
+      if (!filename.empty()) {
+        execFile(filename);
+      } else {
+        handleError("SYNTAX ERROR");
       }
     } else {
       // Execute as immediate statement
@@ -489,6 +507,68 @@ void Interpreter::saveProgram(const std::string &filename) {
   }
 }
 
+void Interpreter::chainProgram(const std::string &filename) {
+  try {
+    std::string content = readTextFile(filename);
+    
+    // Clear program but keep variables
+    program_.clear();
+    dataValues_.clear();
+    dataOffsets_.clear();
+    dataPointer_ = 0;
+
+    // Load new program
+    std::istringstream iss(content);
+    std::string line;
+    while (std::getline(iss, line)) {
+      if (!line.empty()) {
+        LineNumber lineNum;
+        std::string code;
+        parseLine(line, lineNum, code);
+        if (lineNum >= 0) {
+          addLine(lineNum, code);
+        }
+      }
+    }
+    
+    // Run the program
+    run();
+  } catch (const std::exception &e) {
+    std::cout << "?" << e.what() << "\n";
+  }
+}
+
+void Interpreter::dashProgram(const std::string &filename) {
+  try {
+    std::string content = readTextFile(filename);
+    
+    // Clear program but keep variables
+    program_.clear();
+    dataValues_.clear();
+    dataOffsets_.clear();
+    dataPointer_ = 0;
+
+    // Load new program
+    std::istringstream iss(content);
+    std::string line;
+    while (std::getline(iss, line)) {
+      if (!line.empty()) {
+        LineNumber lineNum;
+        std::string code;
+        parseLine(line, lineNum, code);
+        if (lineNum >= 0) {
+          addLine(lineNum, code);
+        }
+      }
+    }
+    
+    // Run the program
+    run();
+  } catch (const std::exception &e) {
+    std::cout << "?" << e.what() << "\n";
+  }
+}
+
 void Interpreter::catalog() {
   auto files = listFiles(".");
 
@@ -499,6 +579,31 @@ void Interpreter::catalog() {
     }
   }
   std::cout << "\n";
+}
+
+void Interpreter::execFile(const std::string &filename) {
+  try {
+    std::string content = readTextFile(filename);
+    
+    // Execute each line as an immediate command
+    std::istringstream iss(content);
+    std::string line;
+    while (std::getline(iss, line)) {
+      if (!line.empty()) {
+        // Skip comments and empty lines
+        auto trimmed = line;
+        auto isSpace = [](unsigned char ch) { return std::isspace(ch) != 0; };
+        trimmed.erase(trimmed.begin(), std::find_if(trimmed.begin(), trimmed.end(),
+                                      [&](char c) { return !isSpace(c); }));
+        
+        if (!trimmed.empty() && trimmed.substr(0, 3) != "REM") {
+          executeImmediate(line);
+        }
+      }
+    }
+  } catch (const std::exception &e) {
+    std::cout << "?" << e.what() << "\n";
+  }
 }
 
 void Interpreter::deleteFile(const std::string &filename) {

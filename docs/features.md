@@ -138,17 +138,17 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 ## ProDOS Commands
 
 ### File System Operations
-- [ ] - (DASH) pn [,S#] [,D#] - run program without clearing variables
+- [x] - (DASH) pn [,S#] [,D#] - run program without clearing variables
 - [ ] APPEND pn - prepare file for appending
 - [ ] BLOAD pn [,A#] [,S#] [,D#] - load binary file
 - [ ] BRUN pn [,A#] [,S#] [,D#] - load and run binary file
 - [ ] BSAVE pn,A#,L# [,S#] [,D#] - save binary file
 - [x] CAT [pn] [,S#] [,D#] - 40-column catalog
-- [ ] CHAIN pn [,@#] [,S#] [,D#] - run program keeping variables
+- [x] CHAIN pn [,@#] [,S#] [,D#] - run program keeping variables
 - [ ] CLOSE [pn] - close file(s)
 - [ ] CREATE pn [,Ttype] [,S#] [,D#] - create file/directory
 - [x] DELETE pn [,S#] [,D#] - delete file
-- [ ] EXEC pn [,S#] [,D#] - execute text file commands
+- [x] EXEC pn [,S#] [,D#] - execute text file commands
 - [ ] FLUSH [pn] - flush file buffers
 - [ ] LOCK pn [,S#] [,D#] - lock file
 - [ ] UNLOCK pn [,S#] [,D#] - unlock file
