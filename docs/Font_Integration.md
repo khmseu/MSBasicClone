@@ -15,10 +15,13 @@
 
 ### 1. Font File Storage
 The font file is **automatically downloaded** during the CMake build process:
-- Target location: `assets/fonts/PrintChar21.ttf` (TrueType format)
-- Charset map: `assets/fonts/apple2-charset.html`
-- The `cmake/FetchFont.cmake` module handles the download
-- Files are cached in CI to avoid repeated downloads
+- **Target location**: `assets/fonts/PrintChar21.ttf` (TrueType format, 7×8 pixels per character)
+- **Charset map**: `assets/fonts/apple2-charset.html` (developer reference)
+- **License**: `assets/fonts/FreeLicense.txt` (auto-downloaded from kreativekorp.com)
+- **Module**: The `cmake/FetchFont.cmake` module handles downloading
+- **Smart caching**: Files are cached in CI to avoid repeated downloads on every build
+- **Idempotent**: If files exist locally, they are never re-downloaded
+- **Graceful fallback**: If downloads fail (network issues, blocked URLs, etc.), the build continues without error using Raylib's default font
 
 ### 2. Font Loading in GraphicsRenderer
 - Load font file when Raylib is available
@@ -35,18 +38,26 @@ The font file is **automatically downloaded** during the CMake build process:
 - 80-column mode: Scale horizontally by 0.5x or use smaller font
 
 ## Current Implementation Status
-- [x] Add font auto-fetching to CMake build (via FetchFont.cmake module)
-- [x] Download charset map together with font file
-- [x] Add CI caching for downloaded fonts
-- [ ] Implement font loading in GraphicsRenderer::loadApple2Font()
-- [ ] Update drawChar() to use loaded font
-- [ ] Update drawText() to use loaded font
-- [ ] Add text mode scaling logic
-- [ ] Test rendering in 40-column mode
-- [ ] Test rendering in 80-column mode
+- [x] Add font auto-fetching to CMake build (via `cmake/FetchFont.cmake` module)
+- [x] Download charset map together with font file during configuration
+- [x] Download license file (`FreeLicense.txt`) automatically
+- [x] Add CI caching for downloaded fonts in GitHub Actions (`.github/workflows/build.yml`)
+- [x] Idempotent downloads (skip if files already present)
+- [x] Graceful error handling with helpful fallback messages
+- [x] Configurable URLs via CMake variables (`APPLE2_FONT_URL`, `APPLE2_CHARSET_URL`)
+- [ ] Implement font loading in `GraphicsRenderer::loadApple2Font()` (currently stubbed)
+- [ ] Update `drawChar()` to use loaded font instead of Raylib default
+- [ ] Update `drawText()` to use loaded font for text mode rendering
+- [ ] Add text mode scaling logic for 80-column mode (0.5x horizontal scaling)
+- [ ] Test rendering in 40-column mode (7×8 pixels per char)
+- [ ] Test rendering in 80-column mode (with horizontal compression)
 
 ## License Considerations
-The Ultimate Apple II Font is free to use. Need to verify license and attribution requirements from kreativekorp.com website.
+The Ultimate Apple II Font uses the **Free License** from kreativekorp.com:
+- **License File**: Automatically downloaded to `assets/fonts/FreeLicense.txt`
+- **URL**: https://www.kreativekorp.com/software/fonts/FreeLicense.txt
+- **Usage**: Free to use with appropriate attribution
+- **Attribution**: Please see the license file for specific requirements
 
 ## Alternative Approach
 If direct font integration is complex, consider:

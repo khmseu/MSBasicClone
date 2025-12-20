@@ -10,17 +10,30 @@ MSBasic automatically downloads the Ultimate Apple II Font and its charset map d
 
 ### Build-Time Download
 
-When you run `cmake` to configure the build, the `cmake/FetchFont.cmake` module:
+When you run `cmake` to configure the build, the `cmake/FetchFont.cmake` module automatically:
 
 1. **Checks for existing files**: If font files already exist in `assets/fonts/`, they are not re-downloaded
-2. **Downloads font**: Attempts to download `PrintChar21.ttf` from kreativekorp.com
-3. **Downloads charset map**: Attempts to download the Apple II charset map
-4. **Graceful fallback**: If downloads fail, the build continues with warnings, and Raylib's default font is used
+2. **Creates fonts directory**: Creates `assets/fonts/` if needed
+3. **Downloads font**: Attempts to download `PrintChar21.ttf` from kreativekorp.com
+4. **Downloads charset map**: Attempts to download the Apple II charset map from the same source
+5. **Graceful fallback**: If downloads fail, the build continues with warnings and Raylib's default font is used as fallback
+6. **Sets availability flag**: Sets `APPLE2_FONT_AVAILABLE` cache variable for other build components
 
 ### Files Downloaded
 
-- `assets/fonts/PrintChar21.ttf` - The Ultimate Apple II Font (TrueType format)
-- `assets/fonts/apple2-charset.html` - Apple II character set reference map
+- `assets/fonts/PrintChar21.ttf` - The Ultimate Apple II Font (TrueType format, 7×8 pixels per character)
+- `assets/fonts/apple2-charset.html` - Apple II character set reference map (developer documentation)
+
+### URLs Used
+
+- Font: `https://www.kreativekorp.com/swdownload/fonts/apple2/PrintChar21.ttf`
+- Charset Map: `https://www.kreativekorp.com/charset/map/apple2/`
+
+Both URLs can be overridden via CMake variables:
+```bash
+cmake -DAPPLE2_FONT_URL="https://alternative-source/font.ttf" \
+      -DAPPLE2_CHARSET_URL="https://alternative-source/map.html" ..
+```
 
 ## CI/CD Integration
 
@@ -39,9 +52,11 @@ The GitHub Actions workflow (`.github/workflows/build.yml`) includes caching for
 ```
 
 This cache:
-- Avoids repeated downloads in CI runs
-- Is invalidated only when `FetchFont.cmake` changes
-- Speeds up CI build times
+- **Avoids repeated downloads** in CI runs (important for frequent PRs and commits)
+- **Is invalidated only when** `FetchFont.cmake` changes (stable key)
+- **Restores from previous runs** via fallback key prefix `apple2-fonts-`
+- **Speeds up CI build times** significantly (font file is ~50KB, charset map is ~20KB)
+- **Works across workflow runs** without manual intervention
 
 ## Manual Installation
 
@@ -56,10 +71,13 @@ If automatic download fails (e.g., due to network restrictions or blocked domain
 ## Font Specifications
 
 - **Font Name**: The Ultimate Apple II Font (PrintChar21)
-- **Character Cell**: 7×8 pixels
+- **Character Cell**: 7×8 pixels per character
 - **Format**: TrueType (.ttf)
+- **Text Mode 40-column**: 280 pixels wide (40 chars × 7 pixels)
+- **Text Mode 80-column**: 560 pixels effective (80 chars × 7 pixels, scaled 0.5x to fit 280 pixels)
+- **Screen Height**: 192 pixels (24 rows × 8 pixels)
 - **Usage**: Text rendering in 40×24 and 80×24 modes
-- **License**: Created by kreativekorp.com - see their website for license terms
+- **License**: Free License (see `FreeLicense.txt` from kreativekorp.com)
 
 ## Troubleshooting
 
@@ -88,14 +106,27 @@ The font loading is currently a TODO in the codebase. The infrastructure is in p
 
 ### CMake Module
 
-The `cmake/FetchFont.cmake` module provides the `fetch_apple2_font()` function:
+The `cmake/FetchFont.cmake` module provides the `fetch_apple2_font()` function with the following features:
 
-- Uses CMake's `file(DOWNLOAD ...)` command
-- Sets 30-second timeout for downloads
-- Verifies TLS/SSL certificates
-- Cleans up partial downloads on failure
-- Sets `APPLE2_FONT_AVAILABLE` cache variable
-- Supports configurable URLs via `APPLE2_FONT_URL` and `APPLE2_CHARSET_URL` CMake variables
+- **Uses CMake's `file(DOWNLOAD ...)` command** for native, cross-platform download support (no external tools needed)
+- **30-second timeout per download** to prevent hanging on slow/blocked connections
+- **TLS/SSL certificate verification** enabled for security
+- **Smart cleanup** - removes partial downloads on failure to save space
+- **Idempotent** - skips re-downloading if files already exist (safe for repeated builds)
+- **Sets `APPLE2_FONT_AVAILABLE` cache variable** - other build components can check this
+- **Supports configurable URLs** via `APPLE2_FONT_URL` and `APPLE2_CHARSET_URL` CMake variables
+- **Helpful error messages** - guides users to manual installation and alternative sources
+
+### Invocation
+
+The module is automatically included and called during CMake configuration:
+
+```cmake
+# In CMakeLists.txt
+include(cmake/FetchFont.cmake)
+```
+
+The `fetch_apple2_font()` function is called automatically and doesn't require manual invocation.
 
 ### Configurable URLs
 
