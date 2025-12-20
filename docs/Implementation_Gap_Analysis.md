@@ -193,9 +193,9 @@ Graphics features are implemented:
 - ✅ GR, HGR, HGR2 mode support
 - ✅ All drawing commands functional
 - ✅ Raylib integration with FetchContent
-- ⚠️ Window rendering ready but needs font files
+- ✅ Font auto-fetching system implemented
 
-**Action Needed:** Add Ultimate Apple II Font files to `assets/fonts/` for text rendering.
+**Status:** Ultimate Apple II Font files are automatically downloaded during CMake configuration via the `cmake/FetchFont.cmake` module. See `docs/Font_Auto_Fetching.md` for details.
 
 ## Test Coverage Analysis
 
@@ -242,13 +242,14 @@ Improve ProDOS file operations:
 
 **Estimated Effort:** 8-16 hours
 
-### Priority 2: Add Graphics Fonts (Low Effort)
+### Priority 2: Complete Graphics Font Integration (Low Effort)
 
 Complete the graphics text rendering:
-1. Download Ultimate Apple II Font
-2. Place in `assets/fonts/` directory
-3. Test text rendering in graphics modes
-4. Verify 40-column and 80-column display
+1. ✅ Font auto-fetching implemented (automatic download during build)
+2. ✅ Font files cached in CI to avoid repeated downloads
+3. Implement actual font loading in `GraphicsRenderer::loadApple2Font()` (currently stubbed)
+4. Test text rendering in graphics modes with loaded font
+5. Verify 40-column and 80-column display
 
 **Estimated Effort:** 2-4 hours
 
