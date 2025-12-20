@@ -55,7 +55,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - HTAB/VTAB (cursor positioning)
   - INVERSE/NORMAL/FLASH (text attributes)
   - TAB(), SPC(), POS() functions
-- **Graphics Commands** (offscreen buffer, no rendering yet):
+- **Graphics Commands**:
   - GR, HIRES, HGR, HGR2 (mode switching)
   - COLOR=, HCOLOR= (color selection)
   - PLOT, HPLOT (plotting points)
@@ -64,8 +64,13 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - MOVE, ROTATE, SCALE (shape transformations)
   - SHLOAD (shape table loading)
   - SCRN() function (read pixel color)
+  - Window rendering with Raylib (when available and display present)
+  - Graceful fallback to off-screen buffer when no display
 - **Debugging**: TRACE/NOTRACE (line number display), SPEED (execution delay)
-- **ProDOS Support**: PR#n, IN#n (I/O redirection stubs)
+- **ProDOS Support**: 
+  - PR#n, IN#n (I/O redirection)
+  - PR#0 (40-column text mode)
+  - PR#3 (80-column text mode)
 - **40-bit Floating Point**: Emulated Applesoft floating-point precision
 - **Cross-Platform**: Compiles on Linux, macOS, and Windows
 
@@ -76,6 +81,8 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
 - CMake 3.20 or later
 - GCC 13 or Clang 18 (or compatible)
 - C++20 support
+- Raylib 5.0+ (optional, for graphics rendering)
+- X11 development libraries (optional, for graphics on Linux)
 
 ### Build Instructions
 
@@ -85,6 +92,31 @@ cd build
 cmake ..
 make
 ```
+
+#### Installing Raylib (Optional)
+
+For graphics rendering support, install Raylib 5.0 or later:
+
+**Ubuntu/Debian:**
+```bash
+# Install dependencies
+sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
+
+# Clone and build Raylib
+git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib.git
+cd raylib
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF
+cd build
+make
+sudo make install
+```
+
+**macOS:**
+```bash
+brew install raylib
+```
+
+The build system will automatically detect Raylib and enable graphics rendering if it's available. Without Raylib, graphics commands will use off-screen buffers only.
 
 ### Building with Clang
 
@@ -136,6 +168,34 @@ Run a BASIC program from a file:
 ```bash
 ./msbasic program.bas
 ```
+
+### Graphics Mode Options
+
+The interpreter supports two modes for graphics handling:
+
+```bash
+# Run with graphics rendering enabled (default)
+./msbasic --graphics program.bas
+
+# Run in no-graphics mode (graphics commands will error)
+./msbasic --no-graphics program.bas
+
+# Set window scale factor (1-10, default is 2)
+./msbasic --scale 3 program.bas
+```
+
+**Graphics Mode** (default): When graphics are enabled, the interpreter will attempt to open a window for rendering graphics commands (GR, HGR, HPLOT, etc.). If no display is available (e.g., in a headless environment), graphics will fall back to off-screen buffer mode only.
+
+**No-Graphics Mode**: All graphics commands (GR, HGR, PLOT, HPLOT, etc.) will raise a "GRAPHICS NOT ENABLED ERROR" when executed. This is useful for running programs in terminal-only environments or for testing.
+
+### Text Mode Commands
+
+The interpreter supports 40-column and 80-column text modes via the PR# command:
+
+- `PR#0` - Switch to 40-column text mode (default)
+- `PR#3` - Switch to 80-column text mode
+
+These commands are compatible with Applesoft BASIC conventions for peripheral slot I/O redirection.
 
 ## Example Programs
 
@@ -192,9 +252,10 @@ File system commands are implemented with modern cross-platform file I/O:
 
 ## Development Status
 
-This is a working interpreter with comprehensive Applesoft BASIC features implemented. The following areas are still in development or stubbed:
+This is a working interpreter with comprehensive Applesoft BASIC features implemented. The following areas are still in development:
 
-- **Graphics Rendering**: Graphics commands (GR, HIRES, PLOT, HPLOT, DRAW, XDRAW, etc.) maintain internal state and offscreen buffers but do not render to screen yet
+- **Graphics Rendering**: Graphics commands are implemented with Raylib support for window rendering. When Raylib is not available or no display is present, graphics fall back to off-screen buffer mode.
+- **Font Rendering**: The Ultimate Apple II Font integration is planned for future releases for authentic text rendering in graphics mode.
 - **Sound Commands**: BELL is implemented; other sound/audio commands not yet supported
 - **Hardware-Specific Features**: Some Apple II-specific hardware commands are stubbed (PDL returns 0, USR returns 0, etc.)
 

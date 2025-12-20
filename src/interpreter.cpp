@@ -1592,6 +1592,22 @@ void Interpreter::setOutputDevice(int slot) {
   if (slot < 0)
     slot = 0;
   outputDevice_ = slot;
+  
+  // Handle special device slots for text mode switching
+  if (slot == 0) {
+    // PR#0 - switch back to 40-column mode
+    setTextMode(TextMode::Text40);
+  } else if (slot == 3) {
+    // PR#3 - switch to 80-column mode
+    setTextMode(TextMode::Text80);
+  }
+  // Other slots are currently no-ops but we store them for compatibility
+}
+
+void Interpreter::setTextMode(TextMode mode) {
+  graphicsConfig_.textMode = mode;
+  // In the future, this would update the graphics renderer's text display mode
+  // For now, we just store the mode for PEEK/POKE compatibility
 }
 
 void Interpreter::setInputDevice(int slot) {

@@ -86,6 +86,10 @@ public:
   
   // Graphics mode checking
   void requireGraphicsMode() const;
+  
+  // Text mode switching (PR#3 for 80-col, PR#0 for 40-col)
+  void setTextMode(TextMode mode);
+  TextMode getTextMode() const { return graphicsConfig_.textMode; }
 
   // Mode helpers
   bool isImmediateMode() const { return immediate_; }
