@@ -116,3 +116,7 @@ Research/.venv/
 
 .fake
 .cache/
+
+# CodeQL artifacts
+_codeql_*/
+
