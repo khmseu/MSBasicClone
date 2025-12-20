@@ -1111,6 +1111,30 @@ private:
   std::shared_ptr<Expression> addr_;
 };
 
+class RecallStmt : public Statement {
+public:
+  explicit RecallStmt(const std::string &arrayName)
+      : arrayName_(arrayName) {}
+  void execute(Interpreter *interp) override {
+    interp->recallArray(arrayName_);
+  }
+
+private:
+  std::string arrayName_;
+};
+
+class StoreStmt : public Statement {
+public:
+  explicit StoreStmt(const std::string &arrayName)
+      : arrayName_(arrayName) {}
+  void execute(Interpreter *interp) override {
+    interp->storeArray(arrayName_);
+  }
+
+private:
+  std::string arrayName_;
+};
+
 // Statement implementations for WHILE/WEND/POP
 void WhileStmt::execute(Interpreter *interp) {
   interp->pushWhileLoop(condition_, interp->getCurrentLine());
@@ -1447,6 +1471,24 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     return parseHimem(tokens, pos);
   case TokenType::LOMEM:
     return parseLomem(tokens, pos);
+  case TokenType::RECALL: {
+    pos++; // Skip RECALL
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED ARRAY NAME");
+    }
+    std::string arrayName = tokens[pos].text;
+    pos++;
+    return std::make_shared<RecallStmt>(arrayName);
+  }
+  case TokenType::STORE: {
+    pos++; // Skip STORE
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED ARRAY NAME");
+    }
+    std::string arrayName = tokens[pos].text;
+    pos++;
+    return std::make_shared<StoreStmt>(arrayName);
+  }
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);
   default:

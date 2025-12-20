@@ -53,6 +53,8 @@ enum class TokenType {
   LOAD,
   SAVE,
   CATALOG,
+  CONT,
+  DEL,
   DEF,
   FN,
   ONERR,
@@ -94,6 +96,8 @@ enum class TokenType {
   LOMEM,
   SCRN,
   USR,
+  RECALL,
+  STORE,
 
   // Graphics primitives
   PLOT,

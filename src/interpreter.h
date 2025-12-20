@@ -115,6 +115,10 @@ public:
   // File system operations
   void catalog();
 
+  // Array persistence
+  void storeArray(const std::string &arrayName);
+  void recallArray(const std::string &arrayName);
+
   // State reset
   void clearState();
 
