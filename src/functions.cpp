@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include <cmath>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #ifdef _WIN32
 #include <windows.h>
@@ -23,6 +24,14 @@ static int gHimem = 49152; // $C000
 } // namespace
 
 void pokeMemory(int addr, int val) {
+  // Special addresses that bypass range checks
+  if (addr == 37 || addr == 105 || addr == 106 || 
+      addr == 115 || addr == 116 || addr == 216 || 
+      addr == 218 || addr == 219 || addr == 222) {
+    memoryMap()[addr] = val & 0xFF;
+    return;
+  }
+  
   if (addr < gLomem || addr > gHimem) {
     throw std::runtime_error("MEMORY RANGE ERROR");
   }
@@ -30,6 +39,18 @@ void pokeMemory(int addr, int val) {
 }
 
 int peekMemory(int addr) {
+  // Special addresses that bypass range checks
+  if (addr == 37 || addr == 105 || addr == 106 || 
+      addr == 115 || addr == 116 || addr == 216 || 
+      addr == 218 || addr == 219 || addr == 222) {
+    auto &mem = memoryMap();
+    auto it = mem.find(addr);
+    if (it == mem.end()) {
+      return 0;
+    }
+    return it->second & 0xFF;
+  }
+  
   if (addr < gLomem || addr > gHimem) {
     throw std::runtime_error("MEMORY RANGE ERROR");
   }
@@ -251,7 +272,8 @@ Value funcPdl(const Value &) {
 
 Value funcPeek(const Value &arg) {
   int addr = static_cast<int>(arg.getNumber());
-  return Value(static_cast<double>(peekMemory(addr)));
+  int result = peekMemory(addr);
+  return Value(static_cast<double>(result));
 }
 Value funcScrn(const Value &x, const Value &y) {
   double dx = x.getNumber();

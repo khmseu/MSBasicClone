@@ -17,6 +17,8 @@ public:
   // Program management
   void loadProgram(const std::string &filename);
   void saveProgram(const std::string &filename);
+  void chainProgram(const std::string &filename);  // Load and run keeping variables
+  void dashProgram(const std::string &filename);   // Run program without clearing variables
   void newProgram();
   void listProgram(int startLine = -1, int endLine = -1);
   void addLine(LineNumber lineNum, const std::string &text);
@@ -101,10 +103,16 @@ public:
     himem_ = val;
     // Keep memory helpers in sync
     setMemoryBounds(lomem_, himem_);
+    // Update memory locations 115-116 (HIMEM pointer)
+    pokeMemory(115, himem_ & 0xFF);
+    pokeMemory(116, (himem_ >> 8) & 0xFF);
   }
   void setLomem(int val) {
     lomem_ = val;
     setMemoryBounds(lomem_, himem_);
+    // Update memory locations 105-106 (LOMEM pointer)
+    pokeMemory(105, lomem_ & 0xFF);
+    pokeMemory(106, (lomem_ >> 8) & 0xFF);
   }
   int getHimem() const { return himem_; }
   int getLomem() const { return lomem_; }
@@ -114,6 +122,7 @@ public:
 
   // File system operations
   void catalog();
+  void execFile(const std::string &filename);  // Execute commands from text file
   
   // ProDOS commands
   void deleteFile(const std::string &filename);

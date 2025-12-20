@@ -540,6 +540,14 @@ public:
       return funcScrn(argValues[0], argValues[1]);
     case TokenType::USR:
       return funcUsr(argValues[0]);
+    case TokenType::PEEK:
+      return funcPeek(argValues[0]);
+    case TokenType::FRE:
+      return funcFre(argValues[0]);
+    case TokenType::PDL:
+      return funcPdl(argValues[0]);
+    case TokenType::POS:
+      return funcPos(argValues[0]);
     default:
       return Value(0.0);
     }
