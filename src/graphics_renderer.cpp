@@ -180,8 +180,8 @@ void GraphicsRenderer::loadApple2Font() {
         nullptr
     };
     
-    bool fontLoaded = false;
-    for (int i = 0; fontPaths[i] != nullptr && !fontLoaded; i++) {
+    bool fontFound = false;
+    for (int i = 0; fontPaths[i] != nullptr; i++) {
         // Check if file exists - using access() for safer checking
 #ifdef _WIN32
         if (_access(fontPaths[i], 0) == 0) {
@@ -190,14 +190,15 @@ void GraphicsRenderer::loadApple2Font() {
 #endif
             // TODO: Implement actual font loading
             // font_ = LoadFontEx(fontPaths[i], 8, nullptr, 0);
-            // fontLoaded = IsReady(font_);
+            // fontFound = IsReady(font_);
             std::cout << "Found Apple II font at: " << fontPaths[i] << "\n";
             std::cout << "Note: Font loading not yet implemented - using default font\n";
+            fontFound = true;
             break;
         }
     }
     
-    if (!fontLoaded) {
+    if (!fontFound) {
         std::cout << "Ultimate Apple II Font not found - using Raylib default font\n";
         std::cout << "Download from: https://www.kreativekorp.com/software/fonts/apple2/\n";
         std::cout << "Place in: assets/fonts/PrintChar21.ttf\n";
