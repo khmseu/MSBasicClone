@@ -10,9 +10,6 @@
 
 GraphicsRenderer::GraphicsRenderer(const GraphicsConfig& config)
     : config_(config), initialized_(false), windowWidth_(0), windowHeight_(0)
-#ifdef HAVE_RAYLIB
-    , font_(nullptr)
-#endif
 {
 }
 
@@ -76,11 +73,8 @@ bool GraphicsRenderer::initialize() {
 void GraphicsRenderer::shutdown() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
-        if (font_ != nullptr) {
-            UnloadFont(*font_);
-            delete font_;
-            font_ = nullptr;
-        }
+        // Font loading not yet implemented, so no cleanup needed
+        // TODO: When font is loaded, call UnloadFont() here
         CloseWindow();
         initialized_ = false;
     }
@@ -173,14 +167,8 @@ void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
 void GraphicsRenderer::loadApple2Font() {
 #ifdef HAVE_RAYLIB
     // TODO: Load the Ultimate Apple II Font
-    // For now, we'll use Raylib's default font
-    // The font should be downloaded from:
-    // https://www.kreativekorp.com/software/fonts/apple2/
-    
-    // Placeholder implementation
-    font_ = nullptr;
-    
-    std::cout << "Note: Using default font. TODO: Integrate Ultimate Apple II Font\n";
+    // Download from: https://www.kreativekorp.com/software/fonts/apple2/
+    // For now, Raylib's default font will be used
 #endif
 }
 
