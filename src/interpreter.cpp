@@ -47,6 +47,16 @@ Interpreter::Interpreter()
 #else
   vtEnabled_ = true;
 #endif
+
+  // Initialize special memory locations
+  // LOMEM pointer (locations 105-106)
+  pokeMemory(105, lomem_ & 0xFF);
+  pokeMemory(106, (lomem_ >> 8) & 0xFF);
+  // HIMEM pointer (locations 115-116)
+  pokeMemory(115, himem_ & 0xFF);
+  pokeMemory(116, (himem_ >> 8) & 0xFF);
+  // Cursor vertical position (location 37)
+  pokeMemory(37, outputRow_);
 }
 
 void Interpreter::parseLine(const std::string &line, LineNumber &lineNum,
@@ -197,6 +207,15 @@ void Interpreter::runFrom(LineNumber lineNum) {
     if (errorHandlerLine_ >= 0) {
       errorLine_ = currentLine_;
       lastError_ = e.what();
+      
+      // Store error information in memory locations for PEEK
+      // Location 218: error line number (low byte)
+      // Location 219: error line number (high byte)
+      // Location 222: error code (simplified - using 16 for all syntax errors)
+      pokeMemory(218, errorLine_ & 0xFF);
+      pokeMemory(219, (errorLine_ >> 8) & 0xFF);
+      pokeMemory(222, 16);  // Generic error code
+      
       gotoLine(errorHandlerLine_);
     } else {
       std::cout << "?" << e.what() << " IN LINE " << currentLine_ << "\n";
@@ -839,6 +858,8 @@ void Interpreter::vtab(int row1) {
   while (outputRow_ < targetRow) {
     printNewline();
   }
+  // Update memory location 37 (cursor vertical position)
+  pokeMemory(37, outputRow_);
 }
 
 void Interpreter::setInverse(bool on) {
@@ -903,6 +924,8 @@ void Interpreter::printNewline() {
   std::cout << "\n";
   outputColumn_ = 0;
   outputRow_++;
+  // Update memory location 37 (cursor vertical position)
+  pokeMemory(37, outputRow_);
 }
 
 void Interpreter::printToNextZone() {

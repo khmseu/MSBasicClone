@@ -261,7 +261,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] PEEK(222) - error code
 
 ### Display Control
-- [ ] PEEK(37) - cursor vertical position (0-23)
+- [x] PEEK(37) - cursor vertical position (0-23)
 - [ ] POKE 32 - text window left edge
 - [ ] POKE 33 - text window width
 - [ ] POKE 34 - text window top (0-23)

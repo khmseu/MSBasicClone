@@ -103,10 +103,16 @@ public:
     himem_ = val;
     // Keep memory helpers in sync
     setMemoryBounds(lomem_, himem_);
+    // Update memory locations 115-116 (HIMEM pointer)
+    pokeMemory(115, himem_ & 0xFF);
+    pokeMemory(116, (himem_ >> 8) & 0xFF);
   }
   void setLomem(int val) {
     lomem_ = val;
     setMemoryBounds(lomem_, himem_);
+    // Update memory locations 105-106 (LOMEM pointer)
+    pokeMemory(105, lomem_ & 0xFF);
+    pokeMemory(106, (lomem_ >> 8) & 0xFF);
   }
   int getHimem() const { return himem_; }
   int getLomem() const { return lomem_; }
