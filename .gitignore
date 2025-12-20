@@ -80,6 +80,8 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 *.cmake
+# But allow cmake module files
+!cmake/*.cmake
 
 # Compiled binaries
 msbasic
@@ -132,3 +134,7 @@ binfile.dat
 testfile.txt
 locktest.txt
 newfile.txt
+
+# Auto-downloaded assets
+assets/fonts/PrintChar21.ttf
+assets/fonts/apple2-charset.html
