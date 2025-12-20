@@ -139,6 +139,17 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"DELETE", TokenType::DELETE},
       {"RENAME", TokenType::RENAME},
       {"PREFIX", TokenType::PREFIX},
+      {"OPEN", TokenType::OPEN},
+      {"CLOSE", TokenType::CLOSE},
+      {"APPEND", TokenType::APPEND},
+      {"BLOAD", TokenType::BLOAD},
+      {"BRUN", TokenType::BRUN},
+      {"BSAVE", TokenType::BSAVE},
+      {"CREATE", TokenType::CREATE},
+      {"FLUSH", TokenType::FLUSH},
+      {"LOCK", TokenType::LOCK},
+      {"UNLOCK", TokenType::UNLOCK},
+      {"POSITION", TokenType::POSITION},
       {"USR", TokenType::USR}};
 
   std::string upper = word;
@@ -258,6 +269,17 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"DELETE", TokenType::DELETE},
       {"RENAME", TokenType::RENAME},
       {"PREFIX", TokenType::PREFIX},
+      {"OPEN", TokenType::OPEN},
+      {"CLOSE", TokenType::CLOSE},
+      {"APPEND", TokenType::APPEND},
+      {"BLOAD", TokenType::BLOAD},
+      {"BRUN", TokenType::BRUN},
+      {"BSAVE", TokenType::BSAVE},
+      {"CREATE", TokenType::CREATE},
+      {"FLUSH", TokenType::FLUSH},
+      {"LOCK", TokenType::LOCK},
+      {"UNLOCK", TokenType::UNLOCK},
+      {"POSITION", TokenType::POSITION},
       {"USR", TokenType::USR}};
 
   std::string upper = word;

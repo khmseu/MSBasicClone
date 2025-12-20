@@ -373,6 +373,175 @@ void Interpreter::executeImmediate(const std::string &line) {
       } else {
         changePrefix(args);
       }
+    } else if (command == "OPEN") {
+      if (!args.empty()) {
+        openFile(args, "");
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "CLOSE") {
+      if (args.empty()) {
+        closeAllFiles();
+      } else {
+        closeFile(args);
+      }
+    } else if (command == "APPEND") {
+      if (!args.empty()) {
+        appendFile(args);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "FLUSH") {
+      if (args.empty()) {
+        handleError("SYNTAX ERROR");
+      } else {
+        flushFile(args);
+      }
+    } else if (command == "POSITION") {
+      if (!args.empty()) {
+        // Parse POSITION filename,Rrecord,Bbyte
+        size_t commaPos = args.find(',');
+        if (commaPos != std::string::npos) {
+          std::string filename = trim(args.substr(0, commaPos));
+          std::string rest = args.substr(commaPos + 1);
+          int record = 0, byte = 0;
+          // Parse R# and B# options
+          size_t rPos = rest.find('R');
+          size_t bPos = rest.find('B');
+          if (rPos != std::string::npos) {
+            record = std::stoi(rest.substr(rPos + 1));
+          }
+          if (bPos != std::string::npos) {
+            byte = std::stoi(rest.substr(bPos + 1));
+          }
+          positionFile(filename, record, byte);
+        } else {
+          handleError("SYNTAX ERROR");
+        }
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "LOCK") {
+      if (!args.empty()) {
+        lockFile(args);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "UNLOCK") {
+      if (!args.empty()) {
+        unlockFile(args);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command == "CREATE") {
+      if (!args.empty()) {
+        createFile(args, "");
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command.rfind("BLOAD", 0) == 0) {
+      std::string rest = trim(code.substr(5));  // Skip "BLOAD"
+      if (!rest.empty()) {
+        // Parse BLOAD filename[,A#]
+        size_t commaPos = rest.find(',');
+        std::string filename = (commaPos != std::string::npos) ? 
+          trim(rest.substr(0, commaPos)) : trim(rest);
+        
+        // Remove quotes if present
+        if (!filename.empty() && filename.front() == '"' && filename.back() == '"') {
+          filename = filename.substr(1, filename.length() - 2);
+        }
+        
+        int address = -1;
+        if (commaPos != std::string::npos) {
+          std::string addrStr = trim(rest.substr(commaPos + 1));
+          size_t aPos = addrStr.find('A');
+          if (aPos != std::string::npos) {
+            address = std::stoi(addrStr.substr(aPos + 1));
+          } else {
+            address = std::stoi(addrStr);
+          }
+        }
+        bloadFile(filename, address);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command.rfind("BSAVE", 0) == 0) {
+      std::string rest = trim(code.substr(5));  // Skip "BSAVE"
+      if (!rest.empty()) {
+        // Parse BSAVE filename,A#,L#
+        size_t firstComma = rest.find(',');
+        if (firstComma != std::string::npos) {
+          std::string filename = trim(rest.substr(0, firstComma));
+          // Remove quotes if present
+          if (!filename.empty() && filename.front() == '"' && filename.back() == '"') {
+            filename = filename.substr(1, filename.length() - 2);
+          }
+          
+          std::string remaining = rest.substr(firstComma + 1);
+          int address = 0, length = 0;
+          
+          // Parse A# parameter
+          size_t secondComma = remaining.find(',');
+          if (secondComma != std::string::npos) {
+            std::string addrStr = trim(remaining.substr(0, secondComma));
+            std::string lenStr = trim(remaining.substr(secondComma + 1));
+            
+            // Parse A value
+            size_t aPos = addrStr.find('A');
+            if (aPos != std::string::npos) {
+              address = std::stoi(addrStr.substr(aPos + 1));
+            } else {
+              address = std::stoi(addrStr);
+            }
+            
+            // Parse L value
+            size_t lPos = lenStr.find('L');
+            if (lPos != std::string::npos) {
+              length = std::stoi(lenStr.substr(lPos + 1));
+            } else {
+              length = std::stoi(lenStr);
+            }
+          }
+          
+          if (length > 0) {
+            bsaveFile(filename, address, length);
+          } else {
+            handleError("SYNTAX ERROR");
+          }
+        } else {
+          handleError("SYNTAX ERROR");
+        }
+      } else {
+        handleError("SYNTAX ERROR");
+      }
+    } else if (command.rfind("BRUN", 0) == 0) {
+      std::string rest = trim(code.substr(4));  // Skip "BRUN"
+      if (!rest.empty()) {
+        // Parse BRUN filename[,A#]
+        size_t commaPos = rest.find(',');
+        std::string filename = (commaPos != std::string::npos) ? 
+          trim(rest.substr(0, commaPos)) : trim(rest);
+        
+        // Remove quotes if present
+        if (!filename.empty() && filename.front() == '"' && filename.back() == '"') {
+          filename = filename.substr(1, filename.length() - 2);
+        }
+        
+        int address = -1;
+        if (commaPos != std::string::npos) {
+          std::string addrStr = trim(rest.substr(commaPos + 1));
+          size_t aPos = addrStr.find('A');
+          if (aPos != std::string::npos) {
+            address = std::stoi(addrStr.substr(aPos + 1));
+          } else {
+            address = std::stoi(addrStr);
+          }
+        }
+        brunFile(filename, address);
+      } else {
+        handleError("SYNTAX ERROR");
+      }
     } else if (command.rfind("EXEC", 0) == 0) {
       std::string filename = trim(code.substr(4));
       if (!filename.empty()) {
@@ -660,6 +829,152 @@ void Interpreter::changePrefix(const std::string &path) {
   
   if (!setPrefix(path)) {
     handleError("PATH NOT FOUND ERROR");
+  }
+}
+
+void Interpreter::openFile(const std::string &filename, const std::string &options) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    FileAccessMode mode = FileAccessMode::READ;
+    // Parse options for mode
+    if (options.find("W") != std::string::npos || options.find("WRITE") != std::string::npos) {
+      mode = FileAccessMode::WRITE;
+    } else if (options.find("A") != std::string::npos || options.find("APPEND") != std::string::npos) {
+      mode = FileAccessMode::APPEND;
+    }
+    FileManager::getInstance().openFile(filename, mode);
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::closeFile(const std::string &filename) {
+  try {
+    FileManager::getInstance().closeFile(filename);
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::closeAllFiles() {
+  FileManager::getInstance().closeAllFiles();
+}
+
+void Interpreter::appendFile(const std::string &filename) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    FileManager::getInstance().openFile(filename, FileAccessMode::APPEND);
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::flushFile(const std::string &filename) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    FileManager::getInstance().flushFile(filename);
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::positionFile(const std::string &filename, int record, int byte) {
+  // For now, position is interpreted as byte offset
+  // Record numbers are not yet implemented in full ProDOS style
+  try {
+    auto& fm = FileManager::getInstance();
+    // Get handle by filename (this is a simplification)
+    // In real ProDOS, you'd use the handle directly
+    size_t position = static_cast<size_t>(record * 512 + byte);  // Assume 512-byte records
+    handleError("POSITION not fully implemented - use sequential I/O");
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::lockFile(const std::string &filename) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  if (!FileManager::getInstance().lockFile(filename)) {
+    handleError("I/O ERROR");
+  }
+}
+
+void Interpreter::unlockFile(const std::string &filename) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  if (!FileManager::getInstance().unlockFile(filename)) {
+    handleError("I/O ERROR");
+  }
+}
+
+void Interpreter::createFile(const std::string &filename, const std::string &options) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  if (!FileManager::getInstance().createFile(filename)) {
+    handleError("I/O ERROR");
+  }
+}
+
+void Interpreter::bloadFile(const std::string &filename, int address) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    std::vector<uint8_t> data = FileManager::getInstance().loadBinaryFile(filename, address);
+    // Binary data is loaded but not used for anything specific yet
+    // In a full Apple II emulator, this would load into memory at the specified address
+    std::cout << "BINARY FILE LOADED: " << data.size() << " BYTES\n";
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::bsaveFile(const std::string &filename, int address, int length) {
+  if (filename.empty() || length <= 0) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    // Create dummy data for now (in full implementation, would read from memory)
+    std::vector<uint8_t> data(length, 0);
+    FileManager::getInstance().saveBinaryFile(filename, data, address, length);
+    std::cout << "BINARY FILE SAVED: " << length << " BYTES\n";
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::brunFile(const std::string &filename, int address) {
+  // BRUN = BLOAD + CALL
+  bloadFile(filename, address);
+  if (address >= 0) {
+    // Would execute machine code at address in full implementation
+    std::cout << "CALL " << address << " (NOT IMPLEMENTED)\n";
   }
 }
 

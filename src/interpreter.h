@@ -129,6 +129,22 @@ public:
   void renameFile(const std::string &oldName, const std::string &newName);
   void showPrefix();
   void changePrefix(const std::string &path);
+  
+  // ProDOS file I/O commands
+  void openFile(const std::string &filename, const std::string &options);
+  void closeFile(const std::string &filename);
+  void closeAllFiles();
+  void appendFile(const std::string &filename);
+  void flushFile(const std::string &filename);
+  void positionFile(const std::string &filename, int record, int byte);
+  void lockFile(const std::string &filename);
+  void unlockFile(const std::string &filename);
+  void createFile(const std::string &filename, const std::string &options);
+  
+  // Binary file operations
+  void bloadFile(const std::string &filename, int address);
+  void bsaveFile(const std::string &filename, int address, int length);
+  void brunFile(const std::string &filename, int address);
 
   // Array persistence
   void storeArray(const std::string &arrayName);
