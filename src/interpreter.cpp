@@ -801,7 +801,7 @@ void Interpreter::deleteFile(const std::string &filename) {
   }
   
   if (!::deleteFile(filename)) {
-    handleError("FILE NOT FOUND ERROR");
+    handleError("PATH NOT FOUND ERROR");
   }
 }
 
@@ -1118,7 +1118,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
 
   std::ifstream file(filename);
   if (!file) {
-    throw std::runtime_error("FILE NOT FOUND ERROR");
+    throw std::runtime_error("PATH NOT FOUND ERROR");
   }
 
   try {
@@ -1241,7 +1241,7 @@ void Interpreter::storeVariables(const std::string &filename) {
 void Interpreter::restoreVariables(const std::string &filename) {
   std::ifstream file(filename);
   if (!file) {
-    throw std::runtime_error("FILE NOT FOUND ERROR");
+    throw std::runtime_error("PATH NOT FOUND ERROR");
   }
 
   try {
@@ -1490,6 +1490,12 @@ void Interpreter::setErrorHandler(LineNumber lineNum) {
 }
 
 void Interpreter::handleError(const std::string &message) {
+  throw std::runtime_error(message);
+}
+
+void Interpreter::handleError(const std::string &message, int errorCode) {
+  // Store error code in memory location 222 for ProDOS compatibility
+  pokeMemory(222, errorCode);
   throw std::runtime_error(message);
 }
 
