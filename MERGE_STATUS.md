@@ -7,6 +7,7 @@
 ## ✅ Merge Completion Status
 
 ### Merge Operation
+
 - **Status**: ✅ **COMPLETE** (no conflicts)
 - **Incoming Commits**: 8 commits from origin/main
 - **Local Commits**: 2 commits added (workflow and formatting)
@@ -16,6 +17,7 @@
 ### Key Features Merged
 
 #### 1. Graphics Implementation (PR #12)
+
 - **Status**: ✅ Merged
 - **Components**:
   - Raylib 5.0 integration with automatic FetchContent build
@@ -25,6 +27,7 @@
   - Example programs: `examples/graphics_modes.bas`, `examples/text_modes.bas`
 
 #### 2. Font Integration (PR #13)
+
 - **Status**: ✅ Merged
 - **Components**:
   - Font loading infrastructure with safe file checking
@@ -34,6 +37,7 @@
   - Moved to `assets/fonts/` directory structure
 
 #### 3. CMakeLists.txt FetchContent
+
 - **Status**: ✅ Merged
 - **Components**:
   - Automatic raylib 5.0 download and build
@@ -43,6 +47,7 @@
   - Optional `AUTO_BUILD_RAYLIB=OFF` flag
 
 #### 4. CI/CD Infrastructure
+
 - **Status**: ✅ Merged
 - **Components**:
   - `.github/workflows/build.yml` with X11/GL dependencies
@@ -51,6 +56,7 @@
   - Build and test automation
 
 #### 5. Documentation
+
 - **Status**: ✅ Merged
 - **Files Added/Updated**:
   - `README.md` - Graphics mode usage and command-line options
@@ -60,6 +66,7 @@
   - `assets/fonts/README.md` - Font directory structure
 
 #### 6. Test Coverage
+
 - **Status**: ✅ Merged
 - **Test Files**:
   - `tests/test_no_graphics.bas` - Verifies no-graphics mode error handling
@@ -71,6 +78,7 @@
 ## 📋 Files Modified in Merge
 
 ### Core Implementation Files
+
 | File | Status | Purpose |
 |------|--------|---------|
 | `CMakeLists.txt` | ✅ Merged | FetchContent raylib, X11 dependency checks |
@@ -78,6 +86,7 @@
 | `.github/workflows/build.yml` | ✅ Merged | CI/CD with dependency pre-install |
 
 ### Documentation Files
+
 | File | Status | Purpose |
 |------|--------|---------|
 | `README.md` | ✅ Merged | Usage instructions for graphics modes |
@@ -87,6 +96,7 @@
 | `assets/fonts/README.md` | ✅ Merged | Font directory structure |
 
 ### Test Files
+
 | File | Status | Purpose |
 |------|--------|---------|
 | `tests/test_no_graphics.bas` | ✅ Merged | Verify no-graphics error handling |
@@ -97,6 +107,7 @@
 ## 🔨 Build Status
 
 ### Latest Build
+
 - **Status**: ✅ **SUCCESSFUL**
 - **Target**: msbasic (merged with all changes)
 - **Time**: ~2 minutes (Raylib compilation included)
@@ -104,6 +115,7 @@
 - **Errors**: ✅ **NONE**
 
 ### Dependencies Installed
+
 ✅ Raylib 5.0 (auto-fetched via FetchContent)  
 ✅ GLFW (as Raylib dependency)  
 ✅ OpenGL development libraries  
@@ -114,45 +126,55 @@
 ## ⚙️ Immediate Next Steps
 
 ### Priority 1: Verify Tests Pass ⏳
+
 **Current**: Tests running (ctest in progress)
 **Action**: Monitor test completion
 **Expected**: 48+ tests should pass
 **Blocked By**: None (tests can run in parallel)
 
 ### Priority 2: Command-line Argument Parsing
+
 **Status**: ⏳ Pending
-**Details**: 
+**Details**:
+
 - Add `--graphics`, `--no-graphics`, `--scale N` flags to `src/main.cpp`
 - Pass graphics config to Interpreter
 - Test: `./msbasic --no-graphics test.bas` should work
 
 **Files to Modify**:
+
 - `src/main.cpp` - Add argument parsing
 - `src/graphics.h/cpp` - Expose mode selection in config
 
 **Estimated Effort**: 30 minutes
 
 ### Priority 3: Raylib Window Rendering
+
 **Status**: ⏳ Pending
 **Details**:
+
 - Implement actual window rendering using Raylib
 - Integrate off-screen buffer with Raylib drawing
 - Font rendering for text mode
 
 **Files to Create/Modify**:
+
 - `src/graphics_renderer.cpp` - Raylib window setup and drawing loop
 - `src/graphics.cpp` - Integrate with Raylib callbacks
 
 **Estimated Effort**: 2-3 hours
 
 ### Priority 4: Add Missing Tests
+
 **Status**: ⏳ Pending
 **Details**:
+
 - Test graphics modes work with command-line flags
 - Test scaling works (`--scale 2`, `--scale 4`)
 - Test mode switching errors properly
 
 **Files to Create**:
+
 - `tests/test_graphics_mode_flags.bas`
 
 **Estimated Effort**: 1 hour
@@ -186,6 +208,7 @@ df7046e Add font integration infrastructure and documentation
 ### Graphics Implementation: ✅ **80% Complete**
 
 **What's Done** ✅
+
 - Raylib 5.0 integration with auto-build
 - Graphics rendering infrastructure
 - GR/HGR/HGR2 mode support
@@ -196,6 +219,7 @@ df7046e Add font integration infrastructure and documentation
 - Test files for graphics and no-graphics modes
 
 **What's Remaining** ⏳
+
 - Command-line flag parsing for mode selection
 - Actual Raylib window rendering
 - Font file assets (Ultimate Apple II Font)
@@ -231,6 +255,7 @@ df7046e Add font integration infrastructure and documentation
 ## 📝 Instructions for Next Developer
 
 1. **To run MSBasic with graphics**:
+
    ```bash
    ./build/msbasic                    # Default: graphics mode if available
    ./build/msbasic --no-graphics      # Terminal-only mode
@@ -238,12 +263,14 @@ df7046e Add font integration infrastructure and documentation
    ```
 
 2. **To rebuild after code changes**:
+
    ```bash
    cd build
    cmake --build . --target msbasic
    ```
 
 3. **To run tests**:
+
    ```bash
    cd build
    ctest --output-on-failure
