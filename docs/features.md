@@ -11,10 +11,12 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Variable name normalization (2 chars significant, case-insensitive)
 - [x] String variables (`$` suffix)
 - [x] Integer variables (`%` suffix, 16-bit signed range)
+- [x] Multiple statements per line (colon `:` separator)
 
 ## Expression Evaluation
 
 - [x] Arithmetic operators: `+`, `-`, `*`, `/`, `^`
+- [x] String concatenation: `+` operator for strings
 - [x] MOD operator
 - [x] Unary operators: `+`, `-`, `NOT`
 - [x] Comparison operators: `=`, `<>`, `<`, `>`, `<=`, `>=`
