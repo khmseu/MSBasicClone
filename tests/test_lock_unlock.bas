@@ -1,0 +1,9 @@
+10 REM Test LOCK and UNLOCK commands
+20 PRINT "TESTING LOCK/UNLOCK"
+30 CREATE "locktest.txt"
+40 LOCK "locktest.txt"
+50 PRINT "FILE LOCKED"
+60 UNLOCK "locktest.txt"
+70 PRINT "FILE UNLOCKED"
+80 DELETE "locktest.txt"
+90 PRINT "LOCK/UNLOCK TEST PASSED"

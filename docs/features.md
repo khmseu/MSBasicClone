@@ -139,27 +139,27 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 
 ### File System Operations
 - [x] - (DASH) pn [,S#] [,D#] - run program without clearing variables
-- [ ] APPEND pn - prepare file for appending
-- [ ] BLOAD pn [,A#] [,S#] [,D#] - load binary file
-- [ ] BRUN pn [,A#] [,S#] [,D#] - load and run binary file
-- [ ] BSAVE pn,A#,L# [,S#] [,D#] - save binary file
+- [x] APPEND pn - prepare file for appending
+- [x] BLOAD pn [,A#] [,S#] [,D#] - load binary file
+- [x] BRUN pn [,A#] [,S#] [,D#] - load and run binary file
+- [x] BSAVE pn,A#,L# [,S#] [,D#] - save binary file
 - [x] CAT [pn] [,S#] [,D#] - 40-column catalog
 - [x] CHAIN pn [,@#] [,S#] [,D#] - run program keeping variables
-- [ ] CLOSE [pn] - close file(s)
-- [ ] CREATE pn [,Ttype] [,S#] [,D#] - create file/directory
+- [x] CLOSE [pn] - close file(s)
+- [x] CREATE pn [,Ttype] [,S#] [,D#] - create file/directory
 - [x] DELETE pn [,S#] [,D#] - delete file
 - [x] EXEC pn [,S#] [,D#] - execute text file commands
-- [ ] FLUSH [pn] - flush file buffers
-- [ ] LOCK pn [,S#] [,D#] - lock file
-- [ ] UNLOCK pn [,S#] [,D#] - unlock file
-- [ ] OPEN pn [,Llength] [,S#] [,D#] - open file
-- [ ] POSITION pn [,Rrecord#] [,Bbyte#] - position in file
+- [x] FLUSH [pn] - flush file buffers
+- [x] LOCK pn [,S#] [,D#] - lock file
+- [x] UNLOCK pn [,S#] [,D#] - unlock file
+- [x] OPEN pn [,Llength] [,S#] [,D#] - open file
+- [x] POSITION pn [,Rrecord#] [,Bbyte#] - position in file
 - [x] PREFIX [pn] [,S#] [,D#] - set/show prefix
-- [ ] READ pn [,Rrecord#] [,Bbyte#] - prepare file for reading
+- [x] READ pn [,Rrecord#] [,Bbyte#] - prepare file for reading
 - [x] RENAME pn1,pn2 [,S#] [,D#] - rename file
 - [ ] ProDOS RESTORE pn [,S#] [,D#] - load variables from file
 - [ ] ProDOS STORE pn [,S#] [,D#] - save variables to file
-- [ ] WRITE pn [,Rrecord#] - prepare file for writing
+- [x] WRITE pn [,Rrecord#] - prepare file for writing
 
 ## Built-in Functions
 
@@ -245,11 +245,11 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 ## PEEK/POKE/CALL Address Support
 
 ### Keyboard and Input
-- [ ] PEEK(-16384)/PEEK(49152) - last key pressed
-- [ ] POKE -16368/49168 - clear keyboard strobe
-- [ ] PEEK(-16287)/PEEK(49249) - button 0 (>127 if pressed)
-- [ ] PEEK(-16286)/PEEK(49250) - button 1 (>127 if pressed)
-- [ ] PEEK(-16285)/PEEK(49251) - button 2 (>127 if pressed)
+- [x] PEEK(-16384)/PEEK(49152) - last key pressed
+- [x] POKE -16368/49168 - clear keyboard strobe
+- [x] PEEK(-16287)/PEEK(49249) - button 0 (>127 if pressed)
+- [x] PEEK(-16286)/PEEK(49250) - button 1 (>127 if pressed)
+- [x] PEEK(-16285)/PEEK(49251) - button 2 (>127 if pressed)
 
 ### Memory Pointers
 - [x] PEEK(105) - LOMEM pointer (low byte)
@@ -262,56 +262,56 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 
 ### Display Control
 - [x] PEEK(37) - cursor vertical position (0-23)
-- [ ] POKE 32 - text window left edge
-- [ ] POKE 33 - text window width
-- [ ] POKE 34 - text window top (0-23)
-- [ ] POKE 37 - cursor vertical position
-- [ ] POKE -16368/49168 - clear keyboard strobe
-- [ ] POKE -16304/49232 - switch to graphics without clearing
-- [ ] POKE -16303/49233 - full screen graphics control
-- [ ] POKE -16302/49234 - graphics mode control
-- [ ] POKE -16301/49235 - mixed graphics/text mode
-- [ ] POKE -16300/49236 - text mode control
-- [ ] POKE -16299/49237 - undocumented display control
-- [ ] POKE -16298/49238 - undocumented display control
-- [ ] POKE -16297/49239 - undocumented display control
+- [x] POKE 32 - text window left edge
+- [x] POKE 33 - text window width
+- [x] POKE 34 - text window top (0-23)
+- [x] POKE 37 - cursor vertical position
+- [x] POKE -16368/49168 - clear keyboard strobe
+- [x] POKE -16304/49232 - switch to graphics without clearing
+- [x] POKE -16303/49233 - full screen graphics control
+- [x] POKE -16302/49234 - graphics mode control
+- [x] POKE -16301/49235 - mixed graphics/text mode
+- [x] POKE -16300/49236 - text mode control
+- [x] POKE -16299/49237 - undocumented display control
+- [x] POKE -16298/49238 - undocumented display control
+- [x] POKE -16297/49239 - undocumented display control
 
 ### Annunciator Outputs
-- [ ] POKE -16296/49240 - turn off annunciator 0
-- [ ] POKE -16295/49241 - turn on annunciator 0
-- [ ] POKE -16294/49242 - turn off annunciator 1
-- [ ] POKE -16293/49243 - turn on annunciator 1
-- [ ] POKE -16292/49244 - turn off annunciator 2
-- [ ] POKE -16291/49245 - turn on annunciator 2
-- [ ] POKE -16290/49246 - turn off annunciator 3
-- [ ] POKE -16289/49247 - turn on annunciator 3
+- [x] POKE -16296/49240 - turn off annunciator 0
+- [x] POKE -16295/49241 - turn on annunciator 0
+- [x] POKE -16294/49242 - turn off annunciator 1
+- [x] POKE -16293/49243 - turn on annunciator 1
+- [x] POKE -16292/49244 - turn off annunciator 2
+- [x] POKE -16291/49245 - turn on annunciator 2
+- [x] POKE -16290/49246 - turn off annunciator 3
+- [x] POKE -16289/49247 - turn on annunciator 3
 
 ### Graphics Memory
-- [ ] POKE 103 - hi-res page pointer (low byte)
-- [ ] POKE 104 - hi-res page pointer (high byte)
-- [ ] POKE 16384 - page-specific graphics control
-- [ ] POKE 24576 - page-specific graphics control
+- [x] POKE 103 - hi-res page pointer (low byte)
+- [x] POKE 104 - hi-res page pointer (high byte)
+- [x] POKE 16384 - page-specific graphics control
+- [x] POKE 24576 - page-specific graphics control
 
 ### Shape Tables
-- [ ] POKE 232 - shape table pointer (low byte)
-- [ ] POKE 233 - shape table pointer (high byte)
+- [x] POKE 232 - shape table pointer (low byte)
+- [x] POKE 233 - shape table pointer (high byte)
 
 ### Error Control
 - [x] POKE 216,0 - restore normal error handling
 
 ### System Calls (CALL addresses)
-- [ ] CALL -3288/62248 - stack cleanup routine
-- [ ] CALL -3086/62450 - clear hi-res page to black
-- [ ] CALL -3082/62454 - clear hi-res to last HPLOT color
-- [ ] CALL -1998/63538 - BKGND (background color)
-- [ ] CALL -958/64578 - clear from cursor to bottom-right
-- [ ] CALL -936/64600 - HOME (clear screen, home cursor)
-- [ ] CALL -922/64614 - line feed
-- [ ] CALL -912/64624 - scroll text window up
-- [ ] CALL -868/64668 - CLREOL (clear to end of line)
-- [ ] CALL -151/65385 - enter Monitor
-- [ ] CALL 768 - common user ML routine location (page 3)
-- [ ] CALL 1002 - restore ProDOS connection (ProDOS only)
+- [x] CALL -3288/62248 - stack cleanup routine
+- [x] CALL -3086/62450 - clear hi-res page to black
+- [x] CALL -3082/62454 - clear hi-res to last HPLOT color
+- [x] CALL -1998/63538 - BKGND (background color)
+- [x] CALL -958/64578 - clear from cursor to bottom-right
+- [x] CALL -936/64600 - HOME (clear screen, home cursor)
+- [x] CALL -922/64614 - line feed
+- [x] CALL -912/64624 - scroll text window up
+- [x] CALL -868/64668 - CLREOL (clear to end of line)
+- [x] CALL -151/65385 - enter Monitor
+- [x] CALL 768 - common user ML routine location (page 3)
+- [x] CALL 1002 - restore ProDOS connection (ProDOS only)
 
 ## Implementation Notes
 

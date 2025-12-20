@@ -868,8 +868,8 @@ public:
       : addr_(std::move(addr)) {}
 
   void execute(Interpreter *interp) override {
-    // No-op stub for CALL; evaluate for side effects only.
-    (void)addr_->evaluate(interp);
+    int address = static_cast<int>(addr_->evaluate(interp).getNumber());
+    interp->callAddress(address);
   }
 
 private:
@@ -1145,6 +1145,137 @@ public:
 
 private:
   std::string arrayName_;
+};
+
+// ProDOS file operation statements
+class OpenFileStmt : public Statement {
+public:
+  explicit OpenFileStmt(const std::string &filename, const std::string &options)
+      : filename_(filename), options_(options) {}
+  void execute(Interpreter *interp) override {
+    interp->openFile(filename_, options_);
+  }
+
+private:
+  std::string filename_;
+  std::string options_;
+};
+
+class CloseFileStmt : public Statement {
+public:
+  explicit CloseFileStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    if (filename_.empty()) {
+      interp->closeAllFiles();
+    } else {
+      interp->closeFile(filename_);
+    }
+  }
+
+private:
+  std::string filename_;
+};
+
+class AppendFileStmt : public Statement {
+public:
+  explicit AppendFileStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->appendFile(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class FlushFileStmt : public Statement {
+public:
+  explicit FlushFileStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->flushFile(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class CreateFileStmt : public Statement {
+public:
+  explicit CreateFileStmt(const std::string &filename, const std::string &options)
+      : filename_(filename), options_(options) {}
+  void execute(Interpreter *interp) override {
+    interp->createFile(filename_, options_);
+  }
+
+private:
+  std::string filename_;
+  std::string options_;
+};
+
+class LockFileStmt : public Statement {
+public:
+  explicit LockFileStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->lockFile(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class UnlockFileStmt : public Statement {
+public:
+  explicit UnlockFileStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->unlockFile(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class BloadFileStmt : public Statement {
+public:
+  explicit BloadFileStmt(const std::string &filename, int address)
+      : filename_(filename), address_(address) {}
+  void execute(Interpreter *interp) override {
+    interp->bloadFile(filename_, address_);
+  }
+
+private:
+  std::string filename_;
+  int address_;
+};
+
+class BsaveFileStmt : public Statement {
+public:
+  explicit BsaveFileStmt(const std::string &filename, int address, int length)
+      : filename_(filename), address_(address), length_(length) {}
+  void execute(Interpreter *interp) override {
+    interp->bsaveFile(filename_, address_, length_);
+  }
+
+private:
+  std::string filename_;
+  int address_;
+  int length_;
+};
+
+class BrunFileStmt : public Statement {
+public:
+  explicit BrunFileStmt(const std::string &filename, int address)
+      : filename_(filename), address_(address) {}
+  void execute(Interpreter *interp) override {
+    interp->brunFile(filename_, address_);
+  }
+
+private:
+  std::string filename_;
+  int address_;
 };
 
 // Statement implementations for WHILE/WEND/POP
@@ -1500,6 +1631,162 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
     std::string arrayName = tokens[pos].text;
     pos++;
     return std::make_shared<StoreStmt>(arrayName);
+  }
+  case TokenType::OPEN: {
+    pos++; // Skip OPEN
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    // Parse optional options (not fully implemented yet)
+    return std::make_shared<OpenFileStmt>(filename, "");
+  }
+  case TokenType::CLOSE: {
+    pos++; // Skip CLOSE
+    std::string filename = "";
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+      filename = tokens[pos].value.getString();
+      pos++;
+    }
+    return std::make_shared<CloseFileStmt>(filename);
+  }
+  case TokenType::APPEND: {
+    pos++; // Skip APPEND
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    return std::make_shared<AppendFileStmt>(filename);
+  }
+  case TokenType::FLUSH: {
+    pos++; // Skip FLUSH
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    return std::make_shared<FlushFileStmt>(filename);
+  }
+  case TokenType::CREATE: {
+    pos++; // Skip CREATE
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    return std::make_shared<CreateFileStmt>(filename, "");
+  }
+  case TokenType::LOCK: {
+    pos++; // Skip LOCK
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    return std::make_shared<LockFileStmt>(filename);
+  }
+  case TokenType::UNLOCK: {
+    pos++; // Skip UNLOCK
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    return std::make_shared<UnlockFileStmt>(filename);
+  }
+  case TokenType::BLOAD: {
+    pos++; // Skip BLOAD
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int address = -1;
+    // Parse optional ,A# parameter
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      if (pos < tokens.size()) {
+        // Could be A# or just a number
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'A') {
+          std::string addrStr = tokens[pos].text.substr(1);
+          address = std::stoi(addrStr);
+          pos++;
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          address = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+      }
+    }
+    return std::make_shared<BloadFileStmt>(filename, address);
+  }
+  case TokenType::BSAVE: {
+    pos++; // Skip BSAVE
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int address = 0, length = 0;
+    // Parse ,A#,L# parameters
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip first comma
+      if (pos < tokens.size()) {
+        // Parse A# or just a number
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'A') {
+          std::string addrStr = tokens[pos].text.substr(1);
+          address = std::stoi(addrStr);
+          pos++;
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          address = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+        
+        // Parse ,L# parameter
+        if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+          pos++; // Skip second comma
+          if (pos < tokens.size()) {
+            if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'L') {
+              std::string lenStr = tokens[pos].text.substr(1);
+              length = std::stoi(lenStr);
+              pos++;
+            } else if (tokens[pos].type == TokenType::NUMBER) {
+              length = static_cast<int>(tokens[pos].value.getNumber());
+              pos++;
+            }
+          }
+        }
+      }
+    }
+    return std::make_shared<BsaveFileStmt>(filename, address, length);
+  }
+  case TokenType::BRUN: {
+    pos++; // Skip BRUN
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int address = -1;
+    // Parse optional ,A# parameter
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      if (pos < tokens.size()) {
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'A') {
+          std::string addrStr = tokens[pos].text.substr(1);
+          address = std::stoi(addrStr);
+          pos++;
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          address = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+      }
+    }
+    return std::make_shared<BrunFileStmt>(filename, address);
   }
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);

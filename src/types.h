@@ -103,6 +103,21 @@ enum class TokenType {
   DELETE,
   RENAME,
   PREFIX,
+  OPEN,
+  CLOSE,
+  APPEND,
+  BLOAD,
+  BRUN,
+  BSAVE,
+  CREATE,
+  FLUSH,
+  LOCK,
+  UNLOCK,
+  POSITION,
+  PRODOSREAD,    // ProDOS READ (to avoid conflict with DATA READ)
+  PRODOSWRITE,   // ProDOS WRITE
+  PRODOSRESTORE, // ProDOS RESTORE (to avoid conflict with DATA RESTORE)
+  PRODOSSTORE,   // ProDOS STORE (to avoid conflict with array STORE)
 
   // Graphics primitives
   PLOT,
