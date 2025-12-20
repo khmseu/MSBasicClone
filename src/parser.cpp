@@ -1334,6 +1334,133 @@ private:
   std::string filename_;
 };
 
+class DeleteFileStmt : public Statement {
+public:
+  explicit DeleteFileStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->deleteFile(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class RenameFileStmt : public Statement {
+public:
+  RenameFileStmt(const std::string &oldName, const std::string &newName)
+      : oldName_(oldName), newName_(newName) {}
+  void execute(Interpreter *interp) override {
+    interp->renameFile(oldName_, newName_);
+  }
+
+private:
+  std::string oldName_;
+  std::string newName_;
+};
+
+class PrefixStmt : public Statement {
+public:
+  explicit PrefixStmt(const std::string &path)
+      : path_(path) {}
+  void execute(Interpreter *interp) override {
+    interp->setPrefix(path_);
+  }
+
+private:
+  std::string path_;
+};
+
+class PositionFileStmt : public Statement {
+public:
+  PositionFileStmt(const std::string &filename, int record, int byte)
+      : filename_(filename), record_(record), byte_(byte) {}
+  void execute(Interpreter *interp) override {
+    interp->positionFile(filename_, record_, byte_);
+  }
+
+private:
+  std::string filename_;
+  int record_;
+  int byte_;
+};
+
+class ChainStmt : public Statement {
+public:
+  ChainStmt(const std::string &filename, int startLine)
+      : filename_(filename), startLine_(startLine) {}
+  void execute(Interpreter *interp) override {
+    interp->chainProgram(filename_, startLine_);
+  }
+
+private:
+  std::string filename_;
+  int startLine_;
+};
+
+class ExecStmt : public Statement {
+public:
+  explicit ExecStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->execFile(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class DashStmt : public Statement {
+public:
+  explicit DashStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    interp->dashRun(filename_);
+  }
+
+private:
+  std::string filename_;
+};
+
+class CatStmt : public Statement {
+public:
+  explicit CatStmt(const std::string &path)
+      : path_(path) {}
+  void execute(Interpreter *interp) override {
+    interp->catalogFiles(path_);
+  }
+
+private:
+  std::string path_;
+};
+
+class ProdosReadStmt : public Statement {
+public:
+  ProdosReadStmt(const std::string &filename, int record, int byte)
+      : filename_(filename), record_(record), byte_(byte) {}
+  void execute(Interpreter *interp) override {
+    interp->readFile(filename_, record_, byte_);
+  }
+
+private:
+  std::string filename_;
+  int record_;
+  int byte_;
+};
+
+class ProdosWriteStmt : public Statement {
+public:
+  ProdosWriteStmt(const std::string &filename, int record)
+      : filename_(filename), record_(record) {}
+  void execute(Interpreter *interp) override {
+    interp->writeFile(filename_, record_);
+  }
+
+private:
+  std::string filename_;
+  int record_;
+};
+
 // Statement implementations for WHILE/WEND/POP
 void WhileStmt::execute(Interpreter *interp) {
   interp->pushWhileLoop(condition_, interp->getCurrentLine());
@@ -1863,6 +1990,228 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       }
     }
     return std::make_shared<BrunFileStmt>(filename, address);
+  }
+  case TokenType::DELETE: {
+    pos++; // Skip DELETE
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<DeleteFileStmt>(filename);
+  }
+  case TokenType::RENAME: {
+    pos++; // Skip RENAME
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string oldName = tokens[pos].value.getString();
+    pos++;
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::COMMA) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED COMMA");
+    }
+    pos++; // Skip comma
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED NEW FILENAME");
+    }
+    std::string newName = tokens[pos].value.getString();
+    pos++;
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<RenameFileStmt>(oldName, newName);
+  }
+  case TokenType::PREFIX: {
+    pos++; // Skip PREFIX
+    std::string path = "";
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+      path = tokens[pos].value.getString();
+      pos++;
+    }
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<PrefixStmt>(path);
+  }
+  case TokenType::POSITION: {
+    pos++; // Skip POSITION
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int record = 0, byte = 0;
+    // Parse optional ,Rrecord# parameter
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      if (pos < tokens.size()) {
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'R') {
+          try {
+            std::string recStr = tokens[pos].text.substr(1);
+            record = std::stoi(recStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID RECORD NUMBER");
+          }
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          record = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+      }
+      // Parse optional ,Bbyte# parameter
+      if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+        pos++; // Skip comma
+        if (pos < tokens.size()) {
+          if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'B') {
+            try {
+              std::string byteStr = tokens[pos].text.substr(1);
+              byte = std::stoi(byteStr);
+              pos++;
+            } catch (...) {
+              throw std::runtime_error("SYNTAX ERROR: INVALID BYTE NUMBER");
+            }
+          } else if (tokens[pos].type == TokenType::NUMBER) {
+            byte = static_cast<int>(tokens[pos].value.getNumber());
+            pos++;
+          }
+        }
+      }
+    }
+    return std::make_shared<PositionFileStmt>(filename, record, byte);
+  }
+  case TokenType::CHAIN: {
+    pos++; // Skip CHAIN
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int startLine = -1;
+    // Parse optional ,@# parameter (starting line number)
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      if (pos < tokens.size()) {
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == '@') {
+          try {
+            std::string lineStr = tokens[pos].text.substr(1);
+            startLine = std::stoi(lineStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID LINE NUMBER");
+          }
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          startLine = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+      }
+    }
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<ChainStmt>(filename, startLine);
+  }
+  case TokenType::EXEC: {
+    pos++; // Skip EXEC
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<ExecStmt>(filename);
+  }
+  case TokenType::DASH: {
+    pos++; // Skip -
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<DashStmt>(filename);
+  }
+  case TokenType::CAT: {
+    pos++; // Skip CAT
+    std::string path = ".";
+    if (pos < tokens.size() && tokens[pos].type == TokenType::STRING) {
+      path = tokens[pos].value.getString();
+      pos++;
+    }
+    // TODO: Parse optional S# and D# parameters
+    return std::make_shared<CatStmt>(path);
+  }
+  case TokenType::PRODOSREAD: {
+    pos++; // Skip READ
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int record = 0, byte = 0;
+    // Parse optional ,Rrecord# parameter
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      if (pos < tokens.size()) {
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'R') {
+          try {
+            std::string recStr = tokens[pos].text.substr(1);
+            record = std::stoi(recStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID RECORD NUMBER");
+          }
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          record = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+      }
+      // Parse optional ,Bbyte# parameter
+      if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+        pos++; // Skip comma
+        if (pos < tokens.size()) {
+          if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'B') {
+            try {
+              std::string byteStr = tokens[pos].text.substr(1);
+              byte = std::stoi(byteStr);
+              pos++;
+            } catch (...) {
+              throw std::runtime_error("SYNTAX ERROR: INVALID BYTE NUMBER");
+            }
+          } else if (tokens[pos].type == TokenType::NUMBER) {
+            byte = static_cast<int>(tokens[pos].value.getNumber());
+            pos++;
+          }
+        }
+      }
+    }
+    return std::make_shared<ProdosReadStmt>(filename, record, byte);
+  }
+  case TokenType::PRODOSWRITE: {
+    pos++; // Skip WRITE
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::STRING) {
+      throw std::runtime_error("SYNTAX ERROR: EXPECTED FILENAME");
+    }
+    std::string filename = tokens[pos].value.getString();
+    pos++;
+    
+    int record = 0;
+    // Parse optional ,Rrecord# parameter
+    if (pos < tokens.size() && tokens[pos].type == TokenType::COMMA) {
+      pos++; // Skip comma
+      if (pos < tokens.size()) {
+        if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'R') {
+          try {
+            std::string recStr = tokens[pos].text.substr(1);
+            record = std::stoi(recStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID RECORD NUMBER");
+          }
+        } else if (tokens[pos].type == TokenType::NUMBER) {
+          record = static_cast<int>(tokens[pos].value.getNumber());
+          pos++;
+        }
+      }
+    }
+    return std::make_shared<ProdosWriteStmt>(filename, record);
   }
   case TokenType::IDENTIFIER:
     return parseLetOrAssignment(tokens, pos);
