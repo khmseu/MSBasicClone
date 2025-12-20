@@ -2,7 +2,11 @@
 
 This document tracks the implementation status of Applesoft BASIC compatibility in MSBasic.
 
-## Core Architecture
+---
+
+## Part 1: Implementation Status (Todo-List Style)
+
+### Core Architecture
 
 - [x] Tokenizer → Parser → Interpreter pipeline
 - [x] Shared AST for interactive and program execution
@@ -13,7 +17,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Integer variables (`%` suffix, 16-bit signed range)
 - [x] Multiple statements per line (colon `:` separator)
 
-## Expression Evaluation
+### Expression Evaluation
 
 - [x] Arithmetic operators: `+`, `-`, `*`, `/`, `^`
 - [x] String concatenation: `+` operator for strings
@@ -22,9 +26,9 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Comparison operators: `=`, `<>`, `<`, `>`, `<=`, `>=`
 - [x] Logical operators: `AND`, `OR`
 
-## Standard Applesoft Commands
+### Standard Applesoft Commands
 
-### Control Flow
+#### Control Flow
 
 - [x] GOTO line_number
 - [x] GOSUB line_number
@@ -41,7 +45,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] CONT
 - [x] POP
 
-### Variable and Data Management
+#### Variable and Data Management
 
 - [x] LET variable = expression (LET is optional)
 - [x] DIM array(size[,size...])
@@ -52,12 +56,12 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] CLR (same as CLEAR)
 - [x] CLEAR
 
-### User-Defined Functions
+#### User-Defined Functions
 
 - [x] DEF FN name(parameter) = expression
 - [x] FN name(argument) - function calls
 
-### Input/Output
+#### Input/Output
 
 - [x] PRINT [expression[;|,expression]...]
 - [x] ? (shorthand for PRINT)
@@ -67,7 +71,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Semicolon separator (tight spacing)
 - [x] Comma separator (tab positions)
 
-### Program Management
+#### Program Management
 
 - [x] NEW - clear program
 - [x] RUN [line_number]
@@ -75,7 +79,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] DEL start,end - delete line range
 - [x] REM comment
 
-### File Operations
+#### File Operations
 
 - [x] LOAD filename
 - [x] SAVE filename
@@ -83,7 +87,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] RECALL arrayname - load array from file
 - [x] STORE arrayname - save array to file
 
-### Screen Control
+#### Screen Control
 
 - [x] HOME - clear screen and home cursor
 - [x] HTAB column - horizontal tab
@@ -93,7 +97,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] FLASH - flashing text mode
 - [x] TEXT - switch to text mode
 
-### Graphics - Low Resolution
+#### Graphics - Low Resolution
 
 - [x] GR - 40x40 low-res graphics mode
 - [x] COLOR= expression - set plotting color (0-15)
@@ -101,7 +105,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] HLIN x1,x2 AT y - horizontal line
 - [x] VLIN y1,y2 AT x - vertical line
 
-### Graphics - High Resolution
+#### Graphics - High Resolution
 
 - [x] HIRES - enable high-resolution graphics mode
 - [x] HGR - 280x192 hi-res graphics (mixed mode)
@@ -116,7 +120,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] SHLOAD - load shapes from DATA statements
 - [x] Shape table binary file loading
 
-### Low-Level System Access
+#### Low-Level System Access
 
 - [x] PEEK(address) - read memory byte
 - [x] POKE address,value - write memory byte
@@ -124,34 +128,34 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] GET variable - read single keystroke
 - [x] WAIT address,mask[,timeoutMs] - wait for memory condition
 
-### Memory Management
+#### Memory Management
 
 - [x] HIMEM: address - set high memory limit
 - [x] LOMEM: address - set low memory limit
 - [x] Memory bounds enforcement for PEEK/POKE/WAIT
 
-### Error Handling
+#### Error Handling
 
 - [x] ONERR GOTO line_number
 - [x] RESUME - continue after error
 - [x] Error code storage in memory location 222
 - [x] Error line storage in locations 218-219
 
-### Debugging and Timing
+#### Debugging and Timing
 
 - [x] TRACE - show line numbers during execution
 - [x] NOTRACE - turn off tracing
 - [x] SPEED n - set execution speed delay (0-255 ms)
 - [x] RANDOMIZE seed - initialize RND
 
-### Device Control
+#### Device Control
 
 - [x] PR# slot - set output device (stub)
 - [x] IN# slot - set input device (stub)
 
-## ProDOS Commands
+### ProDOS Commands
 
-### File System Operations
+#### File System Operations
 
 - [x] - (DASH) pn [,S#] [,D#] - run program without clearing variables
 - [x] APPEND pn - prepare file for appending
@@ -176,9 +180,9 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] ProDOS STORE pn [,S#] [,D#] - save variables to file
 - [x] WRITE pn [,Rrecord#] - prepare file for writing
 
-## Built-in Functions
+### Built-in Functions
 
-### Mathematical Functions
+#### Mathematical Functions
 
 - [x] ABS(expression) - absolute value
 - [x] ATN(expression) - arctangent (radians)
@@ -192,7 +196,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] SQR(expression) - square root
 - [x] TAN(expression) - tangent (radians)
 
-### String Functions
+#### String Functions
 
 - [x] ASC(string) - ASCII code of first character
 - [x] CHR$(code) - character from ASCII code
@@ -203,7 +207,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] STR$(expression) - convert number to string
 - [x] VAL(string) - convert string to number
 
-### System Functions
+#### System Functions
 
 - [x] FRE(dummy) - free memory (returns placeholder)
 - [x] PDL(n) - game paddle position (returns 0)
@@ -212,9 +216,9 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] SCRN(x,y) - read screen pixel color
 - [x] USR(expression) - user machine code call (returns 0)
 
-## Error Handling
+### Error Codes
 
-### Standard Applesoft Error Codes
+#### Standard Applesoft Error Codes
 
 - [x] Error code 0: NEXT without FOR
 - [x] Error code 16: Syntax
@@ -234,7 +238,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] Error code 254: Bad response to INPUT statement
 - [x] Error code 255: CONTROL-C interrupt attempted
 
-### ProDOS Error Codes
+#### ProDOS Error Codes
 
 - [x] Error codes 2-21: ProDOS-specific errors
 - [x] RANGE ERROR (Code 2)
@@ -256,16 +260,16 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] FILE BUSY (Code 20)
 - [x] FILE(S) STILL OPEN (Code 21)
 
-### Error Handling Memory Locations
+#### Error Handling Memory Locations
 
 - [x] Location 216: Error handler control (POKE 216,0 to restore)
 - [x] Location 218: Error line number (low byte)
 - [x] Location 219: Error line number (high byte)
 - [x] Location 222: Error code (0-255)
 
-## PEEK/POKE/CALL Address Support
+### PEEK/POKE/CALL Address Support
 
-### Keyboard and Input
+#### Keyboard and Input
 
 - [x] PEEK(-16384)/PEEK(49152) - last key pressed
 - [x] POKE -16368/49168 - clear keyboard strobe
@@ -273,7 +277,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] PEEK(-16286)/PEEK(49250) - button 1 (>127 if pressed)
 - [x] PEEK(-16285)/PEEK(49251) - button 2 (>127 if pressed)
 
-### Memory Pointers
+#### Memory Pointers
 
 - [x] PEEK(105) - LOMEM pointer (low byte)
 - [x] PEEK(106) - LOMEM pointer (high byte)
@@ -283,7 +287,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] PEEK(219) - error line number (high byte)
 - [x] PEEK(222) - error code
 
-### Display Control
+#### Display Control
 
 - [x] PEEK(37) - cursor vertical position (0-23)
 - [x] POKE 32 - text window left edge
@@ -300,7 +304,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] POKE -16298/49238 - undocumented display control
 - [x] POKE -16297/49239 - undocumented display control
 
-### Annunciator Outputs
+#### Annunciator Outputs
 
 - [x] POKE -16296/49240 - turn off annunciator 0
 - [x] POKE -16295/49241 - turn on annunciator 0
@@ -311,23 +315,23 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] POKE -16290/49246 - turn off annunciator 3
 - [x] POKE -16289/49247 - turn on annunciator 3
 
-### Graphics Memory
+#### Graphics Memory
 
 - [x] POKE 103 - hi-res page pointer (low byte)
 - [x] POKE 104 - hi-res page pointer (high byte)
 - [x] POKE 16384 - page-specific graphics control
 - [x] POKE 24576 - page-specific graphics control
 
-### Shape Tables
+#### Shape Tables
 
 - [x] POKE 232 - shape table pointer (low byte)
 - [x] POKE 233 - shape table pointer (high byte)
 
-### Error Control
+#### Error Control
 
 - [x] POKE 216,0 - restore normal error handling
 
-### System Calls (CALL addresses)
+#### System Calls (CALL addresses)
 
 - [x] CALL -3288/62248 - stack cleanup routine
 - [x] CALL -3086/62450 - clear hi-res page to black
@@ -342,9 +346,133 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] CALL 768 - common user ML routine location (page 3)
 - [x] CALL 1002 - restore ProDOS connection (ProDOS only)
 
-## Graphics Implementation
+### Graphics Implementation
 
-### Architecture Overview
+#### No-Graphics Mode
+
+- [x] Terminal output with ANSI/xterm escape sequences
+- [x] Error handling for graphics commands ("GRAPHICS NOT ENABLED ERROR")
+- [x] Text commands (PRINT, HOME, HTAB, VTAB) work normally
+- [x] Runtime checking with `requireGraphicsMode()`
+
+#### Graphics Mode - Display Window
+
+- [x] 280×192 pixel resolution (Apple II standard)
+- [x] Configurable scaling (1-10x) via `--scale` flag
+- [x] Raylib 5.0+ backend (cross-platform)
+- [x] Graceful fallback for headless environments
+
+#### Graphics Mode - Build System
+
+- [x] Automatic Raylib build via FetchContent
+- [x] Optional building with `-DAUTO_BUILD_RAYLIB=OFF`
+- [x] Dependency checking (X11 on Linux)
+- [x] Cross-platform support (Linux, macOS, Windows)
+
+#### Graphics Mode - Commands
+
+- [x] Mode switching: GR, HIRES, HGR, HGR2
+- [x] Color selection: COLOR=, HCOLOR=
+- [x] Pixel operations: PLOT, HPLOT
+- [x] Line drawing: HLIN, VLIN
+- [x] Shape drawing: DRAW, XDRAW
+- [x] Transformations: MOVE, ROTATE, SCALE
+- [x] Shape loading: SHLOAD
+- [x] Pixel queries: SCRN(x,y)
+
+#### Graphics Mode - Text Mode Switching
+
+- [x] PR#0 - Switch to 40-column text mode
+- [x] PR#3 - Switch to 80-column text mode
+- [x] State tracking in `GraphicsConfig`
+- [x] Automatic scaling based on mode
+
+#### Graphics Mode - Graphics Buffer
+
+- [x] Off-screen buffer always maintained
+- [x] Pixel-perfect rendering support
+- [x] Color values: 24-bit RGB or indexed Apple II colors
+- [x] Efficient buffer updates
+
+### Font Integration
+
+#### Font Specifications
+
+- [x] Font downloaded: The Ultimate Apple II Font (PrintChar21)
+- [x] Character cell size: 7×8 pixels
+- [x] TrueType (.ttf) format
+- [x] License file included (FreeLicense.txt)
+
+#### Automatic Font Fetching
+
+- [x] Check for existing files (idempotent)
+- [x] Create fonts directory
+- [x] Download font (PrintChar21.ttf)
+- [x] Download charset map (apple2-charset.html)
+- [x] Download license (FreeLicense.txt)
+- [x] Graceful fallback on download failure
+- [x] Set availability flag `APPLE2_FONT_AVAILABLE`
+
+#### CI/CD Integration
+
+- [x] GitHub Actions caching for fonts
+- [x] Cache invalidation on `FetchFont.cmake` changes
+- [x] Works across workflow runs
+
+#### Font Loading Implementation
+
+- [x] Font file search in multiple paths
+- [x] Font loading via Raylib's `LoadFontEx()`
+- [x] Error handling with validation
+- [x] Graceful fallback to default font
+- [x] Memory management (proper unloading)
+
+#### Character Rendering Implementation
+
+- [x] Font selection (Apple II or fallback)
+- [x] Scaling with `config_.scaleFactor`
+- [x] Text mode handling (40-column and 80-column)
+- [x] Rendering via `DrawTextEx()`
+
+#### Text Rendering Implementation
+
+- [x] 40-column mode rendering
+- [x] 80-column mode with horizontal compression
+- [x] Character-by-character rendering for 80-column
+- [x] Color handling (RGB extraction)
+- [x] Font fallback support
+
+### Remaining Work - Graphics
+
+- [ ] Uncomment font loading code in `GraphicsRenderer::loadApple2Font()`
+- [ ] Test rendering in 40-column mode
+- [ ] Test rendering in 80-column mode
+- [ ] Text rendering directly into graphics buffer
+- [ ] Mixed text/graphics mode display (4-line text + 160-line graphics)
+- [ ] More accurate Apple II color palette interpolation
+- [ ] Enhanced shape table support with standard Apple II shapes
+- [ ] HIRES page 2 graphics switching
+
+### Implementation Completeness
+
+#### Overall Score: 95%
+
+#### Feature Category Status
+
+- [x] Core BASIC: 100% - All core Applesoft BASIC language features
+- [x] Built-in Functions: 100% - All standard math, string, and system functions
+- [x] Graphics: 100% - Full Apple II graphics support (low-res and high-res)
+- [x] Display Control: 100% - Complete screen and cursor control
+- [x] Program Management: 100% - All program editing and execution commands
+- [x] Memory Operations: 100% - PEEK/POKE/CALL/WAIT fully functional
+- [x] Test Coverage: 90% - 66 test files + 9 example programs = 75 total test programs
+- [ ] ProDOS Commands: 70% - All commands tokenized, most implemented, some need testing/enhancement
+
+---
+
+## Part 2: Implementation Details & Notes
+
+### Graphics Architecture
 
 MSBasic implements two distinct graphics handling methods:
 
@@ -362,31 +490,22 @@ MSBasic implements two distinct graphics handling methods:
    - Graceful fallback to terminal output if Raylib unavailable
    - Enabled with `--graphics` flag (default behavior)
 
-### Mode Selection
+#### Mode Selection
 
-#### Command-Line Flags
+**Command-Line Flags:**
 
 - `--no-graphics` — Force terminal-only mode (disable all graphics)
 - `--graphics` — Enable graphics mode (default, requires Raylib/X11)
 - `--scale N` — Scaling factor for graphics window (1-10, default: 1)
   - Example: `--scale 2` opens 560×384 pixel window (2× scaling of 280×192)
 
-#### Default Behavior
+**Default Behavior:**
 
 - **With X11/Raylib available**: Graphics mode enabled
 - **Without display/Raylib**: Falls back to terminal-only mode
 - **Explicit flag**: Overrides defaults
 
-### No-Graphics Mode Implementation
-
-#### Features (✅ Completed)
-
-- **Terminal Output**: ANSI/xterm escape sequences for all text operations
-- **Error Handling**: Graphics commands raise "GRAPHICS NOT ENABLED ERROR"
-- **Text Commands**: All PRINT, HOME, HTAB, VTAB work normally
-- **Runtime Checking**: `requireGraphicsMode()` enforces mode restrictions
-
-#### Behavior
+#### No-Graphics Mode Behavior
 
 Graphics commands in no-graphics mode:
 
@@ -396,48 +515,9 @@ Graphics commands in no-graphics mode:
 30 PRINT "Text"   REM → Works fine
 ```
 
-### Graphics Mode Implementation
+#### Graphics Mode Usage Examples
 
-#### Features (✅ Completed)
-
-1. **Display Window** ✅
-   - Resolution: 280×192 pixels (Apple II standard)
-   - Scaling: Configurable 1-10x multiplier via `--scale` flag
-   - Backend: Raylib 5.0+ (cross-platform)
-   - Graceful fallback: Works headless without display
-
-2. **Build System** ✅
-   - Automatic Raylib build via FetchContent
-   - Optional building: `-DAUTO_BUILD_RAYLIB=OFF` disables auto-fetch
-   - Dependency checking: Detects X11 on Linux, helps troubleshoot
-   - Cross-platform: Linux, macOS, Windows
-
-3. **Graphics Commands** ✅
-   All Applesoft graphics commands fully implemented:
-   - **Mode switching**: GR, HIRES, HGR, HGR2
-   - **Color selection**: COLOR=, HCOLOR=
-   - **Pixel operations**: PLOT, HPLOT
-   - **Line drawing**: HLIN, VLIN
-   - **Shape drawing**: DRAW, XDRAW
-   - **Transformations**: MOVE, ROTATE, SCALE
-   - **Shape loading**: SHLOAD
-   - **Pixel queries**: SCRN(x,y)
-
-4. **Text Mode Switching** ✅
-   - `PR#0` — Switch to 40-column text mode (standard)
-   - `PR#3` — Switch to 80-column text mode (horizontal compression)
-   - State tracking: `GraphicsConfig` stores current mode
-   - Scaling applied automatically based on mode
-
-5. **Graphics Buffer** ✅
-   - Off-screen buffer always maintained
-   - Pixel-perfect rendering support
-   - Color values: 24-bit RGB or indexed Apple II colors
-   - Performance: Efficient buffer updates
-
-#### Usage Examples
-
-**No-Graphics Mode**:
+**No-Graphics Mode:**
 
 ```bash
 ./msbasic --no-graphics program.bas
@@ -445,7 +525,7 @@ Graphics commands in no-graphics mode:
 
 Graphics commands error; all text I/O uses terminal.
 
-**Graphics Mode with Scaling**:
+**Graphics Mode with Scaling:**
 
 ```bash
 ./msbasic --graphics --scale 2 program.bas
@@ -453,7 +533,7 @@ Graphics commands error; all text I/O uses terminal.
 
 Opens 560×384 pixel window (2× scaling).
 
-**Text Mode Switching**:
+**Text Mode Switching:**
 
 ```basic
 10 PR#0        REM 40-column mode (280 pixels)
@@ -462,9 +542,9 @@ Opens 560×384 pixel window (2× scaling).
 40 PRINT "80-COLUMN TEXT"
 ```
 
-#### Implementation Details
+#### Graphics Implementation Details
 
-**Mode Detection**:
+**Mode Detection:**
 
 ```cpp
 // Runtime check for graphics availability
@@ -475,62 +555,17 @@ void Interpreter::requireGraphicsMode() const {
 }
 ```
 
-**Text Mode Rendering**:
+**Text Mode Rendering:**
 
 - 40-column mode: Character width = 7 pixels × scaleFactor
 - 80-column mode: Character width = 3.5 pixels × scaleFactor (0.5× horizontal compression)
 
-**Display Control**:
+**Display Control:**
 
 - POKE addresses for mode switching (documented in PEEK/POKE section)
 - Memory-mapped display control emulated via `pokeMemory()`
 
-### Font Integration in Graphics Mode
-
-The graphics implementation includes the Ultimate Apple II Font for authentic text rendering. See the "Font Integration" section below for complete details.
-
-#### Quick Reference
-
-- **Auto-downloaded**: CMake automatically fetches font during build
-- **Character cell**: 7×8 pixels (matches Apple II)
-- **Text modes**: 40-column (standard) and 80-column (compressed)
-- **Fallback**: Uses Raylib default font if Apple II font unavailable
-- **License**: Free License from kreativekorp.com
-
-### Remaining Work
-
-#### Font Rendering (Low Priority)
-
-- [ ] Uncomment font loading code in `GraphicsRenderer::loadApple2Font()`
-- [ ] Full character rendering with 7×8 pixel cells
-- [ ] Horizontal scaling for 80-column mode
-- **Note**: Graphics mode uses Raylib's default font currently; custom font loading is optional enhancement
-
-#### Advanced Graphics (Future)
-
-- [ ] Text rendering directly into graphics buffer
-- [ ] Mixed text/graphics mode display (4-line text + 160-line graphics)
-- [ ] More accurate Apple II color palette interpolation
-- [ ] Enhanced shape table support with standard Apple II shapes
-- [ ] HIRES page 2 graphics switching
-
-### Testing
-
-#### Manual Tests (✅ Verified)
-
-- Graphics mode detection works correctly
-- No-graphics mode properly errors on graphics commands
-- Text mode switching (PR#) functions correctly
-- Basic graphics commands execute without errors
-- Scaling produces correct window dimensions
-
-#### Test Files
-
-- `tests/test_no_graphics.bas` - Verifies error handling in no-graphics mode
-- `tests/test_graphics_basic.bas` - Basic graphics command validation
-- Full test suite: `ctest --test-dir build --output-on-failure`
-
-### Platform Support
+#### Platform Support
 
 | Platform | Status | Notes |
 |----------|--------|-------|
@@ -538,9 +573,7 @@ The graphics implementation includes the Ultimate Apple II Font for authentic te
 | macOS | ✅ Full support | Native Cocoa backend |
 | Windows | ✅ Full support | Native Win32 backend |
 
-### Configuration
-
-**CMake Build Options**:
+#### CMake Build Options
 
 ```bash
 # Build with automatic Raylib (default)
@@ -553,16 +586,17 @@ cmake -DAUTO_BUILD_RAYLIB=OFF -S . -B build
 cmake -DRAYLIB_ROOT=/path/to/raylib -S . -B build
 ```
 
-## Implementation Notes
-
 ### Variable Names
 
-- Variable names are significant to first 2 characters (case-insensitive)
+Variable names are significant to first 2 characters (case-insensitive):
+
 - Exception: `FN` names preserve 3 characters (e.g., `FNx`)
 - `$` suffix denotes string variables
 - `%` suffix denotes integer variables (clamped to 16-bit signed range)
 
 ### Arrays
+
+Arrays have the following behavior:
 
 - Auto-dimension to size 10 per dimension if undeclared
 - Expression subscripts supported
@@ -571,12 +605,16 @@ cmake -DRAYLIB_ROOT=/path/to/raylib -S . -B build
 
 ### DATA/READ/RESTORE
 
+Data handling follows these rules:
+
 - DATA collected pre-run before program execution
 - READ consumes sequentially across control flow
 - RESTORE can optionally target a specific line number
 - READ on exhausted data raises "OUT OF DATA" error
 
 ### Graphics
+
+Graphics features include:
 
 - GR/HIRES configure scaled overlay window
 - Shape table support with default shapes (triangle, square)
@@ -588,12 +626,16 @@ cmake -DRAYLIB_ROOT=/path/to/raylib -S . -B build
 
 ### Memory Model
 
+Memory handling:
+
 - LOMEM/HIMEM boundaries enforced for PEEK/POKE/WAIT
 - Simple in-memory model for PEEK/POKE operations
 - CALL is currently a no-op
 - USR(addr) stub returns 0
 
 ### Output Behavior
+
+Output features:
 
 - CHR$(7) emits terminal bell (`\a`) and flushes immediately
 - POS reports current column using:
@@ -603,23 +645,31 @@ cmake -DRAYLIB_ROOT=/path/to/raylib -S . -B build
 
 ### Device Control
 
+Device handling:
+
 - PR#n and IN#n store device slots but keep screen/keyboard active
 - No actual device redirection implemented yet
 
 ### File I/O
 
+File operations:
+
 - Basic LOAD/SAVE/CATALOG implemented
 - RECALL/STORE for arrays implemented
-- ProDOS extended file operations not yet implemented
+- ProDOS extended file operations not yet fully implemented
 
-## Testing
+### Testing
+
+Testing infrastructure:
 
 - Test suite location: `tests/` directory
 - Tests are `.bas` programs executed via `ctest --test-dir build`
 - Run tests: `ctest --test-dir build --output-on-failure`
 - Always add `.bas` test programs for new features
 
-## Build and Development
+### Build and Development
+
+Build instructions:
 
 - Build: `cmake -S . -B build && cmake --build build`
 - VS Code task: `build-msbasic` builds the `msbasic` target
@@ -627,26 +677,9 @@ cmake -DRAYLIB_ROOT=/path/to/raylib -S . -B build
 - REPL: `./build/msbasic` (interactive mode)
 - Run script: `./build/msbasic path/to/program.bas`
 
-## Implementation Completeness Analysis
-
-### Overall Completeness Score: 95%
-
-MSBasic is a remarkably complete implementation of Applesoft BASIC with modern enhancements. All core language features, graphics, and most ProDOS features are functional.
-
-#### Feature Category Status
-
-- **Core BASIC**: 100% ✅ - All core Applesoft BASIC language features implemented
-- **Built-in Functions**: 100% ✅ - All standard math, string, and system functions available
-- **Graphics**: 100% ✅ - Full Apple II graphics support (low-res and high-res)
-- **Display Control**: 100% ✅ - Complete screen and cursor control
-- **Program Management**: 100% ✅ - All program editing and execution commands
-- **Memory Operations**: 100% ✅ - PEEK/POKE/CALL/WAIT fully functional
-- **ProDOS Commands**: 70% ⚠️ - All commands tokenized, most implemented, some need testing/enhancement
-- **Test Coverage**: 90% ✅ - 66 test files + 9 example programs = 75 total test programs
-
 ### Known Limitations
 
-#### 1. Hardware-Specific Features (By Design)
+#### Hardware-Specific Features (By Design)
 
 The following Apple II hardware features are stubs or simulations:
 
@@ -658,7 +691,7 @@ The following Apple II hardware features are stubs or simulations:
 
 These limitations are acceptable for a modern BASIC interpreter.
 
-#### 2. ProDOS File Operations (Partially Implemented)
+#### ProDOS File Operations (Partially Implemented)
 
 ProDOS commands are **tokenized** but implementation status varies:
 
@@ -682,7 +715,7 @@ ProDOS commands are **tokenized** but implementation status varies:
 
 ### Test Coverage Details
 
-#### Tests Present: 75 Total Test Programs
+**Tests Present: 75 Total Test Programs**
 
 Sample test categories:
 
@@ -694,9 +727,10 @@ Sample test categories:
 - **Error Handling**: onerr_resume
 - **ProDOS**: Several ProDOS command tests
 
-#### Test Execution
+**Test Execution:**
 
 Running tests with ctest:
+
 ```bash
 cd build
 ctest --output-on-failure
@@ -709,6 +743,7 @@ All core feature tests pass successfully.
 #### Priority 1: Enhance File I/O (Medium Effort)
 
 Improve ProDOS file operations:
+
 1. Add comprehensive tests for OPEN/CLOSE/READ/WRITE
 2. Implement APPEND file mode
 3. Add POSITION (file seeking)
@@ -720,6 +755,7 @@ Improve ProDOS file operations:
 #### Priority 2: Complete Graphics Font Integration (Low Effort)
 
 Complete the graphics text rendering:
+
 1. ✅ Font auto-fetching implemented (automatic download during build)
 2. ✅ Font files cached in CI to avoid repeated downloads
 3. Implement actual font loading in `GraphicsRenderer::loadApple2Font()` (currently stubbed)
@@ -731,6 +767,7 @@ Complete the graphics text rendering:
 #### Priority 3: Add More Examples (Low Effort)
 
 Create example programs demonstrating:
+
 1. ProDOS file operations
 2. ONERR error handling
 3. User-defined functions
@@ -742,6 +779,7 @@ Create example programs demonstrating:
 #### Priority 4: Documentation (Low Effort)
 
 Enhance user documentation:
+
 1. Command reference with examples
 2. ProDOS file operation guide
 3. Graphics programming guide
@@ -754,6 +792,7 @@ Enhance user documentation:
 **Status:** ✅ **Production Ready**
 
 The interpreter is production-ready for:
+
 - Educational purposes
 - Running vintage Applesoft programs
 - Graphics programming
@@ -762,25 +801,27 @@ The interpreter is production-ready for:
 ### Code Quality
 
 #### Security
+
 - **CodeQL Scan Result**: 0 alerts ✅
 - Safe file handling with proper error checking
 - No memory leaks or resource issues
 - Cross-platform compatibility maintained
 
 #### Best Practices
+
 - Modern C++ (range-based loops, std::vector)
 - Clear variable naming
 - Comprehensive comments
 - Error handling with helpful messages
 - Cross-platform compatibility (#ifdef guards)
 
-## Font Integration
+### Font Integration
 
-### Overview
+**Overview:**
 
 MSBasic integrates **The Ultimate Apple II Font** to provide authentic Apple II text rendering. The font is automatically downloaded during the CMake build process, ensuring authentic 7×8 pixel character rendering without manual setup.
 
-### Font Specifications
+**Font Specifications:**
 
 - **Font Name**: The Ultimate Apple II Font (PrintChar21)
 - **Source URL**: <https://www.kreativekorp.com/software/fonts/apple2/>
@@ -789,7 +830,7 @@ MSBasic integrates **The Ultimate Apple II Font** to provide authentic Apple II 
 - **Character Cell Size**: 7×8 pixels per character
 - **License**: Free License from kreativekorp.com (see `assets/fonts/FreeLicense.txt`)
 
-#### Text Mode Support
+**Text Mode Support:**
 
 - **40-column mode**: 280 pixels wide (40 chars × 7 pixels)
   - Direct 7×8 pixel rendering
@@ -799,27 +840,27 @@ MSBasic integrates **The Ultimate Apple II Font** to provide authentic Apple II 
   - Character-by-character rendering with adjusted spacing
 - **Screen Height**: 192 pixels (24 rows × 8 pixels)
 
-### Automatic Font Fetching
+#### Automatic Font Fetching
 
 The build system automatically downloads required font files during CMake configuration:
 
-#### How It Works
+**How It Works:**
 
-1. **Check for existing files**: If font files exist in `assets/fonts/`, downloads are skipped (idempotent)
-2. **Create fonts directory**: Creates `assets/fonts/` if needed
-3. **Download font**: Fetches `PrintChar21.ttf` from kreativekorp.com (30-second timeout)
-4. **Download charset map**: Fetches Apple II charset reference for developers (30-second timeout)
-5. **Download license**: Fetches `FreeLicense.txt` from kreativekorp.com
-6. **Graceful fallback**: If downloads fail, build continues with warnings; Raylib's default font is used at runtime
-7. **Set availability flag**: Sets `APPLE2_FONT_AVAILABLE` CMake cache variable
+1. Check for existing files: If font files exist in `assets/fonts/`, downloads are skipped (idempotent)
+2. Create fonts directory: Creates `assets/fonts/` if needed
+3. Download font: Fetches `PrintChar21.ttf` from kreativekorp.com (30-second timeout)
+4. Download charset map: Fetches Apple II charset reference for developers (30-second timeout)
+5. Download license: Fetches `FreeLicense.txt` from kreativekorp.com
+6. Graceful fallback: If downloads fail, build continues with warnings; Raylib's default font is used at runtime
+7. Set availability flag: Sets `APPLE2_FONT_AVAILABLE` CMake cache variable
 
-#### Files Downloaded
+**Files Downloaded:**
 
 - `assets/fonts/PrintChar21.ttf` - The Ultimate Apple II Font (~50KB)
 - `assets/fonts/apple2-charset.html` - Character set reference map (~20KB)
 - `assets/fonts/FreeLicense.txt` - License file
 
-#### Download URLs
+**Download URLs:**
 
 - **Font**: `https://www.kreativekorp.com/swdownload/fonts/apple2/PrintChar21.ttf`
 - **Charset Map**: `https://www.kreativekorp.com/charset/map/apple2/`
@@ -833,9 +874,9 @@ cmake -DAPPLE2_FONT_URL="https://alternative-source/font.ttf" \
       -S . -B build
 ```
 
-### CI/CD Integration
+#### CI/CD Integration
 
-#### GitHub Actions Caching
+**GitHub Actions Caching:**
 
 The build workflow (`.github/workflows/build.yml`) caches downloaded fonts:
 
@@ -856,9 +897,9 @@ Benefits:
 - Speeds up build times significantly
 - Works across workflow runs without manual intervention
 
-### Implementation Details
+#### Implementation Details
 
-#### CMake Module: `cmake/FetchFont.cmake`
+**CMake Module: `cmake/FetchFont.cmake`**
 
 The `fetch_apple2_font()` function provides:
 
@@ -871,7 +912,7 @@ The `fetch_apple2_font()` function provides:
 - **Configurable URLs**: Supports custom font sources
 - **Helpful error messages**: Guides users to manual installation
 
-#### Font Loading: `GraphicsRenderer::loadApple2Font()`
+**Font Loading: `GraphicsRenderer::loadApple2Font()`**
 
 1. **Font File Search**: Checks multiple paths for `PrintChar21.ttf`:
    - `assets/fonts/PrintChar21.ttf` (relative to working directory)
@@ -893,7 +934,7 @@ The `fetch_apple2_font()` function provides:
    - Properly unloaded in `shutdown()` method
    - Protected by `fontLoaded_` flag to prevent invalid access
 
-#### Character Rendering: `drawChar()`
+**Character Rendering: `drawChar()`**
 
 Single character rendering implementation:
 
@@ -904,7 +945,7 @@ Single character rendering implementation:
    - 80-column mode: 0.5x horizontal scaling (3.5-pixel effective width)
 4. **Rendering**: Uses `DrawTextEx()` for consistent font rendering
 
-#### Text Rendering: `drawText()`
+**Text Rendering: `drawText()`**
 
 Multi-character text rendering:
 
@@ -922,13 +963,13 @@ Multi-character text rendering:
 3. **Color Handling**: RGB color values extracted from 24-bit integer
 4. **Font Fallback**: Uses Raylib default font if Apple II font unavailable
 
-#### Text Mode Detection
+**Text Mode Detection:**
 
 - Uses `config_.textMode` from `GraphicsConfig`
 - `TextMode::Text40`: Standard 40×24 text mode (7-pixel chars)
 - `TextMode::Text80`: 80×24 text mode with horizontal compression (3.5-pixel effective width)
 
-### Manual Installation
+#### Manual Installation
 
 If automatic download fails (e.g., network restrictions or blocked domains):
 
@@ -938,13 +979,13 @@ If automatic download fails (e.g., network restrictions or blocked domains):
 4. Save as `assets/fonts/apple2-charset.html`
 5. Re-run `cmake` - it will detect the existing files
 
-### Troubleshooting
+#### Troubleshooting
 
-#### Download Fails
+**Download Fails:**
 
 If you see warnings like: `CMake Warning: Failed to download font: "Could not resolve hostname"`
 
-**Solutions**:
+**Solutions:**
 
 1. Check your network connection
 2. Manually download the font (see Manual Installation above)
@@ -957,7 +998,7 @@ If you see warnings like: `CMake Warning: Failed to download font: "Could not re
 
 5. The build continues without the font - graphics mode uses Raylib's default font
 
-#### Font Not Loading
+**Font Not Loading:**
 
 If the font file exists but doesn't render correctly:
 
@@ -966,23 +1007,7 @@ If the font file exists but doesn't render correctly:
 3. Check console output for font loading messages
 4. The system automatically falls back to Raylib's default font if loading fails
 
-### Implementation Status
-
-- [x] Add font auto-fetching to CMake build (via `cmake/FetchFont.cmake` module)
-- [x] Download charset map together with font file during configuration
-- [x] Download license file (`FreeLicense.txt`) automatically
-- [x] Add CI caching for downloaded fonts in GitHub Actions
-- [x] Idempotent downloads (skip if files already present)
-- [x] Graceful error handling with helpful fallback messages
-- [x] Configurable URLs via CMake variables
-- [x] Implement font loading in `GraphicsRenderer::loadApple2Font()`
-- [x] Update `drawChar()` to use loaded font instead of Raylib default
-- [x] Update `drawText()` to use loaded font for text mode rendering
-- [x] Add text mode scaling logic for 80-column mode
-- [ ] Test rendering in 40-column mode (requires graphics environment)
-- [ ] Test rendering in 80-column mode (requires graphics environment)
-
-### Version Control
+#### Version Control
 
 Downloaded fonts are excluded from version control via `.gitignore`:
 
@@ -992,7 +1017,7 @@ assets/fonts/PrintChar21.ttf
 assets/fonts/apple2-charset.html
 ```
 
-### Alternative Approach
+#### Alternative Approach
 
 If direct font integration proves complex, consider:
 
