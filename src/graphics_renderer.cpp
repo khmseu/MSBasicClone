@@ -4,6 +4,12 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 #ifdef HAVE_RAYLIB
 #include <raylib.h>
 #endif
@@ -176,10 +182,12 @@ void GraphicsRenderer::loadApple2Font() {
     
     bool fontLoaded = false;
     for (int i = 0; fontPaths[i] != nullptr && !fontLoaded; i++) {
-        // Check if file exists
-        FILE* test = fopen(fontPaths[i], "r");
-        if (test) {
-            fclose(test);
+        // Check if file exists - using access() for safer checking
+#ifdef _WIN32
+        if (_access(fontPaths[i], 0) == 0) {
+#else
+        if (access(fontPaths[i], F_OK) == 0) {
+#endif
             // TODO: Implement actual font loading
             // font_ = LoadFontEx(fontPaths[i], 8, nullptr, 0);
             // fontLoaded = IsReady(font_);
