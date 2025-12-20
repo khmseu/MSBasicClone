@@ -53,12 +53,73 @@ The font file is **automatically downloaded** during the CMake build process:
 - [x] Idempotent downloads (skip if files already present)
 - [x] Graceful error handling with helpful fallback messages
 - [x] Configurable URLs via CMake variables (`APPLE2_FONT_URL`, `APPLE2_CHARSET_URL`)
-- [ ] Implement font loading in `GraphicsRenderer::loadApple2Font()` (currently stubbed)
-- [ ] Update `drawChar()` to use loaded font instead of Raylib default
-- [ ] Update `drawText()` to use loaded font for text mode rendering
-- [ ] Add text mode scaling logic for 80-column mode (0.5x horizontal scaling)
-- [ ] Test rendering in 40-column mode (7×8 pixels per char)
-- [ ] Test rendering in 80-column mode (with horizontal compression)
+- [x] Implement font loading in `GraphicsRenderer::loadApple2Font()`
+- [x] Update `drawChar()` to use loaded font instead of Raylib default
+- [x] Update `drawText()` to use loaded font for text mode rendering
+- [x] Add text mode scaling logic for 80-column mode (0.5x horizontal scaling)
+- [ ] Test rendering in 40-column mode (7×8 pixels per char) - requires graphics environment
+- [ ] Test rendering in 80-column mode (with horizontal compression) - requires graphics environment
+
+## Implementation Details
+
+### Font Loading (`GraphicsRenderer::loadApple2Font()`)
+
+The font loading implementation:
+
+1. **Font File Search**: Checks multiple paths for `PrintChar21.ttf`:
+   - `assets/fonts/PrintChar21.ttf` (relative to working directory)
+   - `../assets/fonts/PrintChar21.ttf` (one level up)
+   - `/usr/share/fonts/apple2/PrintChar21.ttf` (system-wide location)
+
+2. **Font Loading**: Uses Raylib's `LoadFontEx()` function:
+   - Font size: 8 pixels (matching Apple II 7×8 character cell)
+   - Character set: Default ASCII (nullptr, 0 parameters)
+   - Texture filter: `TEXTURE_FILTER_BILINEAR` for smooth scaling
+
+3. **Error Handling**: 
+   - Validates font texture ID after loading
+   - Graceful fallback to Raylib's default font on failure
+   - Comprehensive error messages guide users to manual installation
+
+4. **Memory Management**:
+   - Font stored as `Font*` pointer (allows optional loading)
+   - Properly unloaded in `shutdown()` method
+   - Protected by `fontLoaded_` flag to prevent invalid access
+
+### Character Rendering (`drawChar()`)
+
+Single character rendering implementation:
+
+1. **Font Selection**: Uses Apple II font if loaded, otherwise falls back to default
+2. **Scaling**: Applies `config_.scaleFactor` for window scaling (e.g., 2x → 16 pixels)
+3. **Text Mode Handling**:
+   - 40-column mode: Normal 7-pixel character width
+   - 80-column mode: 0.5x horizontal scaling (3.5-pixel effective width)
+4. **Rendering**: Uses `DrawTextEx()` for consistent font rendering
+
+### Text Rendering (`drawText()`)
+
+Multi-character text rendering implementation:
+
+1. **40-Column Mode** (default):
+   - Direct rendering with `DrawTextEx()`
+   - Character spacing: 1 pixel × scaleFactor
+   - Character width: 7 pixels × scaleFactor
+
+2. **80-Column Mode** (horizontal compression):
+   - Character-by-character rendering loop
+   - X-position adjusted by `7 × scaleFactor × 0.5` per character
+   - Effective character width: 3.5 pixels (7 × 0.5)
+   - Results in 80 characters fitting in 280 pixels
+
+3. **Color Handling**: RGB color values extracted from 24-bit integer
+4. **Font Fallback**: Uses Raylib default font if Apple II font unavailable
+
+### Text Mode Detection
+
+- Uses `config_.textMode` from `GraphicsConfig`
+- `TextMode::Text40`: Standard 40×24 text mode (7-pixel chars)
+- `TextMode::Text80`: 80×24 text mode with horizontal compression (3.5-pixel effective width)
 
 ## License Considerations
 
