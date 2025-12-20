@@ -14,9 +14,11 @@
 ## Implementation Strategy
 
 ### 1. Font File Storage
-Store the font file in the repository at:
-- `assets/fonts/PrintChar21.ttf` (TrueType format)
-- Alternative: Store as bitmap atlas for more control
+The font file is **automatically downloaded** during the CMake build process:
+- Target location: `assets/fonts/PrintChar21.ttf` (TrueType format)
+- Charset map: `assets/fonts/apple2-charset.html`
+- The `cmake/FetchFont.cmake` module handles the download
+- Files are cached in CI to avoid repeated downloads
 
 ### 2. Font Loading in GraphicsRenderer
 - Load font file when Raylib is available
@@ -33,9 +35,9 @@ Store the font file in the repository at:
 - 80-column mode: Scale horizontally by 0.5x or use smaller font
 
 ## Current Implementation Status
-- [ ] Download font file from kreativekorp.com
-- [ ] Add font file to repository (assets/fonts/)
-- [ ] Update CMakeLists.txt to install font file
+- [x] Add font auto-fetching to CMake build (via FetchFont.cmake module)
+- [x] Download charset map together with font file
+- [x] Add CI caching for downloaded fonts
 - [ ] Implement font loading in GraphicsRenderer::loadApple2Font()
 - [ ] Update drawChar() to use loaded font
 - [ ] Update drawText() to use loaded font

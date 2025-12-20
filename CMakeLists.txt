@@ -24,6 +24,9 @@ endif()
 project(MSBasicClone LANGUAGES CXX)
 message(STATUS "MSBasicClone version: ${MSBASIC_VERSION_STRING}")
 
+# Include font fetching module
+include(cmake/FetchFont.cmake)
+
 # Set C++20 standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -156,6 +159,9 @@ else()
         set(RAYLIB_AVAILABLE FALSE)
     endif()
 endif()
+
+# Fetch Apple II Font and charset map
+fetch_apple2_font()
 
 # Create executable
 add_executable(msbasic ${SOURCES} ${HEADERS})

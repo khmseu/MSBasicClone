@@ -139,6 +139,18 @@ brew install raylib
 
 The build system will detect Raylib whether installed manually or built automatically. Without Raylib, graphics commands will use off-screen buffers only.
 
+### Font Auto-Fetching
+
+The build system automatically downloads the Ultimate Apple II Font during CMake configuration:
+
+- **Font**: `PrintChar21.ttf` - The Ultimate Apple II Font (7×8 pixel characters)
+- **Charset Map**: `apple2-charset.html` - Apple II character set reference
+- **Source**: https://www.kreativekorp.com/software/fonts/apple2/
+
+Downloaded files are cached in `assets/fonts/` and reused across builds. If the download fails (e.g., due to network restrictions), the build continues with warnings, and Raylib's default font is used as a fallback.
+
+For manual font installation or troubleshooting, see [Font Auto-Fetching Documentation](docs/Font_Auto_Fetching.md).
+
 ### Building with Clang
 
 ```bash
