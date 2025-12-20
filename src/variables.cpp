@@ -3,6 +3,12 @@
 #include <cmath>
 #include <stdexcept>
 
+namespace {
+// Applesoft BASIC variable name significance limits
+constexpr size_t VARIABLE_NAME_LENGTH = 2;
+constexpr size_t FN_FUNCTION_NAME_LENGTH = 4; // FN prefix + 2 chars
+} // namespace
+
 Variables::Variables() {}
 
 std::string Variables::normalizeName(const std::string &name) const {
@@ -11,15 +17,15 @@ std::string Variables::normalizeName(const std::string &name) const {
   std::transform(normalized.begin(), normalized.end(), normalized.begin(),
                  ::toupper);
 
-  // Preserve the distinguishing character of user-defined functions (FNx)
+  // Preserve two significant characters in the name part of user-defined functions (FNxy)
   if (normalized.rfind("FN", 0) == 0 && normalized.length() > 2) {
-    return normalized.substr(0, 3);
+    return normalized.substr(0, std::min(normalized.length(), FN_FUNCTION_NAME_LENGTH));
   }
 
   // For non-string, non-integer variables, use first 2 chars
-  if (normalized.length() > 2 && normalized.back() != '$' &&
+  if (normalized.length() > VARIABLE_NAME_LENGTH && normalized.back() != '$' &&
       normalized.back() != '%') {
-    return normalized.substr(0, 2);
+    return normalized.substr(0, VARIABLE_NAME_LENGTH);
   }
 
   return normalized;

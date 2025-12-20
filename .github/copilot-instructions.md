@@ -48,8 +48,8 @@ This repository implements an Applesoft II–compatible BASIC interpreter (`msba
 
 ## Project‑Specific Gotchas
 
-- User functions `DEF FNx(a)=expr`: stored in `Variables`; calls like `FNx(expr)` substitute parameter then evaluate.
-- Name normalization: `FN` names preserve 3 chars (`FNx`) significance; other names 2 chars (except `$`/`%`).
+- User functions `DEF FNxy(a)=expr`: stored in `Variables`; calls like `FNxy(expr)` substitute parameter then evaluate.
+- Name normalization: `FN` names preserve 4 chars (`FNxy`) significance—FN prefix plus 2 chars from the name part; other names 2 chars (except `$`/`%`).
 - Tests assume xterm‑like terminals for `POS`; Windows VT fallback is handled.
 - Keep changes portable; guard OS‑specific code and avoid non‑ASCII.
 

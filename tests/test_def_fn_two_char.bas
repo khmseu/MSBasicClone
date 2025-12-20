@@ -1,0 +1,31 @@
+10 REM TEST DEF FN WITH TWO SIGNIFICANT CHARACTERS IN NAME
+20 REM FN prefix + 2 chars should be significant
+30 REM FNXY and FNXZ should be different functions
+40 DEF FNXY(A)=A*2
+50 DEF FNXZ(B)=B*3
+60 REM Test FNXY returns A*2
+70 IF FNXY(5)<>10 THEN 1/0
+80 REM Test FNXZ returns B*3
+90 IF FNXZ(5)<>15 THEN 1/0
+100 REM Test they don't collide
+110 IF FNXY(7)<>14 THEN 1/0
+120 IF FNXZ(7)<>21 THEN 1/0
+130 REM Test FNA and FNB are different
+140 DEF FNA(X)=X+10
+150 DEF FNB(Y)=Y+20
+160 IF FNA(5)<>15 THEN 1/0
+170 IF FNB(5)<>25 THEN 1/0
+180 REM Test FNAA and FNAB are different
+190 DEF FNAA(P)=P*10
+200 DEF FNAB(Q)=Q*20
+210 IF FNAA(3)<>30 THEN 1/0
+220 IF FNAB(3)<>60 THEN 1/0
+230 REM Test FNAA and FNAC should be different (third char doesn't matter)
+240 DEF FNAC(R)=R*30
+250 IF FNAC(3)<>90 THEN 1/0
+260 IF FNAA(3)<>30 THEN 1/0
+270 REM Test case insensitivity
+280 DEF FNUV(S)=S*5
+290 IF FNuv(4)<>20 THEN 1/0
+300 IF fnUV(4)<>20 THEN 1/0
+310 END
