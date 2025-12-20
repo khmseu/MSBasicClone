@@ -69,6 +69,7 @@ set(SOURCES
     src/interactive.cpp
     src/float40.cpp
     src/graphics.cpp
+    src/graphics_renderer.cpp
 )
 
 # Header files
@@ -85,6 +86,7 @@ set(HEADERS
     src/types.h
     src/graphics.h
     src/graphics_config.h
+    src/graphics_renderer.h
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
@@ -96,6 +98,15 @@ configure_file(
 
 set(CPACK_PACKAGE_VERSION "${MSBASIC_VERSION_STRING}")
 include(CPack)
+
+# Optional: Find Raylib for graphics support
+find_package(raylib QUIET)
+if(raylib_FOUND)
+    message(STATUS "Raylib found - graphics rendering enabled")
+    add_compile_definitions(HAVE_RAYLIB)
+else()
+    message(STATUS "Raylib not found - graphics will use off-screen buffer only")
+endif()
 
 # Create executable
 add_executable(msbasic ${SOURCES} ${HEADERS})
@@ -120,6 +131,11 @@ endforeach()
 # Link math library on Unix-like systems
 if(UNIX)
     target_link_libraries(msbasic m)
+endif()
+
+# Link Raylib if found
+if(raylib_FOUND)
+    target_link_libraries(msbasic raylib)
 endif()
 
 # Installation

@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include "interactive.h"
 #include "graphics_config.h"
+#include "graphics.h"
 #include "version.h"
 #include <iostream>
 #include <string>
@@ -64,6 +65,9 @@ int main(int argc, char* argv[]) {
     }
     
     try {
+        // Initialize graphics system
+        graphics().initialize(config);
+        
         if (hasFilename) {
             // Script mode - load and run BASIC file
             Interpreter interp(config);
