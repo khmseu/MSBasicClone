@@ -143,7 +143,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [ ] BLOAD pn [,A#] [,S#] [,D#] - load binary file
 - [ ] BRUN pn [,A#] [,S#] [,D#] - load and run binary file
 - [ ] BSAVE pn,A#,L# [,S#] [,D#] - save binary file
-- [ ] CAT [pn] [,S#] [,D#] - 40-column catalog
+- [x] CAT [pn] [,S#] [,D#] - 40-column catalog
 - [ ] CHAIN pn [,@#] [,S#] [,D#] - run program keeping variables
 - [ ] CLOSE [pn] - close file(s)
 - [ ] CREATE pn [,Ttype] [,S#] [,D#] - create file/directory
