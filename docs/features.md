@@ -378,3 +378,221 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - Version: Generated from `src/version.h.in` using `git describe`
 - REPL: `./build/msbasic` (interactive mode)
 - Run script: `./build/msbasic path/to/program.bas`
+
+## Font Integration
+
+### Overview
+
+MSBasic integrates **The Ultimate Apple II Font** to provide authentic Apple II text rendering. The font is automatically downloaded during the CMake build process, ensuring authentic 7×8 pixel character rendering without manual setup.
+
+### Font Specifications
+
+- **Font Name**: The Ultimate Apple II Font (PrintChar21)
+- **Source URL**: <https://www.kreativekorp.com/software/fonts/apple2/>
+- **Character Set Map**: <https://www.kreativekorp.com/charset/map/apple2/>
+- **Format**: TrueType (.ttf)
+- **Character Cell Size**: 7×8 pixels per character
+- **License**: Free License from kreativekorp.com (see `assets/fonts/FreeLicense.txt`)
+
+#### Text Mode Support
+
+- **40-column mode**: 280 pixels wide (40 chars × 7 pixels)
+  - Direct 7×8 pixel rendering
+  - Standard character spacing
+- **80-column mode**: 560 pixels effective (80 chars × 7 pixels, scaled 0.5x horizontally to fit 280 pixels)
+  - Horizontal compression (3.5-pixel effective width)
+  - Character-by-character rendering with adjusted spacing
+- **Screen Height**: 192 pixels (24 rows × 8 pixels)
+
+### Automatic Font Fetching
+
+The build system automatically downloads required font files during CMake configuration:
+
+#### How It Works
+
+1. **Check for existing files**: If font files exist in `assets/fonts/`, downloads are skipped (idempotent)
+2. **Create fonts directory**: Creates `assets/fonts/` if needed
+3. **Download font**: Fetches `PrintChar21.ttf` from kreativekorp.com (30-second timeout)
+4. **Download charset map**: Fetches Apple II charset reference for developers (30-second timeout)
+5. **Download license**: Fetches `FreeLicense.txt` from kreativekorp.com
+6. **Graceful fallback**: If downloads fail, build continues with warnings; Raylib's default font is used at runtime
+7. **Set availability flag**: Sets `APPLE2_FONT_AVAILABLE` CMake cache variable
+
+#### Files Downloaded
+
+- `assets/fonts/PrintChar21.ttf` - The Ultimate Apple II Font (~50KB)
+- `assets/fonts/apple2-charset.html` - Character set reference map (~20KB)
+- `assets/fonts/FreeLicense.txt` - License file
+
+#### Download URLs
+
+- **Font**: `https://www.kreativekorp.com/swdownload/fonts/apple2/PrintChar21.ttf`
+- **Charset Map**: `https://www.kreativekorp.com/charset/map/apple2/`
+- **License**: `https://www.kreativekorp.com/software/fonts/FreeLicense.txt`
+
+URLs can be overridden via CMake variables:
+
+```bash
+cmake -DAPPLE2_FONT_URL="https://alternative-source/font.ttf" \
+      -DAPPLE2_CHARSET_URL="https://alternative-source/map.html" \
+      -S . -B build
+```
+
+### CI/CD Integration
+
+#### GitHub Actions Caching
+
+The build workflow (`.github/workflows/build.yml`) caches downloaded fonts:
+
+```yaml
+- name: Cache Apple II fonts
+  uses: actions/cache@v4
+  with:
+      path: assets/fonts
+      key: apple2-fonts-${{ hashFiles('cmake/FetchFont.cmake') }}
+      restore-keys: |
+          apple2-fonts-
+```
+
+Benefits:
+- Avoids repeated downloads in CI runs
+- Cache invalidated only when `cmake/FetchFont.cmake` changes
+- Speeds up build times significantly
+- Works across workflow runs without manual intervention
+
+### Implementation Details
+
+#### CMake Module: `cmake/FetchFont.cmake`
+
+The `fetch_apple2_font()` function provides:
+- **Native CMake downloads**: Uses `file(DOWNLOAD ...)` command (no external tools needed)
+- **Cross-platform**: Works on Linux, macOS, and Windows
+- **Timeout handling**: 30-second timeout per download
+- **TLS/SSL verification**: Enabled for security
+- **Smart cleanup**: Removes partial downloads on failure
+- **Idempotent operation**: Safe for repeated builds
+- **Configurable URLs**: Supports custom font sources
+- **Helpful error messages**: Guides users to manual installation
+
+#### Font Loading: `GraphicsRenderer::loadApple2Font()`
+
+1. **Font File Search**: Checks multiple paths for `PrintChar21.ttf`:
+   - `assets/fonts/PrintChar21.ttf` (relative to working directory)
+   - `../assets/fonts/PrintChar21.ttf` (one level up)
+   - `/usr/share/fonts/apple2/PrintChar21.ttf` (system-wide location)
+
+2. **Font Loading**: Uses Raylib's `LoadFontEx()` function:
+   - Font size: 8 pixels (matching Apple II 7×8 character cell)
+   - Character set: Default ASCII
+   - Texture filter: `TEXTURE_FILTER_BILINEAR` for smooth scaling
+
+3. **Error Handling**: 
+   - Validates font texture ID after loading
+   - Graceful fallback to Raylib's default font on failure
+   - Comprehensive error messages guide users to manual installation
+
+4. **Memory Management**:
+   - Font stored as `Font*` pointer (allows optional loading)
+   - Properly unloaded in `shutdown()` method
+   - Protected by `fontLoaded_` flag to prevent invalid access
+
+#### Character Rendering: `drawChar()`
+
+Single character rendering implementation:
+1. **Font Selection**: Uses Apple II font if loaded, otherwise falls back to default
+2. **Scaling**: Applies `config_.scaleFactor` for window scaling (e.g., 2x → 16 pixels)
+3. **Text Mode Handling**:
+   - 40-column mode: Normal 7-pixel character width
+   - 80-column mode: 0.5x horizontal scaling (3.5-pixel effective width)
+4. **Rendering**: Uses `DrawTextEx()` for consistent font rendering
+
+#### Text Rendering: `drawText()`
+
+Multi-character text rendering:
+1. **40-Column Mode** (default):
+   - Direct rendering with `DrawTextEx()`
+   - Character spacing: 1 pixel × scaleFactor
+   - Character width: 7 pixels × scaleFactor
+
+2. **80-Column Mode** (horizontal compression):
+   - Character-by-character rendering loop
+   - X-position adjusted by `7 × scaleFactor × 0.5` per character
+   - Effective character width: 3.5 pixels (7 × 0.5)
+   - Results in 80 characters fitting in 280 pixels
+
+3. **Color Handling**: RGB color values extracted from 24-bit integer
+4. **Font Fallback**: Uses Raylib default font if Apple II font unavailable
+
+#### Text Mode Detection
+
+- Uses `config_.textMode` from `GraphicsConfig`
+- `TextMode::Text40`: Standard 40×24 text mode (7-pixel chars)
+- `TextMode::Text80`: 80×24 text mode with horizontal compression (3.5-pixel effective width)
+
+### Manual Installation
+
+If automatic download fails (e.g., network restrictions or blocked domains):
+
+1. Download from: <https://www.kreativekorp.com/software/fonts/apple2/>
+2. Save `PrintChar21.ttf` to `assets/fonts/PrintChar21.ttf`
+3. Optionally download charset map from: <https://www.kreativekorp.com/charset/map/apple2/>
+4. Save as `assets/fonts/apple2-charset.html`
+5. Re-run `cmake` - it will detect the existing files
+
+### Troubleshooting
+
+#### Download Fails
+
+If you see warnings like: `CMake Warning: Failed to download font: "Could not resolve hostname"`
+
+**Solutions**:
+1. Check your network connection
+2. Manually download the font (see Manual Installation above)
+3. If kreativekorp.com is blocked, contact your network administrator
+4. Use an alternative font source:
+   ```bash
+   cmake -DAPPLE2_FONT_URL="https://alternative-source.com/PrintChar21.ttf" ..
+   ```
+5. The build continues without the font - graphics mode uses Raylib's default font
+
+#### Font Not Loading
+
+If the font file exists but doesn't render correctly:
+1. Check you're running in a graphics-enabled environment (X11 display available)
+2. Verify the font file is not corrupted (should be ~50KB)
+3. Check console output for font loading messages
+4. The system automatically falls back to Raylib's default font if loading fails
+
+### Implementation Status
+
+- [x] Add font auto-fetching to CMake build (via `cmake/FetchFont.cmake` module)
+- [x] Download charset map together with font file during configuration
+- [x] Download license file (`FreeLicense.txt`) automatically
+- [x] Add CI caching for downloaded fonts in GitHub Actions
+- [x] Idempotent downloads (skip if files already present)
+- [x] Graceful error handling with helpful fallback messages
+- [x] Configurable URLs via CMake variables
+- [x] Implement font loading in `GraphicsRenderer::loadApple2Font()`
+- [x] Update `drawChar()` to use loaded font instead of Raylib default
+- [x] Update `drawText()` to use loaded font for text mode rendering
+- [x] Add text mode scaling logic for 80-column mode
+- [ ] Test rendering in 40-column mode (requires graphics environment)
+- [ ] Test rendering in 80-column mode (requires graphics environment)
+
+### Version Control
+
+Downloaded fonts are excluded from version control via `.gitignore`:
+
+```gitignore
+# Auto-downloaded assets
+assets/fonts/PrintChar21.ttf
+assets/fonts/apple2-charset.html
+```
+
+### Alternative Approach
+
+If direct font integration proves complex, consider:
+1. Using a pre-rendered bitmap atlas (256 characters in a grid)
+2. Store as PNG or embedded C array
+3. More control over pixel-perfect rendering
+4. Faster rendering without font rasterization overhead

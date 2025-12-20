@@ -149,7 +149,7 @@ The build system automatically downloads the Ultimate Apple II Font during CMake
 
 Downloaded files are cached in `assets/fonts/` and reused across builds. If the download fails (e.g., due to network restrictions), the build continues with warnings, and Raylib's default font is used as a fallback.
 
-For manual font installation or troubleshooting, see [Font Auto-Fetching Documentation](docs/Font_Auto_Fetching.md).
+For manual font installation or troubleshooting, see the [Font Integration](docs/features.md#font-integration) section in the features documentation.
 
 ### Building with Clang
 

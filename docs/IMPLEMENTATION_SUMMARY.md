@@ -18,11 +18,11 @@ Added FetchContent-based automatic building of raylib library:
 **Impact**: Users no longer need to manually install raylib - the build system handles it automatically.
 
 ### 2. Enhanced Documentation
-**Files**: `README.md`, `docs/Font_Integration.md`, `docs/Graphics_Implementation_Status.md`, `assets/fonts/README.md`
+**Files**: `README.md`, `docs/features.md`, `docs/Graphics_Implementation_Status.md`, `assets/fonts/README.md`
 
 Added comprehensive documentation:
 - Updated README with automatic raylib build instructions
-- Created Font_Integration.md with Ultimate Apple II Font specifications
+- Merged font specifications into features.md Font Integration section
 - Added Graphics_Implementation_Status.md with complete feature checklist
 - Created assets/fonts directory with README for font files
 
