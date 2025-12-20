@@ -17,6 +17,9 @@
 
 GraphicsRenderer::GraphicsRenderer(const GraphicsConfig& config)
     : config_(config), initialized_(false), windowWidth_(0), windowHeight_(0)
+#ifdef HAVE_RAYLIB
+    , font_(nullptr), fontLoaded_(false)
+#endif
 {
 }
 
@@ -80,8 +83,13 @@ bool GraphicsRenderer::initialize() {
 void GraphicsRenderer::shutdown() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
-        // Font loading not yet implemented, so no cleanup needed
-        // TODO: When font is loaded, call UnloadFont() here
+        // Unload font if it was loaded
+        if (fontLoaded_ && font_) {
+            UnloadFont(*font_);
+            delete font_;
+            font_ = nullptr;
+            fontLoaded_ = false;
+        }
         CloseWindow();
         initialized_ = false;
     }
@@ -145,8 +153,6 @@ void GraphicsRenderer::drawPixel(int x, int y, int color) {
 void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color) {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
-        // For now, use built-in font
-        // TODO: Use Apple II font when loaded
         Color c = {
             static_cast<unsigned char>((color >> 16) & 0xFF),
             static_cast<unsigned char>((color >> 8) & 0xFF),
@@ -154,8 +160,42 @@ void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color
             255
         };
         
-        DrawText(text.c_str(), x * config_.scaleFactor, y * config_.scaleFactor, 
-                 10 * config_.scaleFactor, c);
+        if (fontLoaded_ && font_) {
+            // Use loaded Apple II font
+            // Apple II character cell is 7×8 pixels
+            float fontSize = 8.0f * config_.scaleFactor;
+            float spacing = 1.0f * config_.scaleFactor;
+            
+            // Apply horizontal scaling for 80-column mode (0.5x)
+            float horizontalScale = 1.0f;
+            if (config_.textMode == TextMode::Text80) {
+                horizontalScale = 0.5f;
+            }
+            
+            Vector2 position = {
+                static_cast<float>(x * config_.scaleFactor * horizontalScale),
+                static_cast<float>(y * config_.scaleFactor)
+            };
+            
+            // If we're in 80-column mode, we need to scale the text horizontally
+            if (horizontalScale != 1.0f) {
+                // Draw each character with adjusted spacing for horizontal compression
+                float currentX = position.x;
+                for (char ch : text) {
+                    char str[2] = {ch, '\0'};
+                    DrawTextEx(*font_, str, (Vector2){currentX, position.y}, fontSize, 0, c);
+                    // In 80-column mode, characters are compressed horizontally
+                    currentX += (7.0f * config_.scaleFactor * horizontalScale);
+                }
+            } else {
+                // Normal 40-column mode rendering
+                DrawTextEx(*font_, text.c_str(), position, fontSize, spacing, c);
+            }
+        } else {
+            // Fallback to built-in font
+            DrawText(text.c_str(), x * config_.scaleFactor, y * config_.scaleFactor, 
+                     10 * config_.scaleFactor, c);
+        }
     }
 #endif
 }
@@ -163,10 +203,36 @@ void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color
 void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
-        // For now, use built-in drawing
-        // TODO: Use Apple II font when loaded
-        char str[2] = {ch, '\0'};
-        drawText(str, x, y, color);
+        Color c = {
+            static_cast<unsigned char>((color >> 16) & 0xFF),
+            static_cast<unsigned char>((color >> 8) & 0xFF),
+            static_cast<unsigned char>(color & 0xFF),
+            255
+        };
+        
+        if (fontLoaded_ && font_) {
+            // Use loaded Apple II font for single character
+            // Apple II character cell is 7×8 pixels
+            float fontSize = 8.0f * config_.scaleFactor;
+            
+            // Apply horizontal scaling for 80-column mode (0.5x)
+            float horizontalScale = 1.0f;
+            if (config_.textMode == TextMode::Text80) {
+                horizontalScale = 0.5f;
+            }
+            
+            Vector2 position = {
+                static_cast<float>(x * config_.scaleFactor * horizontalScale),
+                static_cast<float>(y * config_.scaleFactor)
+            };
+            
+            char str[2] = {ch, '\0'};
+            DrawTextEx(*font_, str, position, fontSize, 0, c);
+        } else {
+            // Fallback to built-in drawing
+            char str[2] = {ch, '\0'};
+            drawText(str, x, y, color);
+        }
     }
 #endif
 }
@@ -181,6 +247,8 @@ void GraphicsRenderer::loadApple2Font() {
     };
     
     bool fontFound = false;
+    const char* foundPath = nullptr;
+    
     for (const char* path : fontPaths) {
         // Check if file exists - using access() for safer checking
 #ifdef _WIN32
@@ -188,18 +256,45 @@ void GraphicsRenderer::loadApple2Font() {
 #else
         if (access(path, F_OK) == 0) {
 #endif
-            // TODO: Implement actual font loading
-            // font_ = LoadFontEx(path, 8, nullptr, 0);
-            // fontFound = IsReady(font_);
-            std::cout << "Found Apple II font at: " << path << "\n";
-            std::cout << "Note: Font loading not yet implemented - using default font\n";
+            foundPath = path;
             fontFound = true;
             break;
         }
     }
     
-    if (!fontFound) {
-        std::cout << "Ultimate Apple II Font not found - using Raylib default font\n";
+    if (fontFound && foundPath) {
+        try {
+            // Load font at 8 pixels (Apple II character cell is 7×8)
+            // We use 8 here as the fontSize to get proper glyph rendering
+            font_ = new Font();
+            *font_ = LoadFontEx(foundPath, 8, nullptr, 0);
+            
+            // Check if font loaded successfully
+            if (font_->texture.id > 0) {
+                // Apply bilinear filtering for better quality when scaling
+                SetTextureFilter(font_->texture, TEXTURE_FILTER_BILINEAR);
+                
+                fontLoaded_ = true;
+                std::cout << "Successfully loaded Apple II font from: " << foundPath << "\n";
+                std::cout << "Font base size: " << font_->baseSize << " pixels\n";
+            } else {
+                std::cerr << "Warning: Font file found but failed to load from: " << foundPath << "\n";
+                delete font_;
+                font_ = nullptr;
+                fontLoaded_ = false;
+            }
+        } catch (...) {
+            std::cerr << "Warning: Exception while loading font from: " << foundPath << "\n";
+            if (font_) {
+                delete font_;
+                font_ = nullptr;
+            }
+            fontLoaded_ = false;
+        }
+    }
+    
+    if (!fontLoaded_) {
+        std::cout << "Ultimate Apple II Font not found or failed to load - using Raylib default font\n";
         std::cout << "Download from: https://www.kreativekorp.com/software/fonts/apple2/\n";
         std::cout << "Place in: assets/fonts/PrintChar21.ttf\n";
     }
