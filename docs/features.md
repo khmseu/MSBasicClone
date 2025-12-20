@@ -262,89 +262,89 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 
 #### Error Handling Memory Locations
 
-- [x] Location 216: Error handler control (POKE 216,0 to restore)
-- [x] Location 218: Error line number (low byte)
-- [x] Location 219: Error line number (high byte)
-- [x] Location 222: Error code (0-255)
+- [x] Location 216/$D8: Error handler control (POKE 216,0 to restore)
+- [x] Location 218/$DA: Error line number (low byte)
+- [x] Location 219/$DB: Error line number (high byte)
+- [x] Location 222/$DE: Error code (0-255)
 
 ### PEEK/POKE/CALL Address Support
 
 #### Keyboard and Input
 
-- [x] PEEK(-16384)/PEEK(49152) - last key pressed
-- [x] POKE -16368/49168 - clear keyboard strobe
-- [x] PEEK(-16287)/PEEK(49249) - button 0 (>127 if pressed)
-- [x] PEEK(-16286)/PEEK(49250) - button 1 (>127 if pressed)
-- [x] PEEK(-16285)/PEEK(49251) - button 2 (>127 if pressed)
+- [x] PEEK(-16384)/PEEK(49152)/PEEK($C000) - last key pressed
+- [x] POKE -16368/49168/$C010 - clear keyboard strobe
+- [x] PEEK(-16287)/PEEK(49249)/PEEK($C061) - button 0 (>127 if pressed)
+- [x] PEEK(-16286)/PEEK(49250)/PEEK($C062) - button 1 (>127 if pressed)
+- [x] PEEK(-16285)/PEEK(49251)/PEEK($C063) - button 2 (>127 if pressed)
 
 #### Memory Pointers
 
-- [x] PEEK(105) - LOMEM pointer (low byte)
-- [x] PEEK(106) - LOMEM pointer (high byte)
-- [x] PEEK(115) - HIMEM pointer (low byte)
-- [x] PEEK(116) - HIMEM pointer (high byte)
-- [x] PEEK(218) - error line number (low byte)
-- [x] PEEK(219) - error line number (high byte)
-- [x] PEEK(222) - error code
+- [x] PEEK(105)/$69 - LOMEM pointer (low byte)
+- [x] PEEK(106)/$6A - LOMEM pointer (high byte)
+- [x] PEEK(115)/$73 - HIMEM pointer (low byte)
+- [x] PEEK(116)/$74 - HIMEM pointer (high byte)
+- [x] PEEK(218)/$DA - error line number (low byte)
+- [x] PEEK(219)/$DB - error line number (high byte)
+- [x] PEEK(222)/$DE - error code
 
 #### Display Control
 
-- [x] PEEK(37) - cursor vertical position (0-23)
-- [x] POKE 32 - text window left edge
-- [x] POKE 33 - text window width
-- [x] POKE 34 - text window top (0-23)
-- [x] POKE 37 - cursor vertical position
-- [x] POKE -16368/49168 - clear keyboard strobe
-- [x] POKE -16304/49232 - switch to graphics without clearing
-- [x] POKE -16303/49233 - full screen graphics control
-- [x] POKE -16302/49234 - graphics mode control
-- [x] POKE -16301/49235 - mixed graphics/text mode
-- [x] POKE -16300/49236 - text mode control
-- [x] POKE -16299/49237 - undocumented display control
-- [x] POKE -16298/49238 - undocumented display control
-- [x] POKE -16297/49239 - undocumented display control
+- [x] PEEK(37)/$25 - cursor vertical position (0-23)
+- [x] POKE 32/$20 - text window left edge
+- [x] POKE 33/$21 - text window width
+- [x] POKE 34/$22 - text window top (0-23)
+- [x] POKE 37/$25 - cursor vertical position
+- [x] POKE -16368/49168/$C010 - clear keyboard strobe
+- [x] POKE -16304/49232/$C050 - switch to graphics without clearing
+- [x] POKE -16303/49233/$C051 - full screen graphics control
+- [x] POKE -16302/49234/$C052 - graphics mode control
+- [x] POKE -16301/49235/$C053 - mixed graphics/text mode
+- [x] POKE -16300/49236/$C054 - text mode control
+- [x] POKE -16299/49237/$C055 - undocumented display control
+- [x] POKE -16298/49238/$C056 - undocumented display control
+- [x] POKE -16297/49239/$C057 - undocumented display control
 
 #### Annunciator Outputs
 
-- [x] POKE -16296/49240 - turn off annunciator 0
-- [x] POKE -16295/49241 - turn on annunciator 0
-- [x] POKE -16294/49242 - turn off annunciator 1
-- [x] POKE -16293/49243 - turn on annunciator 1
-- [x] POKE -16292/49244 - turn off annunciator 2
-- [x] POKE -16291/49245 - turn on annunciator 2
-- [x] POKE -16290/49246 - turn off annunciator 3
-- [x] POKE -16289/49247 - turn on annunciator 3
+- [x] POKE -16296/49240/$C058 - turn off annunciator 0
+- [x] POKE -16295/49241/$C059 - turn on annunciator 0
+- [x] POKE -16294/49242/$C05A - turn off annunciator 1
+- [x] POKE -16293/49243/$C05B - turn on annunciator 1
+- [x] POKE -16292/49244/$C05C - turn off annunciator 2
+- [x] POKE -16291/49245/$C05D - turn on annunciator 2
+- [x] POKE -16290/49246/$C05E - turn off annunciator 3
+- [x] POKE -16289/49247/$C05F - turn on annunciator 3
 
 #### Graphics Memory
 
-- [x] POKE 103 - hi-res page pointer (low byte)
-- [x] POKE 104 - hi-res page pointer (high byte)
-- [x] POKE 16384 - page-specific graphics control
-- [x] POKE 24576 - page-specific graphics control
+- [x] POKE 103/$67 - hi-res page pointer (low byte)
+- [x] POKE 104/$68 - hi-res page pointer (high byte)
+- [x] POKE 16384/$4000 - page-specific graphics control
+- [x] POKE 24576/$6000 - page-specific graphics control
 
 #### Shape Tables
 
-- [x] POKE 232 - shape table pointer (low byte)
-- [x] POKE 233 - shape table pointer (high byte)
+- [x] POKE 232/$E8 - shape table pointer (low byte)
+- [x] POKE 233/$E9 - shape table pointer (high byte)
 
 #### Error Control
 
-- [x] POKE 216,0 - restore normal error handling
+- [x] POKE 216/$D8,0 - restore normal error handling
 
 #### System Calls (CALL addresses)
 
-- [x] CALL -3288/62248 - stack cleanup routine
-- [x] CALL -3086/62450 - clear hi-res page to black
-- [x] CALL -3082/62454 - clear hi-res to last HPLOT color
-- [x] CALL -1998/63538 - BKGND (background color)
-- [x] CALL -958/64578 - clear from cursor to bottom-right
-- [x] CALL -936/64600 - HOME (clear screen, home cursor)
-- [x] CALL -922/64614 - line feed
-- [x] CALL -912/64624 - scroll text window up
-- [x] CALL -868/64668 - CLREOL (clear to end of line)
-- [x] CALL -151/65385 - enter Monitor
-- [x] CALL 768 - common user ML routine location (page 3)
-- [x] CALL 1002 - restore ProDOS connection (ProDOS only)
+- [x] CALL -3288/62248/$F318 - stack cleanup routine
+- [x] CALL -3086/62450/$F3F2 - clear hi-res page to black
+- [x] CALL -3082/62454/$F3F6 - clear hi-res to last HPLOT color
+- [x] CALL -1998/63538/$F832 - BKGND (background color)
+- [x] CALL -958/64578/$FC42 - clear from cursor to bottom-right
+- [x] CALL -936/64600/$FC58 - HOME (clear screen, home cursor)
+- [x] CALL -922/64614/$FC66 - line feed
+- [x] CALL -912/64624/$FC70 - scroll text window up
+- [x] CALL -868/64668/$FC9C - CLREOL (clear to end of line)
+- [x] CALL -151/65385/$FF69 - enter Monitor
+- [x] CALL 768/$300 - common user ML routine location (page 3)
+- [x] CALL 1002/$3EA - restore ProDOS connection (ProDOS only)
 
 ### Graphics Implementation
 
@@ -685,9 +685,9 @@ The following Apple II hardware features are stubs or simulations:
 
 - **PDL(n)** - Paddle input: Returns 0 (no game controller connected)
 - **Keyboard PEEK** - Returns stub value (uses GET for input)
-- **Button inputs** - PEEK(49249-49251): Returns 0
+- **Button inputs** - PEEK(49249-49251)/PEEK($C061-$C063): Returns 0
 - **Speaker sound** - PEEK/POKE to speaker address: No-op
-- **Annunciators** - PEEK/POKE 49240-49247: Stored but no hardware effect
+- **Annunciators** - PEEK/POKE 49240-49247/$C058-$C05F: Stored but no hardware effect
 
 These limitations are acceptable for a modern BASIC interpreter.
 
