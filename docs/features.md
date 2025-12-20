@@ -32,6 +32,8 @@
   - POP to remove entry from GOSUB stack
   - WAIT addr,mask to poll I/O
   - HIMEM=/LOMEM= to set memory boundaries
+  - TEXT to switch to text display mode
+  - STOP to pause execution (can be continued with CONT)
   - HPLOT for high-resolution graphics plotting (points and lines)
   - MOVE x,y for cursor positioning in hi-res graphics
   - ROTATE angle and SCALE n for shape parameters
@@ -67,6 +69,10 @@
   - SAVE filename
   - CATALOG
   - CLR
+  - CONT (continue after STOP)
+  - DEL start,end (delete line range)
+  - RECALL arrayname (load array from file)
+  - STORE arrayname (save array to file)
   - immediate-mode statements use the same parser/interpreter
 - Cursor helpers:
   - TAB(n) and SPC(n) return space padding

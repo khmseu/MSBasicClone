@@ -875,6 +875,9 @@ public:
 
 class TextStmt : public Statement {
 public:
+  // TEXT switches to text mode (no graphics)
+  // In this implementation, text mode is the default and graphics are
+  // offscreen-only, so TEXT is effectively a no-op that confirms text mode
   void execute(Interpreter *) override {}
 };
 
