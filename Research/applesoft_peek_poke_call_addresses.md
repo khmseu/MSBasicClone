@@ -215,13 +215,13 @@ POKE is used to write a value to a memory location. The statement takes an addre
 
 - POKE -16300,0 - The TEXT statement will return to text display with the text window set to the full screen and the cursor at the bottom of the screen. To turn off high-resolution graphics and return to text display with the text window and cursor int
 
-### POKE 32
+### POKE 32 = POKE($20)
 
 **Purpose:** Sets the left edge of the text window to the value specified by expression L.
 
 **Source:** Volume 2
 
-### POKE 33
+### POKE 33 = POKE($21)
 
 **Purpose:** Sets the width of the text window (number of characters per line) to the value specified by expression $\mathbb{W}$ .
 
@@ -258,7 +258,7 @@ POKE is used to write a value to a memory location. The statement takes an addre
 - POKE 104,96 - POKE 103, 1 POKE 104,96
 - POKE 104,64 - POKE 103, 1 POKE 104,64
 
-### POKE 216
+### POKE 216 = POKE($D8)
 
 **Purpose:** Error handling control - POKE 216,0 restores normal error handling
 
