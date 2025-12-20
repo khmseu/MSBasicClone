@@ -183,7 +183,7 @@ Creates a list of items for use by READ statements. In the example, the first it
 
 Syntax: DEF FN name (name) = aexpr
 
-Example:DEFFN CUBE  $(X) = X\ast X\ast X$
+Example:DEFFN CU  $(X) = X\ast X\ast X$
 
 Defines a new function for use in the program. The example defines a function that yields the cube of its argument. [2.4.3]
 
@@ -241,9 +241,9 @@ Causes all text displayed on the screen with subsequent PR INT statements to fla
 
 Syntax: FN name (aexpr)
 
-Example: FN CUBE (6)
+Example: FN CU (6)
 
-Applies a designated function to the value of the argument expression. Assuming the definition for the function CUBE given above under DEF FN, the example yields the value 21G. [2.4.3]
+Applies a designated function to the value of the argument expression. Assuming the definition for the function CU given above under DEF FN, the example yields the value 21G. [2.4.3]
 
 # FOR
 

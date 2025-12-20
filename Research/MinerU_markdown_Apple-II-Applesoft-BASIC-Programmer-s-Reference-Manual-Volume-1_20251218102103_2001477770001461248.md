@@ -1860,7 +1860,7 @@ tive arguments will then produce the same sequence of results:</td></tr><tr><td>
 
 # 2.4.3 Defining Your Own Functions: The DEF FN Statement
 
-DEF FN CUBE (X) = X * X * X
+DEF FN CU (X) = X * X * X
 
 In addition to the built-in functions discussed in Sections 2.4.1 and 2.4.2, Applesoft gives you the ability to define your own functions for the special needs of a particular program. Defining your own functions can be a real time-saver: instead of writing out the same complex formula over and over again, you can simply define it once as a function, give it a name, and then refer to it by that name whenever you need it.
 
@@ -1870,12 +1870,12 @@ argument: the value on which a function operates
 
 To define a function of your own, use the DEF FN statement. This statement consists of the keywords DEF FN (for "define function") followed by the name of the function you're defining, the argument name enclosed in parentheses, an equal sign  $(=)$ , and the formula defining the function. The examples below define functions to convert temperatures from Fahrenheit to Celsius and vice versa, and to convert angles from degrees to radians and vice versa, assuming that the value of the variable PI is 3, 14159265:
 
-10DEFFNFTC（T）=（T-32）\*5/9—Fahrenheit to Celsius  
-20DEFFNCTF（T）=T\*（9/5）+32 —Celsius to Fahrenheit  
-30DEFFN DTR（A）=A\*（PI/180） degrees to radians  
-40DEFFNRTD（A）=A\*（180/PI） -radians to degrees
+10DEFFNFT（T）=（T-32）\*5/9—Fahrenheit to Celsius  
+20DEFFNCF（T）=T\*（9/5）+32 —Celsius to Fahrenheit  
+30DEFFN DR（A）=A\*（PI/180） degrees to radians  
+40DEFFNRD（A）=A\*（180/PI） -radians to degrees
 
-For example, the definition above for function FTC says "to convert from Fahrenheit to Celsius, take the value of the argument (T), subtract 32, multiply by 5, and divide by 9."
+For example, the definition above for function FT says "to convert from Fahrenheit to Celsius, take the value of the argument (T), subtract 32, multiply by 5, and divide by 9."
 
 Formula limited to 239 characters
 
@@ -1891,11 +1891,11 @@ Take care not to begin the names of different functions with the same two charac
 
 However, a program can have a function and an array beginning with the same two characters (or even having exactly the same name). This is because references to the function are written with the keyword FN (see below), but references to the array aren't. Thus Applesoft can tell that, for example,
 
-FN COUNT (N)
+FN CO (N)
 
-is a call to the function named COUNT, whereas
+is a call to the function named CO, whereas
 
-COUNT (N)
+CO (N)
 
 is a reference to the array of the same name.
 
@@ -1905,19 +1905,19 @@ The DEF FN statement can be executed only from within a program; you can't use t
 
 To call a function that you've defined with DEF FN, type the keyword FN (for "function") followed by the name of the function and an expression in parentheses representing the argument value on which you want the function to operate. For example, using the functions defined above,
 
-FN FTC (98,6)
+FN FT (98,6)
 
 convert 98,6 degrees Fahrenheit to Celsius; yields 37
 
-FN CTF (100)
+FN CF (100)
 
 convert 100 degrees Celsius to Fahrenheit; yields 212
 
-FN DTR (180)
+FN DR (180)
 
 convert 180 degrees to radians; yields 3, 14159265
 
-FN RTD (PI / 2)
+FN RD (PI / 2)
 
 convert PI / 2 radians to degrees; yields 90
 
