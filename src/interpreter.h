@@ -114,6 +114,12 @@ public:
 
   // File system operations
   void catalog();
+  
+  // ProDOS commands
+  void deleteFile(const std::string &filename);
+  void renameFile(const std::string &oldName, const std::string &newName);
+  void showPrefix();
+  void changePrefix(const std::string &path);
 
   // Array persistence
   void storeArray(const std::string &arrayName);
