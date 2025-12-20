@@ -1,4 +1,6 @@
 #include "graphics.h"
+#include "graphics_renderer.h"
+#include "graphics_config.h"
 
 #include <algorithm>
 #include <cmath>
@@ -21,7 +23,7 @@ int clampToInt(double value) { return static_cast<int>(std::lround(value)); }
 Graphics::Graphics()
     : mode_(GraphicsMode::None),
       window_{0, 0, kDefaultColumns, kDefaultRows, 1.0, 1.0}, frame_(),
-      windowOpen_(false), color_(0) {
+      windowOpen_(false), color_(0), renderer_(nullptr) {
   defineDefaultShapes();
 }
 
@@ -31,6 +33,45 @@ Graphics &Graphics::instance() {
 }
 
 Graphics &graphics() { return Graphics::instance(); }
+
+void Graphics::initialize(const GraphicsConfig& config) {
+  // Create and initialize renderer if graphics is enabled
+  if (config.isGraphicsEnabled()) {
+    renderer_ = std::make_shared<GraphicsRenderer>(config);
+    if (!renderer_->initialize()) {
+      renderer_.reset();
+    }
+  }
+}
+
+void Graphics::setRenderer(std::shared_ptr<GraphicsRenderer> renderer) {
+  renderer_ = renderer;
+}
+
+void Graphics::renderFrame() {
+  if (!renderer_ || !renderer_->isInitialized()) {
+    return;
+  }
+  
+  renderer_->beginFrame();
+  renderer_->clear();
+  
+  // Render all recorded points from the frame buffer
+  for (const auto& sample : frame_) {
+    renderer_->drawPixel(static_cast<int>(sample.logicalX), 
+                        static_cast<int>(sample.logicalY), 
+                        sample.color);
+  }
+  
+  renderer_->endFrame();
+}
+
+bool Graphics::shouldClose() const {
+  if (renderer_ && renderer_->isInitialized()) {
+    return renderer_->shouldClose();
+  }
+  return false;
+}
 
 GraphicsMode Graphics::mode() const { return mode_; }
 

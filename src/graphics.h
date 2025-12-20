@@ -2,8 +2,12 @@
 
 #include <unordered_map>
 #include <vector>
-
+#include <memory>
 #include <utility>
+
+// Forward declaration
+class GraphicsRenderer;
+struct GraphicsConfig;
 
 enum class GraphicsMode { None, LowRes, HighRes };
 
@@ -27,6 +31,14 @@ struct PlotSample {
 class Graphics {
 public:
   static Graphics &instance();
+
+  // Initialization
+  void initialize(const GraphicsConfig& config);
+  void setRenderer(std::shared_ptr<GraphicsRenderer> renderer);
+  
+  // Rendering
+  void renderFrame();  // Render the accumulated frame to the window
+  bool shouldClose() const;
 
   void enterLowRes();
   void enterHighRes();
@@ -70,6 +82,7 @@ private:
   std::vector<PlotSample> frame_;
   bool windowOpen_;
   int color_;
+  std::shared_ptr<GraphicsRenderer> renderer_;  // Actual window renderer
   // Shape drawing state
   int rotateAngle_ = 0; // degrees
   int scaleFactor_ = 1; // unit scale multiplier
