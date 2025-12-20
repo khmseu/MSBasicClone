@@ -181,7 +181,7 @@ void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color
                 char charBuffer[2] = {'\0', '\0'};
                 // Draw each character with adjusted spacing for horizontal compression
                 float currentX = position.x;
-                for (char ch : text) {
+                for (const char& ch : text) {
                     charBuffer[0] = ch;
                     DrawTextEx(font_, charBuffer, (Vector2){currentX, position.y}, fontSize, 0, c);
                     // In 80-column mode, characters are compressed horizontally
@@ -262,7 +262,7 @@ void GraphicsRenderer::loadApple2Font() {
         }
     }
     
-    if (fontFound && foundPath) {
+    if (fontFound) {
         try {
             // Load font at 8 pixels (Apple II character cell is 7×8)
             // We use 8 here as the fontSize to get proper glyph rendering
@@ -278,10 +278,18 @@ void GraphicsRenderer::loadApple2Font() {
                 std::cout << "Font base size: " << font_.baseSize << " pixels\n";
             } else {
                 std::cerr << "Warning: Font file found but failed to load from: " << foundPath << "\n";
+                // Unload the font to ensure proper cleanup of any partially loaded resources
+                UnloadFont(font_);
                 fontLoaded_ = false;
             }
         } catch (...) {
             std::cerr << "Warning: Exception while loading font from: " << foundPath << "\n";
+            // Attempt to unload font in case of partial initialization
+            try {
+                UnloadFont(font_);
+            } catch (...) {
+                // Ignore cleanup errors
+            }
             fontLoaded_ = false;
         }
     }
