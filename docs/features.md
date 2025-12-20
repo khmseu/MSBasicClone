@@ -444,9 +444,9 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 
 ### Remaining Work - Graphics
 
-- [ ] Uncomment font loading code in `GraphicsRenderer::loadApple2Font()`
-- [ ] Test rendering in 40-column mode
-- [ ] Test rendering in 80-column mode
+- [x] Uncomment font loading code in `GraphicsRenderer::loadApple2Font()`
+- [x] Test rendering in 40-column mode
+- [x] Test rendering in 80-column mode
 - [ ] Text rendering directly into graphics buffer
 - [ ] Mixed text/graphics mode display (4-line text + 160-line graphics)
 - [ ] More accurate Apple II color palette interpolation
