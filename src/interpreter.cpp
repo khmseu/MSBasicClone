@@ -476,6 +476,9 @@ void Interpreter::catalog() {
 }
 
 namespace {
+// Maximum number of array dimensions supported in array files
+constexpr size_t kMaxArrayDimensions = 255;
+
 // Helper function to sanitize array name for use as filename
 std::string sanitizeArrayName(const std::string &arrayName) {
   std::string filename = arrayName;
@@ -548,7 +551,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
     // Read dimensions
     size_t numDims;
     file >> numDims;
-    if (!file || numDims == 0 || numDims > 255) {
+    if (!file || numDims == 0 || numDims > kMaxArrayDimensions) {
       throw std::runtime_error("INVALID ARRAY FILE FORMAT");
     }
     

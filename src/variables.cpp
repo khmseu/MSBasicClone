@@ -166,7 +166,7 @@ bool Variables::hasArray(const std::string &name) const {
   return arrays_.find(normalizeName(name)) != arrays_.end();
 }
 
-const std::vector<int> &Variables::getArrayDimensions(const std::string &name) {
+const std::vector<int> &Variables::getArrayDimensions(const std::string &name) const {
   std::string normalized = normalizeName(name);
   auto it = arrays_.find(normalized);
   if (it == arrays_.end()) {
@@ -176,7 +176,7 @@ const std::vector<int> &Variables::getArrayDimensions(const std::string &name) {
 }
 
 const std::map<std::vector<int>, Value> &
-Variables::getArrayData(const std::string &name) {
+Variables::getArrayData(const std::string &name) const {
   std::string normalized = normalizeName(name);
   auto it = arrays_.find(normalized);
   if (it == arrays_.end()) {
