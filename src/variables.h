@@ -44,6 +44,10 @@ public:
   void setArrayData(const std::string &name, const std::vector<int> &dimensions,
                    const std::map<std::vector<int>, Value> &data);
 
+  // Variable persistence helpers (for ProDOS STORE/RESTORE)
+  std::map<std::string, double> getAllNumericVariables() const;
+  std::map<std::string, std::string> getAllStringVariables() const;
+
 private:
   std::map<std::string, Value> variables_;
 

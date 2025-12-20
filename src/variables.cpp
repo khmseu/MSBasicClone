@@ -193,3 +193,23 @@ void Variables::setArrayData(const std::string &name,
   arr.dimensions = dimensions;
   arr.data = data;
 }
+
+std::map<std::string, double> Variables::getAllNumericVariables() const {
+  std::map<std::string, double> numVars;
+  for (const auto &pair : variables_) {
+    if (!pair.second.isString()) {
+      numVars[pair.first] = pair.second.getNumber();
+    }
+  }
+  return numVars;
+}
+
+std::map<std::string, std::string> Variables::getAllStringVariables() const {
+  std::map<std::string, std::string> strVars;
+  for (const auto &pair : variables_) {
+    if (pair.second.isString()) {
+      strVars[pair.first] = pair.second.getString();
+    }
+  }
+  return strVars;
+}

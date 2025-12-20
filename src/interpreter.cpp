@@ -801,7 +801,7 @@ void Interpreter::deleteFile(const std::string &filename) {
   }
   
   if (!::deleteFile(filename)) {
-    handleError("FILE NOT FOUND ERROR");
+    handleError("PATH NOT FOUND ERROR");
   }
 }
 
@@ -1118,7 +1118,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
 
   std::ifstream file(filename);
   if (!file) {
-    throw std::runtime_error("FILE NOT FOUND ERROR");
+    throw std::runtime_error("PATH NOT FOUND ERROR");
   }
 
   try {
@@ -1198,6 +1198,164 @@ void Interpreter::recallArray(const std::string &arrayName) {
     throw std::runtime_error("INVALID ARRAY FILE FORMAT");
   } catch (const std::out_of_range &) {
     throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+  }
+}
+
+void Interpreter::storeVariables(const std::string &filename) {
+  std::ofstream file(filename);
+  if (!file) {
+    throw std::runtime_error("I/O ERROR");
+  }
+
+  // Get all scalar variables from the Variables object
+  const auto &numVars = variables_.getAllNumericVariables();
+  const auto &strVars = variables_.getAllStringVariables();
+
+  // Write format version
+  file << "MSBASIC_VARS_V1\n";
+
+  // Write numeric variables
+  file << numVars.size() << "\n";
+  for (const auto &pair : numVars) {
+    file << pair.first << " " << pair.second << "\n";
+  }
+
+  // Write string variables
+  file << strVars.size() << "\n";
+  for (const auto &pair : strVars) {
+    // Escape newlines in strings
+    std::string escapedStr = pair.second;
+    size_t pos = 0;
+    while ((pos = escapedStr.find('\n', pos)) != std::string::npos) {
+      escapedStr.replace(pos, 1, "\\n");
+      pos += 2;
+    }
+    file << pair.first << " " << escapedStr << "\n";
+  }
+
+  if (!file) {
+    throw std::runtime_error("I/O ERROR");
+  }
+}
+
+void Interpreter::restoreVariables(const std::string &filename) {
+  std::ifstream file(filename);
+  if (!file) {
+    throw std::runtime_error("PATH NOT FOUND ERROR");
+  }
+
+  try {
+    // Read format version
+    std::string version;
+    std::getline(file, version);
+    if (version != "MSBASIC_VARS_V1") {
+      throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
+    }
+
+    // Read numeric variables
+    size_t numCount;
+    file >> numCount;
+    file.ignore(); // Skip newline
+    
+    for (size_t i = 0; i < numCount; ++i) {
+      std::string varName;
+      double value;
+      file >> varName >> value;
+      if (!file) {
+        throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
+      }
+      variables_.setVariable(varName, Value(value));
+    }
+    file.ignore(); // Skip newline after last number
+
+    // Read string variables
+    size_t strCount;
+    file >> strCount;
+    file.ignore(); // Skip newline
+    
+    for (size_t i = 0; i < strCount; ++i) {
+      std::string line;
+      std::getline(file, line);
+      if (!file || line.empty()) {
+        throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
+      }
+      
+      // Parse variable name and value
+      size_t spacePos = line.find(' ');
+      if (spacePos == std::string::npos) {
+        throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
+      }
+      
+      std::string varName = line.substr(0, spacePos);
+      std::string value = line.substr(spacePos + 1);
+      
+      // Unescape newlines
+      size_t pos = 0;
+      while ((pos = value.find("\\n", pos)) != std::string::npos) {
+        value.replace(pos, 2, "\n");
+        pos += 1;
+      }
+      
+      variables_.setVariable(varName, Value(value));
+    }
+  } catch (const std::invalid_argument &) {
+    throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
+  } catch (const std::out_of_range &) {
+    throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
+  }
+}
+
+void Interpreter::loadShapeTableFromFile(const std::string &filename) {
+  // Load shape table from binary file in Apple II format
+  std::ifstream file(filename, std::ios::binary);
+  if (!file) {
+    throw std::runtime_error("PATH NOT FOUND ERROR");
+  }
+
+  try {
+    // Read number of shapes (first byte)
+    uint8_t numShapes;
+    file.read(reinterpret_cast<char*>(&numShapes), 1);
+    if (!file || numShapes == 0) {
+      throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+    }
+
+    // Read shape table index (2 bytes per shape)
+    std::vector<uint16_t> shapeOffsets(numShapes);
+    for (size_t i = 0; i < numShapes; ++i) {
+      uint8_t lowByte, highByte;
+      file.read(reinterpret_cast<char*>(&lowByte), 1);
+      file.read(reinterpret_cast<char*>(&highByte), 1);
+      if (!file) {
+        throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+      }
+      shapeOffsets[i] = lowByte | (highByte << 8);
+    }
+
+    // Read all remaining data
+    std::vector<uint8_t> shapeData;
+    char byte;
+    while (file.read(&byte, 1)) {
+      shapeData.push_back(static_cast<uint8_t>(byte));
+    }
+
+    // For now, we'll store the shape table pointer in memory locations 232-233
+    // This is a simplified implementation that just validates the file format
+    // Full implementation would parse the shape vectors and load them into graphics
+    
+    // Store shape table pointer (using a simplified approach)
+    // In real Apple II, this would be the memory address of the shape table
+    // For our implementation, we just acknowledge the file was loaded
+    pokeMemory(232, 0);  // Low byte of shape table pointer
+    pokeMemory(233, 0);  // High byte of shape table pointer
+    
+    // Note: Full shape table parsing and rendering would require decoding
+    // the vector plotting commands in each shape definition. This is a
+    // stub implementation that validates file format but doesn't fully
+    // parse the shapes.
+    
+  } catch (const std::exception &e) {
+    throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
   }
 }
 
@@ -1386,6 +1544,12 @@ void Interpreter::setErrorHandler(LineNumber lineNum) {
 }
 
 void Interpreter::handleError(const std::string &message) {
+  throw std::runtime_error(message);
+}
+
+void Interpreter::handleError(const std::string &message, int errorCode) {
+  // Store error code in memory location 222 for ProDOS compatibility
+  pokeMemory(222, errorCode);
   throw std::runtime_error(message);
 }
 

@@ -10,6 +10,28 @@
 #include <string>
 #include <vector>
 
+// ProDOS Error Codes (stored in memory location 222)
+namespace ErrorCode {
+  constexpr int RANGE_ERROR = 2;
+  constexpr int NO_DEVICE_CONNECTED = 3;
+  constexpr int WRITE_PROTECTED = 4;
+  constexpr int END_OF_DATA = 5;
+  constexpr int PATH_NOT_FOUND = 6;
+  constexpr int IO_ERROR = 8;
+  constexpr int DISK_FULL = 9;
+  constexpr int FILE_LOCKED = 10;
+  constexpr int INVALID_OPTION = 11;
+  constexpr int NO_BUFFERS_AVAILABLE = 12;
+  constexpr int FILE_TYPE_MISMATCH = 13;
+  constexpr int PROGRAM_TOO_LARGE = 14;
+  constexpr int NOT_DIRECT_COMMAND = 15;
+  constexpr int DIRECTORY_FULL = 17;
+  constexpr int FILE_NOT_OPEN = 18;
+  constexpr int DUPLICATE_FILENAME = 19;
+  constexpr int FILE_BUSY = 20;
+  constexpr int FILES_STILL_OPEN = 21;
+}
+
 class Interpreter {
 public:
   Interpreter();
@@ -74,6 +96,7 @@ public:
   // Error handling
   void setErrorHandler(LineNumber lineNum);
   void handleError(const std::string &message);
+  void handleError(const std::string &message, int errorCode);
   void resume();
 
   // Debugging
@@ -152,6 +175,13 @@ public:
   // Array persistence
   void storeArray(const std::string &arrayName);
   void recallArray(const std::string &arrayName);
+
+  // Variable persistence (ProDOS STORE/RESTORE)
+  void storeVariables(const std::string &filename);
+  void restoreVariables(const std::string &filename);
+
+  // Shape table loading
+  void loadShapeTableFromFile(const std::string &filename);
 
   // State reset
   void clearState();

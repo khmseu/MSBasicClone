@@ -74,7 +74,7 @@ bool fileExists(const std::string& filename) {
 std::string readTextFile(const std::string& filename) {
     std::ifstream file(filename);
     if (!file) {
-        throw std::runtime_error("FILE NOT FOUND ERROR");
+        throw std::runtime_error("PATH NOT FOUND ERROR");
     }
     
     std::stringstream buffer;
@@ -161,7 +161,7 @@ int FileManager::openFile(const std::string& filename, FileAccessMode mode) {
         return handle;
     } else {
         handles_.erase(handle);
-        throw std::runtime_error("FILE NOT FOUND ERROR");
+        throw std::runtime_error("PATH NOT FOUND ERROR");
     }
 }
 
@@ -284,7 +284,7 @@ bool FileManager::createFile(const std::string& filename) {
 std::vector<uint8_t> FileManager::loadBinaryFile(const std::string& filename, int address) {
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
     if (!file) {
-        throw std::runtime_error("FILE NOT FOUND ERROR");
+        throw std::runtime_error("PATH NOT FOUND ERROR");
     }
     
     std::streamsize size = file.tellg();
