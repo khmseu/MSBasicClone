@@ -1,6 +1,8 @@
 #include "graphics_renderer.h"
 #include <stdexcept>
 #include <iostream>
+#include <cstdlib>
+#include <cstring>
 
 #ifdef HAVE_RAYLIB
 #include <raylib.h>
@@ -25,6 +27,15 @@ bool GraphicsRenderer::initialize() {
 
 #ifdef HAVE_RAYLIB
     if (config_.isGraphicsEnabled()) {
+        // Check if we have a display available before trying to initialize
+        const char* display = getenv("DISPLAY");
+        if (!display || strlen(display) == 0) {
+            std::cerr << "Warning: No DISPLAY environment variable set.\n";
+            std::cerr << "Graphics mode is enabled but rendering will be off-screen only.\n";
+            initialized_ = false;
+            return false;
+        }
+        
         // Apple II hires resolution is 280x192
         int baseWidth = 280;
         int baseHeight = 192;
@@ -32,7 +43,18 @@ bool GraphicsRenderer::initialize() {
         windowWidth_ = baseWidth * config_.scaleFactor;
         windowHeight_ = baseHeight * config_.scaleFactor;
         
+        // Try to initialize window
         InitWindow(windowWidth_, windowHeight_, "MSBasic - Apple II Graphics");
+        
+        // Check if window was successfully created
+        if (!IsWindowReady()) {
+            std::cerr << "Warning: Could not initialize graphics window.\n";
+            std::cerr << "Graphics mode is enabled but rendering will be off-screen only.\n";
+            CloseWindow();
+            initialized_ = false;
+            return false;
+        }
+        
         SetTargetFPS(60);
         
         // Load the Apple II font
