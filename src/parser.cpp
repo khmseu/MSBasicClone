@@ -868,8 +868,8 @@ public:
       : addr_(std::move(addr)) {}
 
   void execute(Interpreter *interp) override {
-    // No-op stub for CALL; evaluate for side effects only.
-    (void)addr_->evaluate(interp);
+    int address = static_cast<int>(addr_->evaluate(interp).getNumber());
+    interp->callAddress(address);
   }
 
 private:

@@ -24,26 +24,98 @@ static int gHimem = 49152; // $C000
 } // namespace
 
 void pokeMemory(int addr, int val) {
-  // Special addresses that bypass range checks
+  auto &mem = memoryMap();
+  
+  // Handle negative addresses (Apple II convention)
+  if (addr < 0) {
+    addr = 65536 + addr;  // Convert negative to 16-bit unsigned
+  }
+  
+  // Special addresses that bypass range checks and have special behavior
+  
+  // Memory pointers and error handling (0-255 range)
   if (addr == 37 || addr == 105 || addr == 106 || 
       addr == 115 || addr == 116 || addr == 216 || 
       addr == 218 || addr == 219 || addr == 222) {
-    memoryMap()[addr] = val & 0xFF;
+    mem[addr] = val & 0xFF;
     return;
   }
   
+  // Text window control (32-37)
+  if (addr >= 32 && addr <= 37) {
+    mem[addr] = val & 0xFF;
+    return;
+  }
+  
+  // Shape table pointers (232-233)
+  if (addr == 232 || addr == 233) {
+    mem[addr] = val & 0xFF;
+    return;
+  }
+  
+  // Hi-res page pointers (103-104)
+  if (addr == 103 || addr == 104) {
+    mem[addr] = val & 0xFF;
+    return;
+  }
+  
+  // Graphics memory base addresses
+  if (addr == 16384 || addr == 24576) {
+    mem[addr] = val & 0xFF;
+    return;
+  }
+  
+  // Keyboard strobe (49168)
+  if (addr == 49168 || addr == -16368) {
+    // Clear keyboard strobe - no-op in our implementation
+    return;
+  }
+  
+  // Display control switches (49232-49239)
+  if (addr >= 49232 && addr <= 49239) {
+    mem[addr] = val & 0xFF;
+    return;
+  }
+  
+  // Annunciator outputs (49240-49247)
+  if (addr >= 49240 && addr <= 49247) {
+    mem[addr] = val & 0xFF;
+    return;
+  }
+  
+  // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
     throw std::runtime_error("MEMORY RANGE ERROR");
   }
-  memoryMap()[addr] = val & 0xFF;
+  mem[addr] = val & 0xFF;
 }
 
 int peekMemory(int addr) {
+  auto &mem = memoryMap();
+  
+  // Handle negative addresses (Apple II convention)
+  if (addr < 0) {
+    addr = 65536 + addr;  // Convert negative to 16-bit unsigned
+  }
+  
   // Special addresses that bypass range checks
+  
+  // Keyboard input (49152 / -16384)
+  if (addr == 49152 || addr == -16384) {
+    // Return last key pressed (stub - would need actual keyboard state)
+    return mem.count(49152) ? mem[49152] : 0;
+  }
+  
+  // Button inputs (49249-49251 / -16287 to -16285)
+  if (addr >= 49249 && addr <= 49251) {
+    // Return button state (stub - always unpressed)
+    return 0;
+  }
+  
+  // Memory pointers and error handling
   if (addr == 37 || addr == 105 || addr == 106 || 
       addr == 115 || addr == 116 || addr == 216 || 
       addr == 218 || addr == 219 || addr == 222) {
-    auto &mem = memoryMap();
     auto it = mem.find(addr);
     if (it == mem.end()) {
       return 0;
@@ -51,10 +123,46 @@ int peekMemory(int addr) {
     return it->second & 0xFF;
   }
   
+  // Text window control (32-37)
+  if (addr >= 32 && addr <= 37) {
+    auto it = mem.find(addr);
+    return (it != mem.end()) ? (it->second & 0xFF) : 0;
+  }
+  
+  // Shape table pointers (232-233)
+  if (addr == 232 || addr == 233) {
+    auto it = mem.find(addr);
+    return (it != mem.end()) ? (it->second & 0xFF) : 0;
+  }
+  
+  // Hi-res page pointers (103-104)
+  if (addr == 103 || addr == 104) {
+    auto it = mem.find(addr);
+    return (it != mem.end()) ? (it->second & 0xFF) : 0;
+  }
+  
+  // Graphics memory base addresses
+  if (addr == 16384 || addr == 24576) {
+    auto it = mem.find(addr);
+    return (it != mem.end()) ? (it->second & 0xFF) : 0;
+  }
+  
+  // Display control switches (49232-49239)
+  if (addr >= 49232 && addr <= 49239) {
+    auto it = mem.find(addr);
+    return (it != mem.end()) ? (it->second & 0xFF) : 0;
+  }
+  
+  // Annunciator outputs (49240-49247)
+  if (addr >= 49240 && addr <= 49247) {
+    auto it = mem.find(addr);
+    return (it != mem.end()) ? (it->second & 0xFF) : 0;
+  }
+  
+  // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
     throw std::runtime_error("MEMORY RANGE ERROR");
   }
-  auto &mem = memoryMap();
   auto it = mem.find(addr);
   if (it == mem.end()) {
     return 0;

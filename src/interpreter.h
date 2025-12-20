@@ -145,6 +145,9 @@ public:
   void bloadFile(const std::string &filename, int address);
   void bsaveFile(const std::string &filename, int address, int length);
   void brunFile(const std::string &filename, int address);
+  
+  // Apple II system calls
+  void callAddress(int address);
 
   // Array persistence
   void storeArray(const std::string &arrayName);
