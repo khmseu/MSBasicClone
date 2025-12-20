@@ -43,10 +43,10 @@ private:
     int windowWidth_;   // Scaled window width
     int windowHeight_;  // Scaled window height
     
-    // TODO: Add font loading
-    // #ifdef HAVE_RAYLIB
-    // Font font_;        // Apple II font
-    // #endif
+#ifdef HAVE_RAYLIB
+    Font font_;         // Apple II font (default-constructed if not loaded)
+    bool fontLoaded_;   // Track if font was successfully loaded
+#endif
 
     void loadApple2Font();
     unsigned int convertColor(int appleColor) const;

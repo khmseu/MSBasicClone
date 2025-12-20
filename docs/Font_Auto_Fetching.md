@@ -106,7 +106,12 @@ CMake Warning: Failed to download font: "Could not resolve hostname"
 
 ### Font Not Loading
 
-The font loading is currently a TODO in the codebase. The infrastructure is in place, but actual font rasterization is not yet implemented in `GraphicsRenderer::loadApple2Font()`.
+If the font file exists but doesn't appear to be rendering correctly:
+
+1. Check that you're running in a graphics-enabled environment (X11 display available)
+2. Verify the font file is not corrupted (should be ~50KB)
+3. Check console output for font loading messages
+4. The system will automatically fall back to Raylib's default font if loading fails
 
 ## Implementation Details
 
@@ -153,13 +158,35 @@ This is useful when:
 ### Integration Points
 
 1. **CMakeLists.txt**: Calls `fetch_apple2_font()` during configuration
-2. **GraphicsRenderer**: Checks for font files at multiple paths
+2. **GraphicsRenderer**: Loads font files using Raylib's `LoadFontEx()` at runtime
+   - Searches multiple paths: `assets/fonts/`, `../assets/fonts/`, `/usr/share/fonts/apple2/`
+   - Applies bilinear texture filtering for quality
+   - Implements 40-column and 80-column text mode support
 3. **.gitignore**: Excludes downloaded fonts from version control
+
+### Font Loading Implementation
+
+The `GraphicsRenderer::loadApple2Font()` method provides complete font loading:
+
+- **Multi-path search**: Checks several common locations for the font file
+- **Raylib integration**: Uses `LoadFontEx()` at 8px size for 7×8 character cells
+- **Quality settings**: Applies bilinear texture filtering for smooth scaling
+- **Error handling**: Validates font loading and provides helpful error messages
+- **Graceful fallback**: Uses Raylib's default font if Apple II font unavailable
+- **Memory management**: Properly allocates and deallocates font resources
+
+### Text Mode Support
+
+The renderer supports both Apple II text modes:
+
+- **40-column mode**: Standard 7-pixel character width, 280 pixels total
+- **80-column mode**: 3.5-pixel effective width (0.5x horizontal scaling), 280 pixels total
 
 ## Future Enhancements
 
-- [ ] Implement actual font loading in GraphicsRenderer
+- [x] Implement actual font loading in GraphicsRenderer (completed)
 - [ ] Support alternative font sources/mirrors
 - [ ] Add option to disable auto-fetching
 - [ ] Implement offline/embedded font fallback
 - [ ] Add font file integrity checks (checksum/hash)
+- [ ] Add visual tests for font rendering in CI
