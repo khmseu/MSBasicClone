@@ -195,7 +195,7 @@ Graphics features are implemented:
 - ✅ Raylib integration with FetchContent
 - ✅ Font auto-fetching system implemented
 
-**Status:** Ultimate Apple II Font files are automatically downloaded during CMake configuration via the `cmake/FetchFont.cmake` module. See `docs/Font_Auto_Fetching.md` for details.
+**Status:** Ultimate Apple II Font files are automatically downloaded during CMake configuration via the `cmake/FetchFont.cmake` module. See the "Font Integration" section in `docs/features.md` for details.
 
 ## Test Coverage Analysis
 

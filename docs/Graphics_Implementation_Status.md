@@ -47,7 +47,7 @@ All Applesoft graphics commands are implemented:
 
 ### 7. Font Integration Infrastructure ✅
 - **Directory structure**: assets/fonts/ created
-- **Documentation**: Font_Integration.md with specifications
+- **Documentation**: Font Integration section in features.md with specifications
 - **Search paths**: Checks multiple locations for font file
 - **Helpful messages**: Tells user where to download font
 - **Fallback**: Uses Raylib default font when Apple II font not available

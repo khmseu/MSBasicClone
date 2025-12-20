@@ -33,7 +33,7 @@
   - Font loading infrastructure with safe file checking
   - Ultimate Apple II Font support structure
   - Font search path logic in `src/graphics_renderer.cpp`
-  - Comprehensive font documentation in `docs/Font_Integration.md`
+  - Comprehensive font documentation in the Font Integration section of `docs/features.md`
   - Moved to `assets/fonts/` directory structure
 
 #### 3. CMakeLists.txt FetchContent
@@ -62,7 +62,7 @@
   - `README.md` - Graphics mode usage and command-line options
   - `IMPLEMENTATION_SUMMARY.md` - Complete implementation details
   - `docs/Graphics_Implementation_Status.md` - Feature checklist
-  - `docs/Font_Integration.md` - Font specifications
+  - `docs/features.md` - Font specifications in Font Integration section
   - `assets/fonts/README.md` - Font directory structure
 
 #### 6. Test Coverage
@@ -92,7 +92,7 @@
 | `README.md` | ✅ Merged | Usage instructions for graphics modes |
 | `IMPLEMENTATION_SUMMARY.md` | ✅ Merged | Summary of all changes |
 | `docs/Graphics_Implementation_Status.md` | ✅ Merged | Feature checklist and status |
-| `docs/Font_Integration.md` | ✅ Merged | Ultimate Apple II Font specifications |
+| `docs/features.md` | ✅ Merged | Ultimate Apple II Font specifications in Font Integration section |
 | `assets/fonts/README.md` | ✅ Merged | Font directory structure |
 
 ### Test Files
