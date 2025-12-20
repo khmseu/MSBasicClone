@@ -74,7 +74,11 @@ CMake Warning: Failed to download font: "Could not resolve hostname"
 1. Check your network connection
 2. Try manually downloading the font (see Manual Installation above)
 3. If kreativekorp.com is blocked, contact your network administrator
-4. The build will continue without the font - graphics mode will use Raylib's default font
+4. Use an alternative font source by setting CMake variables:
+   ```bash
+   cmake -DAPPLE2_FONT_URL="https://alternative-source.com/PrintChar21.ttf" ..
+   ```
+5. The build will continue without the font - graphics mode will use Raylib's default font
 
 ### Font Not Loading
 
@@ -91,6 +95,22 @@ The `cmake/FetchFont.cmake` module provides the `fetch_apple2_font()` function:
 - Verifies TLS/SSL certificates
 - Cleans up partial downloads on failure
 - Sets `APPLE2_FONT_AVAILABLE` cache variable
+- Supports configurable URLs via `APPLE2_FONT_URL` and `APPLE2_CHARSET_URL` CMake variables
+
+### Configurable URLs
+
+You can override the default font source URLs when running CMake:
+
+```bash
+cmake -DAPPLE2_FONT_URL="https://mirror.example.com/PrintChar21.ttf" \
+      -DAPPLE2_CHARSET_URL="https://mirror.example.com/apple2-charset.html" \
+      -S . -B build
+```
+
+This is useful when:
+- The default source is blocked or unavailable
+- You have a local mirror or cache
+- Testing with alternative font files
 
 ### Integration Points
 
