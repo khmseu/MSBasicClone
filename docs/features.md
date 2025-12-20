@@ -46,7 +46,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] READ variable[,variable...]
 - [x] RESTORE [line_number]
 - [x] CLR (same as CLEAR)
-- [ ] CLEAR (currently mapped to CLR)
+- [x] CLEAR
 
 ### User-Defined Functions
 - [x] DEF FN name(parameter) = expression
