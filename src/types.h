@@ -99,6 +99,11 @@ enum class TokenType {
   RECALL,
   STORE,
 
+  // ProDOS commands
+  DELETE,
+  RENAME,
+  PREFIX,
+
   // Graphics primitives
   PLOT,
   HLIN,

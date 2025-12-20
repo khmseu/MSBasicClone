@@ -3,13 +3,20 @@
 #include <sstream>
 #include <stdexcept>
 #include <cstring>
+#include <filesystem>
 
 #ifdef PLATFORM_WINDOWS
 #include <windows.h>
+#include <direct.h>
+#define getcwd _getcwd
+#define chdir _chdir
 #else
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #endif
+
+namespace fs = std::filesystem;
 
 std::vector<FileInfo> listFiles(const std::string& path) {
     std::vector<FileInfo> files;
@@ -81,4 +88,33 @@ void writeTextFile(const std::string& filename, const std::string& content) {
     }
     
     file << content;
+}
+
+bool deleteFile(const std::string& filename) {
+    try {
+        return fs::remove(filename);
+    } catch (...) {
+        return false;
+    }
+}
+
+bool renameFile(const std::string& oldName, const std::string& newName) {
+    try {
+        fs::rename(oldName, newName);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+std::string getCurrentPrefix() {
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+        return std::string(cwd);
+    }
+    return "";
+}
+
+bool setPrefix(const std::string& path) {
+    return chdir(path.c_str()) == 0;
 }
