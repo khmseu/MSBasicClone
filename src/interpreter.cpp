@@ -1754,8 +1754,9 @@ void Interpreter::readFile(const std::string &filename, int record, int byte) {
     // Position if record/byte specified
     if (record > 0 || byte > 0) {
       size_t position = static_cast<size_t>(record * 512 + byte);
-      // Note: setPosition not directly accessible, would need handle
+      // TODO: Implement actual file positioning via FileManager handle
       // For now, just open at beginning
+      (void)position; // Suppress unused variable warning
     }
     
     std::cout << "FILE OPENED FOR READING: " << filename << "\n";
@@ -1777,7 +1778,8 @@ void Interpreter::writeFile(const std::string &filename, int record) {
     // Position if record specified
     if (record > 0) {
       size_t position = static_cast<size_t>(record * 512);
-      // Note: setPosition not directly accessible, would need handle
+      // TODO: Implement actual file positioning via FileManager handle
+      (void)position; // Suppress unused variable warning
     }
     
     std::cout << "FILE OPENED FOR WRITING: " << filename << "\n";

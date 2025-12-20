@@ -2044,9 +2044,13 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       pos++; // Skip comma
       if (pos < tokens.size()) {
         if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'R') {
-          std::string recStr = tokens[pos].text.substr(1);
-          record = std::stoi(recStr);
-          pos++;
+          try {
+            std::string recStr = tokens[pos].text.substr(1);
+            record = std::stoi(recStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID RECORD NUMBER");
+          }
         } else if (tokens[pos].type == TokenType::NUMBER) {
           record = static_cast<int>(tokens[pos].value.getNumber());
           pos++;
@@ -2057,9 +2061,13 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
         pos++; // Skip comma
         if (pos < tokens.size()) {
           if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'B') {
-            std::string byteStr = tokens[pos].text.substr(1);
-            byte = std::stoi(byteStr);
-            pos++;
+            try {
+              std::string byteStr = tokens[pos].text.substr(1);
+              byte = std::stoi(byteStr);
+              pos++;
+            } catch (...) {
+              throw std::runtime_error("SYNTAX ERROR: INVALID BYTE NUMBER");
+            }
           } else if (tokens[pos].type == TokenType::NUMBER) {
             byte = static_cast<int>(tokens[pos].value.getNumber());
             pos++;
@@ -2083,9 +2091,13 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       pos++; // Skip comma
       if (pos < tokens.size()) {
         if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == '@') {
-          std::string lineStr = tokens[pos].text.substr(1);
-          startLine = std::stoi(lineStr);
-          pos++;
+          try {
+            std::string lineStr = tokens[pos].text.substr(1);
+            startLine = std::stoi(lineStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID LINE NUMBER");
+          }
         } else if (tokens[pos].type == TokenType::NUMBER) {
           startLine = static_cast<int>(tokens[pos].value.getNumber());
           pos++;
@@ -2139,9 +2151,13 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       pos++; // Skip comma
       if (pos < tokens.size()) {
         if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'R') {
-          std::string recStr = tokens[pos].text.substr(1);
-          record = std::stoi(recStr);
-          pos++;
+          try {
+            std::string recStr = tokens[pos].text.substr(1);
+            record = std::stoi(recStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID RECORD NUMBER");
+          }
         } else if (tokens[pos].type == TokenType::NUMBER) {
           record = static_cast<int>(tokens[pos].value.getNumber());
           pos++;
@@ -2152,9 +2168,13 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
         pos++; // Skip comma
         if (pos < tokens.size()) {
           if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'B') {
-            std::string byteStr = tokens[pos].text.substr(1);
-            byte = std::stoi(byteStr);
-            pos++;
+            try {
+              std::string byteStr = tokens[pos].text.substr(1);
+              byte = std::stoi(byteStr);
+              pos++;
+            } catch (...) {
+              throw std::runtime_error("SYNTAX ERROR: INVALID BYTE NUMBER");
+            }
           } else if (tokens[pos].type == TokenType::NUMBER) {
             byte = static_cast<int>(tokens[pos].value.getNumber());
             pos++;
@@ -2178,9 +2198,13 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       pos++; // Skip comma
       if (pos < tokens.size()) {
         if (tokens[pos].type == TokenType::IDENTIFIER && tokens[pos].text[0] == 'R') {
-          std::string recStr = tokens[pos].text.substr(1);
-          record = std::stoi(recStr);
-          pos++;
+          try {
+            std::string recStr = tokens[pos].text.substr(1);
+            record = std::stoi(recStr);
+            pos++;
+          } catch (...) {
+            throw std::runtime_error("SYNTAX ERROR: INVALID RECORD NUMBER");
+          }
         } else if (tokens[pos].type == TokenType::NUMBER) {
           record = static_cast<int>(tokens[pos].value.getNumber());
           pos++;
