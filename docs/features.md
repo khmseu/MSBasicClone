@@ -92,6 +92,7 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 - [x] VLIN y1,y2 AT x - vertical line
 
 ### Graphics - High Resolution
+- [x] HIRES - enable high-resolution graphics mode
 - [x] HGR - 280x192 hi-res graphics (mixed mode)
 - [x] HGR2 - 280x192 hi-res graphics (full screen)
 - [x] HCOLOR= expression - set hi-res color
