@@ -150,6 +150,11 @@ bool Tokenizer::isKeyword(const std::string &word) const {
       {"LOCK", TokenType::LOCK},
       {"UNLOCK", TokenType::UNLOCK},
       {"POSITION", TokenType::POSITION},
+      {"CHAIN", TokenType::CHAIN},
+      {"EXEC", TokenType::EXEC},
+      {"CAT", TokenType::CAT},
+      {"WRITE", TokenType::PRODOSWRITE},
+      {"-", TokenType::DASH},
       {"USR", TokenType::USR}};
 
   std::string upper = word;
@@ -280,6 +285,11 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
       {"LOCK", TokenType::LOCK},
       {"UNLOCK", TokenType::UNLOCK},
       {"POSITION", TokenType::POSITION},
+      {"CHAIN", TokenType::CHAIN},
+      {"EXEC", TokenType::EXEC},
+      {"CAT", TokenType::CAT},
+      {"WRITE", TokenType::PRODOSWRITE},
+      {"-", TokenType::DASH},
       {"USR", TokenType::USR}};
 
   std::string upper = word;

@@ -157,13 +157,17 @@ public:
 
   // File system operations
   void catalog();
+  void catalogFiles(const std::string &path = ".");  // CAT with optional path
   void execFile(const std::string &filename);  // Execute commands from text file
   
   // ProDOS commands
   void deleteFile(const std::string &filename);
   void renameFile(const std::string &oldName, const std::string &newName);
   void showPrefix();
+  void setPrefix(const std::string &path);  // Set prefix or show if empty
   void changePrefix(const std::string &path);
+  void chainProgram(const std::string &filename, int startLine);  // Load and run with starting line
+  void dashRun(const std::string &filename);  // Run without clearing variables
   
   // ProDOS file I/O commands
   void openFile(const std::string &filename, const std::string &options);
@@ -172,6 +176,8 @@ public:
   void appendFile(const std::string &filename);
   void flushFile(const std::string &filename);
   void positionFile(const std::string &filename, int record, int byte);
+  void readFile(const std::string &filename, int record, int byte);  // ProDOS READ
+  void writeFile(const std::string &filename, int record);  // ProDOS WRITE
   void lockFile(const std::string &filename);
   void unlockFile(const std::string &filename);
   void createFile(const std::string &filename, const std::string &options);

@@ -114,6 +114,10 @@ enum class TokenType {
   LOCK,
   UNLOCK,
   POSITION,
+  CHAIN,
+  EXEC,
+  DASH,
+  CAT,
   PRODOSREAD,    // ProDOS READ (to avoid conflict with DATA READ)
   PRODOSWRITE,   // ProDOS WRITE
   PRODOSRESTORE, // ProDOS RESTORE (to avoid conflict with DATA RESTORE)

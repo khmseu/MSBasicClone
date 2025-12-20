@@ -840,7 +840,7 @@ void Interpreter::changePrefix(const std::string &path) {
     return;
   }
   
-  if (!setPrefix(path)) {
+  if (!::setPrefix(path)) {
     handleError("PATH NOT FOUND ERROR");
   }
 }
@@ -1663,6 +1663,126 @@ void Interpreter::requireGraphicsMode() const {
   if (!graphicsConfig_.isGraphicsEnabled()) {
     // Use error code 255 (general error) for graphics not enabled
     const_cast<Interpreter*>(this)->handleError("GRAPHICS NOT ENABLED ERROR", 255);
+  }
+}
+
+// Additional ProDOS command implementations
+
+void Interpreter::setPrefix(const std::string &path) {
+  if (path.empty()) {
+    showPrefix();
+  } else {
+    changePrefix(path);
+  }
+}
+
+void Interpreter::catalogFiles(const std::string &path) {
+  auto files = listFiles(path);
+
+  std::cout << "\nCAT " << path << "\n\n";
+  for (const auto &file : files) {
+    if (!file.isDirectory && file.name.length() > 0 && file.name[0] != '.') {
+      std::cout << " " << file.name << "\n";
+    }
+  }
+  std::cout << "\n";
+}
+
+void Interpreter::chainProgram(const std::string &filename, int startLine) {
+  try {
+    std::string content = readTextFile(filename);
+    
+    // Clear program but keep variables
+    program_.clear();
+    dataValues_.clear();
+    dataOffsets_.clear();
+    dataPointer_ = 0;
+
+    // Load new program
+    std::istringstream iss(content);
+    std::string line;
+    while (std::getline(iss, line)) {
+      if (!line.empty()) {
+        LineNumber lineNum;
+        std::string code;
+        parseLine(line, lineNum, code);
+        if (lineNum >= 0) {
+          addLine(lineNum, code);
+        }
+      }
+    }
+    
+    // Run the program from the specified starting line
+    if (startLine > 0) {
+      runFrom(startLine);
+    } else {
+      run();
+    }
+  } catch (const std::exception &e) {
+    std::cout << "?" << e.what() << "\n";
+  }
+}
+
+void Interpreter::dashRun(const std::string &filename) {
+  // DASH (-) runs a program without clearing variables
+  // It's similar to dashProgram but can also handle binary files
+  try {
+    // Check file extension to determine type
+    if (filename.size() > 4 && filename.substr(filename.size() - 4) == ".bas") {
+      // Text BASIC file
+      dashProgram(filename);
+    } else {
+      // Try as binary file
+      bloadFile(filename, -1);
+      // Could also execute if it's a binary program
+    }
+  } catch (const std::exception &e) {
+    std::cout << "?" << e.what() << "\n";
+  }
+}
+
+void Interpreter::readFile(const std::string &filename, int record, int byte) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    // Open file for reading
+    FileManager::getInstance().openFile(filename, FileAccessMode::READ);
+    
+    // Position if record/byte specified
+    if (record > 0 || byte > 0) {
+      size_t position = static_cast<size_t>(record * 512 + byte);
+      // Note: setPosition not directly accessible, would need handle
+      // For now, just open at beginning
+    }
+    
+    std::cout << "FILE OPENED FOR READING: " << filename << "\n";
+  } catch (const std::exception &e) {
+    handleError(e.what());
+  }
+}
+
+void Interpreter::writeFile(const std::string &filename, int record) {
+  if (filename.empty()) {
+    handleError("SYNTAX ERROR");
+    return;
+  }
+  
+  try {
+    // Open file for writing
+    FileManager::getInstance().openFile(filename, FileAccessMode::WRITE);
+    
+    // Position if record specified
+    if (record > 0) {
+      size_t position = static_cast<size_t>(record * 512);
+      // Note: setPosition not directly accessible, would need handle
+    }
+    
+    std::cout << "FILE OPENED FOR WRITING: " << filename << "\n";
+  } catch (const std::exception &e) {
+    handleError(e.what());
   }
 }
 
