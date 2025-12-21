@@ -63,7 +63,7 @@ function(fetch_apple2_font)
             
             # Extract the required files
             execute_process(
-                COMMAND ${CMAKE_COMMAND} -E tar xzf "${TEMP_ZIP}"
+                COMMAND ${CMAKE_COMMAND} -E tar xf "${TEMP_ZIP}"
                 WORKING_DIRECTORY "${FONT_DIR}"
                 RESULT_VARIABLE EXTRACT_RESULT
             )
