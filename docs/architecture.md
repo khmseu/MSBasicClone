@@ -55,7 +55,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - Lexical analysis of BASIC source code
 - Keyword recognition (PRINT, IF, FOR, etc.)
 - Number and string literal parsing
-- Operator recognition (+, -, *, /, ^, MOD, etc.)
+- Operator recognition (+, -, \*, /, ^, MOD, etc.)
 - Identifier extraction with special handling for $, %, and FN prefixes
 
 **Design Notes**:
@@ -87,7 +87,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 1. Primary expressions (literals, variables, function calls, parentheses)
 2. Power operator (^)
 3. Unary operators (+, -, NOT)
-4. Multiplicative operators (*, /, MOD)
+4. Multiplicative operators (\*, /, MOD)
 5. Additive operators (+, -)
 6. Relational operators (<, >, <=, >=, =, <>)
 7. NOT operator
@@ -740,4 +740,4 @@ Additional reference materials for Applesoft BASIC (commands, functions, languag
 
 ---
 
-*Last Updated: 2025-12-21*
+_Last Updated: 2025-12-21_

@@ -5,12 +5,15 @@ This directory contains all documentation for the MSBasic project.
 ## Documentation Files
 
 ### Architecture Documentation
+
 - **[architecture.md](architecture.md)**: Comprehensive overview of the MSBasic system architecture, including component descriptions, data flow, and design decisions.
 
 ### Features Documentation
+
 - **[features.md](features.md)**: Implementation status tracking document listing all implemented features, test coverage, and future enhancements.
 
 ### API Documentation
+
 - **api/** (generated): Doxygen-generated API documentation. Build with `make docs` or `cmake --build build --target docs`.
 
 ## Building API Documentation
@@ -18,6 +21,7 @@ This directory contains all documentation for the MSBasic project.
 The project uses Doxygen to generate API documentation from source code comments.
 
 ### Requirements
+
 - Doxygen 1.8.0 or later
 - (Optional) LaTeX for PDF generation
 - (Optional) Graphviz for diagrams
@@ -25,29 +29,33 @@ The project uses Doxygen to generate API documentation from source code comments
 ### Build Instructions
 
 1. **Install Doxygen** (if not already installed):
+
    ```bash
    # Ubuntu/Debian
    sudo apt-get install doxygen graphviz
-   
+
    # macOS
    brew install doxygen graphviz
-   
+
    # Windows (with Chocolatey)
    choco install doxygen.install graphviz
    ```
 
 2. **Build HTML Documentation**:
+
    ```bash
    cd /path/to/MSBasicClone
    cmake --build build --target docs
    ```
-   
+
    Or directly with Doxygen:
+
    ```bash
    doxygen Doxyfile
    ```
 
 3. **View Documentation**:
+
    ```bash
    # HTML output
    open docs/api/html/index.html    # macOS
@@ -65,6 +73,7 @@ The project uses Doxygen to generate API documentation from source code comments
 ### Documentation Structure
 
 The Doxygen configuration (`Doxyfile` in the project root) generates:
+
 - **HTML**: Browsable web documentation with search capability
 - **LaTeX**: Source files for PDF generation
 - **Cross-references**: Links between related classes, functions, and files
@@ -74,6 +83,7 @@ The Doxygen configuration (`Doxyfile` in the project root) generates:
 ## Documentation Coverage
 
 ### Source Files with Doxygen Comments
+
 - `src/types.h` - Core type definitions
 - `src/tokenizer.h` - Lexical analysis
 - `src/parser.h` - Syntax analysis
@@ -86,6 +96,7 @@ The Doxygen configuration (`Doxyfile` in the project root) generates:
 - Additional files documented inline
 
 ### Markdown Documentation
+
 - `README.md` - Project overview and quick start
 - `docs/architecture.md` - System architecture
 - `docs/features.md` - Implementation status
@@ -96,22 +107,24 @@ The Doxygen configuration (`Doxyfile` in the project root) generates:
 When contributing code, please follow these documentation standards:
 
 ### File Header
+
 ```cpp
 /**
  * @file filename.h
  * @brief Brief description of the file's purpose
- * 
+ *
  * More detailed description of what this file contains,
  * its role in the system, and any important notes.
  */
 ```
 
 ### Class Documentation
+
 ```cpp
 /**
  * @class ClassName
  * @brief Brief description of the class
- * 
+ *
  * Detailed description of the class purpose, responsibilities,
  * usage patterns, and any important design considerations.
  */
@@ -121,13 +134,14 @@ class ClassName {
 ```
 
 ### Function/Method Documentation
+
 ```cpp
 /**
  * @brief Brief description of what the function does
- * 
+ *
  * Detailed description of the function's behavior,
  * side effects, and usage notes.
- * 
+ *
  * @param paramName Description of parameter
  * @param otherParam Description of another parameter
  * @return Description of return value
@@ -137,19 +151,23 @@ ReturnType functionName(Type paramName, OtherType otherParam);
 ```
 
 ### Inline Comments
+
 Use `//` for single-line explanatory comments and `/* */` for multi-line comments.
-Focus on explaining *why* rather than *what* (the code shows what).
+Focus on explaining _why_ rather than _what_ (the code shows what).
 
 ## Maintenance
 
 ### Updating Documentation
+
 1. Update source code comments when changing implementations
 2. Regenerate Doxygen docs: `cmake --build build --target docs`
 3. Update architecture.md for design changes
 4. Update features.md for new features or status changes
 
 ### Documentation Testing
+
 Verify documentation builds without errors:
+
 ```bash
 doxygen Doxyfile 2>&1 | grep -i "warning\|error"
 ```
@@ -164,4 +182,4 @@ Should produce no warnings or errors for clean documentation.
 
 ---
 
-*Last Updated: 2025-12-21*
+_Last Updated: 2025-12-21_

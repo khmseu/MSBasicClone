@@ -566,11 +566,11 @@ void Interpreter::requireGraphicsMode() const {
 
 #### Platform Support
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Linux | ✅ Full support | Requires X11/Xwayland |
-| macOS | ✅ Full support | Native Cocoa backend |
-| Windows | ✅ Full support | Native Win32 backend |
+| Platform | Status          | Notes                 |
+| -------- | --------------- | --------------------- |
+| Linux    | ✅ Full support | Requires X11/Xwayland |
+| macOS    | ✅ Full support | Native Cocoa backend  |
+| Windows  | ✅ Full support | Native Win32 backend  |
 
 #### CMake Build Options
 
@@ -694,23 +694,23 @@ These limitations are acceptable for a modern BASIC interpreter.
 
 ProDOS commands are **tokenized** but implementation status varies:
 
-| Command | Tokenized | Implemented | Notes |
-|---------|-----------|-------------|-------|
-| CAT/CATALOG | ✅ | ✅ | Directory listing works |
-| LOAD/SAVE | ✅ | ✅ | Program file I/O works |
-| BLOAD/BSAVE | ✅ | ✅ | Binary file I/O implemented |
-| OPEN/CLOSE | ✅ | ✅ | File open/close implemented |
-| READ/WRITE | ✅ | ✅ | ProDOS READ/WRITE implemented |
-| APPEND | ✅ | ✅ | Append mode supported |
-| POSITION | ✅ | ✅ | File positioning implemented |
-| DELETE/RENAME | ✅ | ✅ | File operations work |
-| CREATE | ✅ | ✅ | File/directory creation |
-| LOCK/UNLOCK | ✅ | ✅ | File permission operations (stub) |
-| PREFIX | ✅ | ✅ | Working directory show/set |
-| FLUSH | ✅ | ✅ | Buffer flushing implemented |
-| EXEC | ✅ | ✅ | Command file execution implemented |
-| CHAIN | ✅ | ✅ | Program chaining with start line |
-| - (dash) | ✅ | ✅ | Run without clearing vars |
+| Command       | Tokenized | Implemented | Notes                              |
+| ------------- | --------- | ----------- | ---------------------------------- |
+| CAT/CATALOG   | ✅        | ✅          | Directory listing works            |
+| LOAD/SAVE     | ✅        | ✅          | Program file I/O works             |
+| BLOAD/BSAVE   | ✅        | ✅          | Binary file I/O implemented        |
+| OPEN/CLOSE    | ✅        | ✅          | File open/close implemented        |
+| READ/WRITE    | ✅        | ✅          | ProDOS READ/WRITE implemented      |
+| APPEND        | ✅        | ✅          | Append mode supported              |
+| POSITION      | ✅        | ✅          | File positioning implemented       |
+| DELETE/RENAME | ✅        | ✅          | File operations work               |
+| CREATE        | ✅        | ✅          | File/directory creation            |
+| LOCK/UNLOCK   | ✅        | ✅          | File permission operations (stub)  |
+| PREFIX        | ✅        | ✅          | Working directory show/set         |
+| FLUSH         | ✅        | ✅          | Buffer flushing implemented        |
+| EXEC          | ✅        | ✅          | Command file execution implemented |
+| CHAIN         | ✅        | ✅          | Program chaining with start line   |
+| - (dash)      | ✅        | ✅          | Run without clearing vars          |
 
 ### Test Coverage Details
 
@@ -883,10 +883,10 @@ The build workflow (`.github/workflows/build.yml`) caches downloaded fonts:
 - name: Cache Apple II fonts
   uses: actions/cache@v4
   with:
-      path: assets/fonts
-      key: apple2-fonts-${{ hashFiles('cmake/FetchFont.cmake') }}
-      restore-keys: |
-          apple2-fonts-
+    path: assets/fonts
+    key: apple2-fonts-${{ hashFiles('cmake/FetchFont.cmake') }}
+    restore-keys: |
+      apple2-fonts-
 ```
 
 Benefits:
