@@ -127,6 +127,9 @@ void TapeManager::writeRecord(const std::vector<uint8_t>& data) {
         throw std::runtime_error("TAPE WRITE ERROR");
     }
     
+    // Flush to ensure data is written to disk
+    file_.flush();
+    
     updatePosition();
 }
 
