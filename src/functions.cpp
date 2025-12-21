@@ -25,9 +25,13 @@ static int gHimem = 49152; // $C000
 
 // Format a 16-bit address as a 4-digit uppercase hexadecimal string (0xXXXX).
 // Used for displaying memory addresses in error messages and CALL output.
-std::string formatHexAddress(int addr) {
+// If mask16bit is true, masks the address to 16 bits before formatting.
+std::string formatHexAddress(int addr, bool mask16bit) {
   std::ostringstream oss;
-  oss << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << (addr & 0xFFFF);
+  if (mask16bit) {
+    addr = addr & 0xFFFF;
+  }
+  oss << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
   return oss.str();
 }
 
@@ -93,7 +97,7 @@ void pokeMemory(int addr, int val) {
   
   // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
-    throw std::runtime_error("MEMORY RANGE ERROR: " + formatHexAddress(addr));
+    throw std::runtime_error("MEMORY RANGE ERROR: " + formatHexAddress(addr, false));
   }
   mem[addr] = val & 0xFF;
 }
@@ -169,7 +173,7 @@ int peekMemory(int addr) {
   
   // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
-    throw std::runtime_error("MEMORY RANGE ERROR: " + formatHexAddress(addr));
+    throw std::runtime_error("MEMORY RANGE ERROR: " + formatHexAddress(addr, false));
   }
   auto it = mem.find(addr);
   if (it == mem.end()) {
