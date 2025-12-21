@@ -8,6 +8,7 @@
 #include <cctype>
 #include <chrono>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -1005,19 +1006,19 @@ void Interpreter::callAddress(int address) {
       
     case 62450: // -3086: Clear hi-res page to black
       // Would clear graphics buffer in full implementation
-      std::cout << "CALL -3086: CLEAR HI-RES TO BLACK (STUB)\n";
+      std::cout << "CALL 0xF3D2: CLEAR HI-RES TO BLACK (STUB)\n";
       break;
       
     case 62454: // -3082: Clear hi-res to last HPLOT color
-      std::cout << "CALL -3082: CLEAR HI-RES TO COLOR (STUB)\n";
+      std::cout << "CALL 0xF3D6: CLEAR HI-RES TO COLOR (STUB)\n";
       break;
       
     case 63538: // -1998: BKGND (background color)
-      std::cout << "CALL -1998: SET BACKGROUND (STUB)\n";
+      std::cout << "CALL 0xF832: SET BACKGROUND (STUB)\n";
       break;
       
     case 64578: // -958: Clear from cursor to bottom-right
-      std::cout << "CALL -958: CLEAR TO BOTTOM (STUB)\n";
+      std::cout << "CALL 0xFC42: CLEAR TO BOTTOM (STUB)\n";
       break;
       
     case 64600: // -936: HOME (clear screen, home cursor)
@@ -1034,7 +1035,7 @@ void Interpreter::callAddress(int address) {
       break;
       
     case 64624: // -912: Scroll text window up
-      std::cout << "CALL -912: SCROLL UP (STUB)\n";
+      std::cout << "CALL 0xFC70: SCROLL UP (STUB)\n";
       break;
       
     case 64668: // -868: CLREOL (clear to end of line)
@@ -1042,20 +1043,20 @@ void Interpreter::callAddress(int address) {
       break;
       
     case 65385: // -151: Enter Monitor
-      std::cout << "CALL -151: MONITOR (NOT IMPLEMENTED)\n";
+      std::cout << "CALL 0xFF69: MONITOR (NOT IMPLEMENTED)\n";
       break;
       
     case 768: // Common user ML routine location (page 3)
-      std::cout << "CALL 768: USER ROUTINE (STUB)\n";
+      std::cout << "CALL 0x0300: USER ROUTINE (STUB)\n";
       break;
       
     case 1002: // Restore ProDOS connection
-      std::cout << "CALL 1002: RESTORE PRODOS (STUB)\n";
+      std::cout << "CALL 0x03EA: RESTORE PRODOS (STUB)\n";
       break;
       
     default:
       // Generic machine language call - no-op
-      std::cout << "CALL " << address << " (NOT IMPLEMENTED)\n";
+      std::cout << "CALL 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << address << std::dec << " (NOT IMPLEMENTED)\n";
       break;
   }
 }

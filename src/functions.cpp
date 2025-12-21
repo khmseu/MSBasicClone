@@ -85,7 +85,9 @@ void pokeMemory(int addr, int val) {
   
   // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
-    throw std::runtime_error("MEMORY RANGE ERROR");
+    std::ostringstream oss;
+    oss << "MEMORY RANGE ERROR: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
+    throw std::runtime_error(oss.str());
   }
   mem[addr] = val & 0xFF;
 }
@@ -161,7 +163,9 @@ int peekMemory(int addr) {
   
   // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
-    throw std::runtime_error("MEMORY RANGE ERROR");
+    std::ostringstream oss;
+    oss << "MEMORY RANGE ERROR: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
+    throw std::runtime_error(oss.str());
   }
   auto it = mem.find(addr);
   if (it == mem.end()) {
