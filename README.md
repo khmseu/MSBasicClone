@@ -2,6 +2,12 @@
 
 A modern implementation of the Applesoft II BASIC interpreter written in C++20, targeting compatibility with the classic Apple II BASIC dialect.
 
+## Documentation
+
+- **[Architecture Documentation](docs/architecture.md)**: Comprehensive system architecture overview
+- **[Implementation Features](docs/features.md)**: Complete feature status and implementation notes
+- **[API Documentation](docs/README.md)**: Instructions for building Doxygen API docs
+
 ## Features
 
 ### Implemented

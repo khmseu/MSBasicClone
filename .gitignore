@@ -142,3 +142,6 @@ postest.txt
 # Auto-downloaded assets (now bundled in repo)
 # assets/fonts/PrintChar21.ttf
 # assets/fonts/apple2-charset.html
+
+# Generated documentation
+docs/api/
