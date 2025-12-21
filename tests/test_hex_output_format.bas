@@ -1,0 +1,10 @@
+10 REM Test that addresses in output use $XXXX format
+20 PRINT "TESTING HEX OUTPUT FORMAT"
+30 REM Test CALL with unimplemented address
+40 CALL 1234
+50 PRINT "CALL TEST PASSED"
+60 REM Test special CALL addresses
+70 CALL 768
+80 CALL 1002
+90 PRINT "SPECIAL CALL TEST PASSED"
+100 END

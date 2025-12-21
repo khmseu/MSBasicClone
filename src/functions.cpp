@@ -19,21 +19,21 @@ std::unordered_map<int, int> &memoryMap() {
   return mem;
 }
 // Memory bounds used by peek/poke and WAIT; defaults align with interpreter.
-static int gLomem = 2048;  // $0800
-static int gHimem = 49152; // $C000
+static int gLomem = 0x0800;  // $0800 (2048)
+static int gHimem = 0xC000; // $C000 (49152)
 } // namespace
 
 // Format an address as an uppercase hexadecimal string.
-// When mask16bit is true: masks to 16 bits and formats as 0xXXXX (4 digits)
-// When mask16bit is false: shows full address with appropriate width (e.g., 0x186A0)
+// When mask16bit is true: masks to 16 bits and formats as $XXXX (4 digits)
+// When mask16bit is false: shows full address with appropriate width (e.g., $186A0)
 // Used for displaying CALL addresses (masked) and error messages (full address).
 std::string formatHexAddress(int addr, bool mask16bit) {
   std::ostringstream oss;
   if (mask16bit) {
     addr = addr & 0xFFFF;
-    oss << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
+    oss << "$" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
   } else {
-    oss << "0x" << std::hex << std::uppercase << addr;
+    oss << "$" << std::hex << std::uppercase << addr;
   }
   return oss.str();
 }
@@ -43,57 +43,57 @@ void pokeMemory(int addr, int val) {
   
   // Handle negative addresses (Apple II convention)
   if (addr < 0) {
-    addr = 65536 + addr;  // Convert negative to 16-bit unsigned
+    addr = 0x10000 + addr;  // Convert negative to 16-bit unsigned
   }
   
   // Special addresses that bypass range checks and have special behavior
   
   // Memory pointers and error handling (0-255 range)
-  if (addr == 37 || addr == 105 || addr == 106 || 
-      addr == 115 || addr == 116 || addr == 216 || 
-      addr == 218 || addr == 219 || addr == 222) {
+  if (addr == 0x0025 || addr == 0x0069 || addr == 0x006A || 
+      addr == 0x0073 || addr == 0x0074 || addr == 0x00D8 || 
+      addr == 0x00DA || addr == 0x00DB || addr == 0x00DE) {
     mem[addr] = val & 0xFF;
     return;
   }
   
   // Text window control (32-37)
-  if (addr >= 32 && addr <= 37) {
+  if (addr >= 0x0020 && addr <= 0x0025) {
     mem[addr] = val & 0xFF;
     return;
   }
   
   // Shape table pointers (232-233)
-  if (addr == 232 || addr == 233) {
+  if (addr == 0x00E8 || addr == 0x00E9) {
     mem[addr] = val & 0xFF;
     return;
   }
   
   // Hi-res page pointers (103-104)
-  if (addr == 103 || addr == 104) {
+  if (addr == 0x0067 || addr == 0x0068) {
     mem[addr] = val & 0xFF;
     return;
   }
   
   // Graphics memory base addresses
-  if (addr == 16384 || addr == 24576) {
+  if (addr == 0x4000 || addr == 0x6000) {
     mem[addr] = val & 0xFF;
     return;
   }
   
   // Keyboard strobe (49168)
-  if (addr == 49168 || addr == -16368) {
+  if (addr == 0xC010 || addr == -0x3FF0) {
     // Clear keyboard strobe - no-op in our implementation
     return;
   }
   
   // Display control switches (49232-49239)
-  if (addr >= 49232 && addr <= 49239) {
+  if (addr >= 0xC050 && addr <= 0xC057) {
     mem[addr] = val & 0xFF;
     return;
   }
   
   // Annunciator outputs (49240-49247)
-  if (addr >= 49240 && addr <= 49247) {
+  if (addr >= 0xC058 && addr <= 0xC05F) {
     mem[addr] = val & 0xFF;
     return;
   }
@@ -110,27 +110,27 @@ int peekMemory(int addr) {
   
   // Handle negative addresses (Apple II convention)
   if (addr < 0) {
-    addr = 65536 + addr;  // Convert negative to 16-bit unsigned
+    addr = 0x10000 + addr;  // Convert negative to 16-bit unsigned
   }
   
   // Special addresses that bypass range checks
   
   // Keyboard input (49152 / -16384)
-  if (addr == 49152 || addr == -16384) {
+  if (addr == 0xC000 || addr == -0x4000) {
     // Return last key pressed (stub - would need actual keyboard state)
-    return mem.count(49152) ? mem[49152] : 0;
+    return mem.count(0xC000) ? mem[0xC000] : 0;
   }
   
   // Button inputs (49249-49251 / -16287 to -16285)
-  if (addr >= 49249 && addr <= 49251) {
+  if (addr >= 0xC061 && addr <= 0xC063) {
     // Return button state (stub - always unpressed)
     return 0;
   }
   
   // Memory pointers and error handling
-  if (addr == 37 || addr == 105 || addr == 106 || 
-      addr == 115 || addr == 116 || addr == 216 || 
-      addr == 218 || addr == 219 || addr == 222) {
+  if (addr == 0x0025 || addr == 0x0069 || addr == 0x006A || 
+      addr == 0x0073 || addr == 0x0074 || addr == 0x00D8 || 
+      addr == 0x00DA || addr == 0x00DB || addr == 0x00DE) {
     auto it = mem.find(addr);
     if (it == mem.end()) {
       return 0;
@@ -139,37 +139,37 @@ int peekMemory(int addr) {
   }
   
   // Text window control (32-37)
-  if (addr >= 32 && addr <= 37) {
+  if (addr >= 0x0020 && addr <= 0x0025) {
     auto it = mem.find(addr);
     return (it != mem.end()) ? (it->second & 0xFF) : 0;
   }
   
   // Shape table pointers (232-233)
-  if (addr == 232 || addr == 233) {
+  if (addr == 0x00E8 || addr == 0x00E9) {
     auto it = mem.find(addr);
     return (it != mem.end()) ? (it->second & 0xFF) : 0;
   }
   
   // Hi-res page pointers (103-104)
-  if (addr == 103 || addr == 104) {
+  if (addr == 0x0067 || addr == 0x0068) {
     auto it = mem.find(addr);
     return (it != mem.end()) ? (it->second & 0xFF) : 0;
   }
   
   // Graphics memory base addresses
-  if (addr == 16384 || addr == 24576) {
+  if (addr == 0x4000 || addr == 0x6000) {
     auto it = mem.find(addr);
     return (it != mem.end()) ? (it->second & 0xFF) : 0;
   }
   
   // Display control switches (49232-49239)
-  if (addr >= 49232 && addr <= 49239) {
+  if (addr >= 0xC050 && addr <= 0xC057) {
     auto it = mem.find(addr);
     return (it != mem.end()) ? (it->second & 0xFF) : 0;
   }
   
   // Annunciator outputs (49240-49247)
-  if (addr >= 49240 && addr <= 49247) {
+  if (addr >= 0xC058 && addr <= 0xC05F) {
     auto it = mem.find(addr);
     return (it != mem.end()) ? (it->second & 0xFF) : 0;
   }
