@@ -1,19 +1,26 @@
 # FetchFont.cmake
-# Automatically download Ultimate Apple II Font and charset map
+# Manage Ultimate Apple II Font and charset map
+# These files are bundled in the repository but can be refreshed from upstream
 
 function(fetch_apple2_font)
     set(FONT_DIR "${CMAKE_SOURCE_DIR}/assets/fonts")
     set(FONT_FILE "${FONT_DIR}/PrintChar21.ttf")
     set(CHARSET_FILE "${FONT_DIR}/apple2-charset.html")
+    set(LICENSE_FILE "${FONT_DIR}/FreeLicense.txt")
+    set(FONT_PACKAGE_URL "https://www.kreativekorp.com/swdownload/fonts/retro/pr.zip")
+    set(CHARSET_URL "https://www.kreativekorp.com/charset/?map=apple2")
     
-    # Allow override of font URL via CMake variable
-    if(NOT DEFINED APPLE2_FONT_URL)
-        set(APPLE2_FONT_URL "https://www.kreativekorp.com/swdownload/fonts/apple2/PrintChar21.ttf")
+    # Allow override of URLs via CMake variable
+    if(DEFINED APPLE2_FONT_PACKAGE_URL)
+        set(FONT_PACKAGE_URL "${APPLE2_FONT_PACKAGE_URL}")
     endif()
     
-    if(NOT DEFINED APPLE2_CHARSET_URL)
-        set(APPLE2_CHARSET_URL "https://www.kreativekorp.com/charset/map/apple2/")
+    if(DEFINED APPLE2_CHARSET_URL)
+        set(CHARSET_URL "${APPLE2_CHARSET_URL}")
     endif()
+    
+    # Option to force refresh bundled files
+    option(REFRESH_BUNDLED_FONTS "Force refresh of bundled font files from upstream" OFF)
     
     # Create fonts directory if it doesn't exist
     if(NOT EXISTS "${FONT_DIR}")
@@ -21,74 +28,102 @@ function(fetch_apple2_font)
         message(STATUS "Created fonts directory: ${FONT_DIR}")
     endif()
     
-    # Check if font already exists
-    if(EXISTS "${FONT_FILE}")
-        message(STATUS "Ultimate Apple II Font already present: ${FONT_FILE}")
-    else()
-        message(STATUS "Attempting to download Ultimate Apple II Font...")
-        
-        # Try to download the font
-        file(DOWNLOAD 
-            "${APPLE2_FONT_URL}"
-            "${FONT_FILE}"
-            STATUS DOWNLOAD_STATUS
-            TIMEOUT 30
-            TLS_VERIFY ON
-        )
-        
-        list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
-        list(GET DOWNLOAD_STATUS 1 STATUS_MESSAGE)
-        
-        if(STATUS_CODE EQUAL 0)
-            message(STATUS "Successfully downloaded Ultimate Apple II Font")
-        else()
-            message(WARNING "Failed to download font: ${STATUS_MESSAGE}")
-            message(WARNING "Font URL: ${APPLE2_FONT_URL}")
-            message(WARNING "You can manually download the font from:")
-            message(WARNING "  https://www.kreativekorp.com/software/fonts/apple2/")
-            message(WARNING "And place it at: ${FONT_FILE}")
-            message(WARNING "Or set APPLE2_FONT_URL CMake variable to an alternative source")
-            message(STATUS "Build will continue without the font (using Raylib default)")
-            
-            # Clean up partial download if it exists
-            if(EXISTS "${FONT_FILE}")
-                file(REMOVE "${FONT_FILE}")
-            endif()
-        endif()
+    # Check if all bundled files exist
+    set(ALL_FILES_PRESENT TRUE)
+    if(NOT EXISTS "${FONT_FILE}" OR NOT EXISTS "${CHARSET_FILE}" OR NOT EXISTS "${LICENSE_FILE}")
+        set(ALL_FILES_PRESENT FALSE)
     endif()
     
-    # Check if charset map already exists
-    if(EXISTS "${CHARSET_FILE}")
-        message(STATUS "Apple II charset map already present: ${CHARSET_FILE}")
-    else()
-        message(STATUS "Attempting to download Apple II charset map...")
+    # Refresh logic: download if files are missing or refresh is forced
+    if(NOT ALL_FILES_PRESENT OR REFRESH_BUNDLED_FONTS)
+        if(REFRESH_BUNDLED_FONTS)
+            message(STATUS "REFRESH_BUNDLED_FONTS is ON - refreshing font files from upstream...")
+        else()
+            message(STATUS "Font files missing - downloading from upstream...")
+        endif()
         
-        # Try to download the charset map
+        # Download the font package (contains font and license)
+        set(TEMP_ZIP "${CMAKE_BINARY_DIR}/apple2_font.zip")
+        message(STATUS "Downloading font package from ${FONT_PACKAGE_URL}...")
+        
         file(DOWNLOAD 
-            "${APPLE2_CHARSET_URL}"
-            "${CHARSET_FILE}"
+            "${FONT_PACKAGE_URL}"
+            "${TEMP_ZIP}"
             STATUS DOWNLOAD_STATUS
-            TIMEOUT 30
+            TIMEOUT 60
             TLS_VERIFY ON
+            SHOW_PROGRESS
         )
         
         list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
         list(GET DOWNLOAD_STATUS 1 STATUS_MESSAGE)
         
         if(STATUS_CODE EQUAL 0)
-            message(STATUS "Successfully downloaded Apple II charset map")
+            message(STATUS "Successfully downloaded font package")
+            
+            # Extract the required files
+            execute_process(
+                COMMAND ${CMAKE_COMMAND} -E tar xzf "${TEMP_ZIP}"
+                WORKING_DIRECTORY "${FONT_DIR}"
+                RESULT_VARIABLE EXTRACT_RESULT
+            )
+            
+            if(EXTRACT_RESULT EQUAL 0)
+                message(STATUS "Successfully extracted font files")
+            else()
+                message(WARNING "Failed to extract font package")
+            endif()
+            
+            # Clean up zip file
+            file(REMOVE "${TEMP_ZIP}")
         else()
-            message(WARNING "Failed to download charset map: ${STATUS_MESSAGE}")
-            message(WARNING "Charset URL: ${APPLE2_CHARSET_URL}")
-            message(WARNING "You can manually download the charset map from the URL above")
-            message(WARNING "Or set APPLE2_CHARSET_URL CMake variable to an alternative source")
-            message(STATUS "Build will continue without the charset map")
+            message(WARNING "Failed to download font package: ${STATUS_MESSAGE}")
+            message(WARNING "Font package URL: ${FONT_PACKAGE_URL}")
+            message(WARNING "You can manually download from:")
+            message(WARNING "  https://www.kreativekorp.com/software/fonts/apple2/")
+            message(WARNING "And extract PrintChar21.ttf and FreeLicense.txt to: ${FONT_DIR}")
             
             # Clean up partial download if it exists
-            if(EXISTS "${CHARSET_FILE}")
-                file(REMOVE "${CHARSET_FILE}")
+            if(EXISTS "${TEMP_ZIP}")
+                file(REMOVE "${TEMP_ZIP}")
             endif()
         endif()
+        
+        # Download charset map
+        if(NOT EXISTS "${CHARSET_FILE}" OR REFRESH_BUNDLED_FONTS)
+            message(STATUS "Downloading charset map from ${CHARSET_URL}...")
+            
+            file(DOWNLOAD 
+                "${CHARSET_URL}"
+                "${CHARSET_FILE}"
+                STATUS DOWNLOAD_STATUS
+                TIMEOUT 30
+                TLS_VERIFY ON
+            )
+            
+            list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+            list(GET DOWNLOAD_STATUS 1 STATUS_MESSAGE)
+            
+            if(STATUS_CODE EQUAL 0)
+                message(STATUS "Successfully downloaded Apple II charset map")
+            else()
+                message(WARNING "Failed to download charset map: ${STATUS_MESSAGE}")
+                message(WARNING "Charset URL: ${CHARSET_URL}")
+                message(WARNING "You can manually download from the URL above")
+                
+                # Clean up partial download if it exists
+                if(EXISTS "${CHARSET_FILE}")
+                    file(REMOVE "${CHARSET_FILE}")
+                endif()
+            endif()
+        endif()
+    else()
+        # All files present and no refresh requested
+        message(STATUS "Font files are bundled and present:")
+        message(STATUS "  - ${FONT_FILE}")
+        message(STATUS "  - ${CHARSET_FILE}")
+        message(STATUS "  - ${LICENSE_FILE}")
+        message(STATUS "To refresh from upstream, configure with -DREFRESH_BUNDLED_FONTS=ON")
     endif()
     
     # Set a cache variable to indicate font availability for use by build system
