@@ -8,7 +8,6 @@
 #include <cctype>
 #include <chrono>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -1056,7 +1055,7 @@ void Interpreter::callAddress(int address) {
       
     default:
       // Generic machine language call - no-op
-      std::cout << "CALL 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << address << std::dec << " (NOT IMPLEMENTED)\n";
+      std::cout << "CALL " << formatHexAddress(address) << " (NOT IMPLEMENTED)\n";
       break;
   }
 }

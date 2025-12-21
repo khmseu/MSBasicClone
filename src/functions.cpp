@@ -23,6 +23,12 @@ static int gLomem = 2048;  // $0800
 static int gHimem = 49152; // $C000
 } // namespace
 
+std::string formatHexAddress(int addr) {
+  std::ostringstream oss;
+  oss << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
+  return oss.str();
+}
+
 void pokeMemory(int addr, int val) {
   auto &mem = memoryMap();
   
@@ -85,9 +91,7 @@ void pokeMemory(int addr, int val) {
   
   // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
-    std::ostringstream oss;
-    oss << "MEMORY RANGE ERROR: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
-    throw std::runtime_error(oss.str());
+    throw std::runtime_error("MEMORY RANGE ERROR: " + formatHexAddress(addr));
   }
   mem[addr] = val & 0xFF;
 }
@@ -163,9 +167,7 @@ int peekMemory(int addr) {
   
   // Standard memory range check
   if (addr < gLomem || addr > gHimem) {
-    std::ostringstream oss;
-    oss << "MEMORY RANGE ERROR: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
-    throw std::runtime_error(oss.str());
+    throw std::runtime_error("MEMORY RANGE ERROR: " + formatHexAddress(addr));
   }
   auto it = mem.find(addr);
   if (it == mem.end()) {
