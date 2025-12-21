@@ -80,8 +80,8 @@ void pokeMemory(int addr, int val) {
     return;
   }
   
-  // Keyboard strobe (49168)
-  if (addr == 0xC010 || addr == -0x3FF0) {
+  // Keyboard strobe (49168 / -16368)
+  if (addr == 0xC010 || addr == -16368) {
     // Clear keyboard strobe - no-op in our implementation
     return;
   }
@@ -116,7 +116,7 @@ int peekMemory(int addr) {
   // Special addresses that bypass range checks
   
   // Keyboard input (49152 / -16384)
-  if (addr == 0xC000 || addr == -0x4000) {
+  if (addr == 0xC000 || addr == -16384) {
     // Return last key pressed (stub - would need actual keyboard state)
     return mem.count(0xC000) ? mem[0xC000] : 0;
   }
