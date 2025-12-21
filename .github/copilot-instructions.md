@@ -59,4 +59,8 @@ This repository implements an Applesoft II–compatible BASIC interpreter (`msba
 - Prefer small, isolated patches matching existing style.
 - Add `.bas` repros instead of C++ unit tests for language behavior.
 
-Feedback: If any workflow or behavior above is unclear (e.g., adding a new command or graphics behavior), tell me which area to detail further and I’ll refine this guide.
+## Running CLI commands
+
+- When running CLI commands, **always** wait for and look at the output
+- Never just issue the next command before you have seen the output from the last
+- Do not assume a program will be running in the background unless you explicitely asked for it

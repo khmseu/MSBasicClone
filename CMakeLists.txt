@@ -201,8 +201,9 @@ if(DOXYGEN_FOUND)
     message(STATUS "Doxygen found - documentation target available")
     add_custom_target(docs
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
+        COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR}/docs/api/latex make
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Generating API documentation with Doxygen"
+        COMMENT "Generating API documentation with Doxygen and building PDF"
         VERBATIM
     )
 else()
