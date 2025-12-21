@@ -195,5 +195,20 @@ if(RAYLIB_AVAILABLE)
     target_link_libraries(msbasic raylib)
 endif()
 
+# Documentation target (requires Doxygen)
+find_package(Doxygen QUIET)
+if(DOXYGEN_FOUND)
+    message(STATUS "Doxygen found - documentation target available")
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+else()
+    message(STATUS "Doxygen not found - documentation target unavailable")
+    message(STATUS "Install Doxygen to build documentation: apt-get install doxygen (Ubuntu) or brew install doxygen (macOS)")
+endif()
+
 # Installation
 install(TARGETS msbasic DESTINATION bin)
