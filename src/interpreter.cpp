@@ -1528,6 +1528,38 @@ void Interpreter::restoreVariables(const std::string &filename) {
 }
 
 void Interpreter::loadShapeTableFromFile(const std::string &filename) {
+  // Use tape if available and no filename is provided
+  if (filename.empty() && tapeManager_.hasTape()) {
+    // Load shape table from tape
+    tapeManager_.openForRead();
+    
+    try {
+      // Read record from tape
+      std::vector<uint8_t> record = tapeManager_.readRecord();
+      
+      if (record.empty()) {
+        throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+      }
+      
+      // First byte should be number of shapes
+      uint8_t numShapes = record[0];
+      if (numShapes == 0 || record.size() < 1 + numShapes * 2) {
+        throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+      }
+      
+      // Store shape table pointer (using a simplified approach)
+      pokeMemory(0x00E8, 0);  // Low byte of shape table pointer
+      pokeMemory(0x00E9, 0);  // High byte of shape table pointer
+      
+      tapeManager_.close();
+      return;
+      
+    } catch (const std::exception &e) {
+      tapeManager_.close();
+      throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
+    }
+  }
+  
   // Load shape table from binary file in Apple II format
   std::ifstream file(filename, std::ios::binary);
   if (!file) {
