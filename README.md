@@ -6,7 +6,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
 
 - **[Architecture Documentation](docs/architecture.md)**: Comprehensive system architecture overview
 - **[Implementation Features](docs/features.md)**: Complete feature status and implementation notes
-- **[API Documentation](docs/README.md)**: Instructions for building Doxygen API docs
+- **[API Documentation](docs/docs_overview.md)**: Instructions for building Doxygen API docs
 
 ## Features
 
@@ -14,11 +14,11 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
 
 - **Interactive Mode**: Classic "]" prompt with immediate command execution
 - **Script Mode**: Execute BASIC programs from files
-- **Variables**: 
+- **Variables**:
   - Numeric and string variables (with $ suffix for strings)
   - Integer variables (with % suffix, 16-bit clamped)
   - First two characters significant for variable names
-- **Arrays**: 
+- **Arrays**:
   - Multi-dimensional arrays with DIM
   - Auto-DIM to size 10 per dimension if undeclared
 - **Operators**: Arithmetic (+, -, \*, /, ^, MOD), comparison (=, <>, <, >, <=, >=), logical (AND, OR, NOT)
@@ -51,7 +51,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - TEXT (switch to text mode)
 - **Math Functions**: SIN, COS, TAN, ATN, EXP, LOG, SQR, ABS, INT, SGN, RND, RANDOMIZE
 - **String Functions**: LEFT$, RIGHT$, MID$, LEN, CHR$, ASC, VAL, STR$
-- **Memory Commands**: 
+- **Memory Commands**:
   - PEEK/POKE with bounds checking
   - CALL (machine language call stub)
   - WAIT with optional timeout
@@ -74,7 +74,7 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - Window rendering with Raylib (when available and display present)
   - Graceful fallback to off-screen buffer when no display
 - **Debugging**: TRACE/NOTRACE (line number display), SPEED (execution delay)
-- **ProDOS Support**: 
+- **ProDOS Support**:
   - PR#n, IN#n (I/O redirection)
   - PR#0 (40-column text mode)
   - PR#3 (80-column text mode)
@@ -105,6 +105,7 @@ make
 By default, the build system will automatically download and build Raylib from source if it's not found on your system. This requires:
 
 **Linux:**
+
 ```bash
 # Install X11 development libraries first
 sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
@@ -117,6 +118,7 @@ No additional dependencies needed - Raylib will build automatically.
 Raylib will build automatically with MinGW or MSVC.
 
 To disable automatic Raylib building:
+
 ```bash
 cmake -DAUTO_BUILD_RAYLIB=OFF ..
 ```
@@ -126,6 +128,7 @@ cmake -DAUTO_BUILD_RAYLIB=OFF ..
 If you prefer to install Raylib manually:
 
 **Ubuntu/Debian:**
+
 ```bash
 # Install dependencies
 sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
@@ -140,6 +143,7 @@ sudo make install
 ```
 
 **macOS:**
+
 ```bash
 brew install raylib
 ```
@@ -153,7 +157,7 @@ The Ultimate Apple II Font and related files are **bundled in the repository** f
 - **Font**: `PrintChar21.ttf` - The Ultimate Apple II Font (7×8 pixel characters)
 - **Charset Map**: `apple2-charset.html` - Apple II character set reference
 - **License**: `FreeLicense.txt` - Font license from Kreative Korporation
-- **Source**: https://www.kreativekorp.com/software/fonts/apple2/
+- **Source**: <https://www.kreativekorp.com/software/fonts/apple2/>
 
 These files are located in `assets/fonts/` and are tracked in git. The build system uses them automatically.
 
@@ -163,7 +167,7 @@ To refresh the bundled files from upstream (optional):
 cmake -S . -B build -DREFRESH_BUNDLED_FONTS=ON
 ```
 
-For more details, see `assets/fonts/README.md`.
+For more details, see `assets/fonts/fonts_overview.md`.
 
 ### Building with Clang
 
@@ -242,11 +246,13 @@ The interpreter supports two modes for graphics handling:
 The interpreter supports cassette tape emulation for array and shape table persistence:
 
 **Using command-line:**
+
 ```bash
 ./msbasic --tape /tmp/mytape.tap program.bas
 ```
 
 **Using BASIC commands:**
+
 ```basic
 10 TAPE "/tmp/mytape.tap"    REM Set current tape file (rewinds)
 20 DIM A(5), B(5)
@@ -260,6 +266,7 @@ The interpreter supports cassette tape emulation for array and shape table persi
 ```
 
 **Tape Features:**
+
 - Sequential record format with SIZE|DATA headers
 - Supports arrays (numeric and string) via STORE/RECALL
 - Supports shape tables via SHLOAD

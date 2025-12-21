@@ -51,6 +51,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Purpose**: Convert raw text into a stream of tokens for parsing.
 
 **Key Responsibilities**:
+
 - Lexical analysis of BASIC source code
 - Keyword recognition (PRINT, IF, FOR, etc.)
 - Number and string literal parsing
@@ -58,12 +59,14 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - Identifier extraction with special handling for $, %, and FN prefixes
 
 **Design Notes**:
+
 - Single-pass tokenization
 - Line-aware for error reporting
 - Supports both immediate commands and program lines
 - Handles multi-statement lines (colon `:` separator)
 
 **Key Classes/Functions**:
+
 - `Tokenizer::tokenize(const std::string& line)`: Main entry point
 - `Tokenizer::isKeyword()`: Keyword lookup
 - Token type enumeration in `types.h`
@@ -73,12 +76,14 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Purpose**: Transform tokens into an Abstract Syntax Tree (AST).
 
 **Key Responsibilities**:
+
 - Recursive descent parsing
 - Expression parsing with proper operator precedence
 - Statement parsing (PRINT, IF, FOR, GOSUB, etc.)
 - Error detection and reporting
 
 **Expression Parsing Hierarchy** (highest to lowest precedence):
+
 1. Primary expressions (literals, variables, function calls, parentheses)
 2. Power operator (^)
 3. Unary operators (+, -, NOT)
@@ -90,11 +95,13 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 9. OR operator
 
 **Statement Parsing**:
+
 - Each statement type has a dedicated parser method (`parseIf()`, `parseFor()`, etc.)
 - Supports multi-statement lines via `parseStatement()` loop
 - Handles both numbered program lines and immediate mode commands
 
 **Key Classes**:
+
 - `Expression`: Base class for all expression AST nodes
 - `Statement`: Base class for all statement AST nodes
 - `Parser`: Main parser class with recursive descent methods
@@ -104,6 +111,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Purpose**: Execute the parsed AST and manage runtime state.
 
 **Key Responsibilities**:
+
 - Program execution control (run, stop, continue)
 - Variable and array management via `Variables` class
 - Control flow (GOTO, GOSUB/RETURN, FOR/NEXT, WHILE/WEND)
@@ -114,6 +122,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - Memory simulation (PEEK/POKE/CALL/WAIT)
 
 **Execution Model**:
+
 - Program stored as map of `LineNumber` → `ProgramLine`
 - Program counter (`programCounter_`) iterates through sorted lines
 - Jump flag (`jumped_`) prevents auto-increment after GOTO/GOSUB
@@ -121,6 +130,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - Nested FOR loop management with stack
 
 **State Management**:
+
 - **Running state**: `running_`, `paused_`, `immediate_`
 - **Execution position**: `currentLine_`, `programCounter_`
 - **Control stacks**: `gosubStack_`, `forStack_`, `whileStack_`
@@ -130,6 +140,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - **Memory bounds**: `lomem_`, `himem_`
 
 **Key Methods**:
+
 - `run()`: Execute program from start or current position
 - `executeImmediate()`: Execute single command in immediate mode
 - `gotoLine()`, `gosub()`, `returnFromGosub()`: Control flow
@@ -141,6 +152,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Purpose**: Store and manage program variables, arrays, and user-defined functions.
 
 **Key Responsibilities**:
+
 - Variable storage (numeric, string, integer)
 - Multi-dimensional array support
 - Auto-dimensioning arrays to size 10
@@ -148,23 +160,27 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - User-defined function (DEF FN) storage
 
 **Variable Name Normalization**:
+
 - First 2 characters significant (case-insensitive)
 - Exception: FN names preserve 3-4 characters (FN prefix + 2 chars)
 - String suffix `$` preserved
 - Integer suffix `%` preserved
 
 **Array Support**:
+
 - Multi-dimensional arrays with arbitrary dimension count
 - Auto-DIM to size 10 per dimension if undeclared
 - Bounds checking with "BAD SUBSCRIPT" error
 - Sparse storage using `std::map<std::vector<int>, Value>`
 
 **User-Defined Functions**:
+
 - Stored with parameter name and expression AST
 - Function calls substitute parameter value into expression
 - Naming follows FN conventions (FN prefix + 2 chars)
 
 **Key Classes/Methods**:
+
 - `setVariable()`, `getVariable()`: Simple variable access
 - `dimArray()`, `setArrayElement()`, `getArrayElement()`: Array operations
 - `defineFunction()`, `getFunction()`: User function management
@@ -177,22 +193,26 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Function Categories**:
 
 **Mathematical Functions**:
+
 - Trigonometric: SIN, COS, TAN, ATN
 - Exponential/Logarithmic: EXP, LOG, SQR
 - Numeric: ABS, INT, SGN, RND
 
 **String Functions**:
+
 - Extraction: LEFT$, RIGHT$, MID$
 - Conversion: CHR$, ASC, STR$, VAL
 - Information: LEN
 
 **System Functions**:
+
 - Memory: PEEK, FRE
 - Screen: POS, SCRN
 - Hardware: PDL, USR (stubs)
 - Formatting: TAB, SPC
 
 **Implementation**:
+
 - Function evaluation occurs during expression evaluation
 - Functions are parsed as special expression nodes
 - Built-in functions have dedicated evaluator methods
@@ -205,34 +225,40 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Statement Types**:
 
 **Control Flow**:
+
 - Conditional: IF/THEN/ELSE
 - Loops: FOR/NEXT, WHILE/WEND
 - Jumps: GOTO, GOSUB/RETURN, ON...GOTO/GOSUB
 - Stack manipulation: POP
 
 **I/O**:
+
 - Output: PRINT, HTAB, VTAB, HOME
 - Input: INPUT, GET
 - Text modes: INVERSE, NORMAL, FLASH
 
 **Data Management**:
+
 - Variables: LET (implicit assignment)
 - Arrays: DIM
 - Data: DATA, READ, RESTORE
 
 **Graphics**:
+
 - Mode switching: GR, HIRES, HGR, HGR2, TEXT
 - Drawing: PLOT, HPLOT, HLIN, VLIN
 - Shapes: DRAW, XDRAW, MOVE, ROTATE, SCALE, SHLOAD
 - Color: COLOR=, HCOLOR=
 
 **Program Control**:
+
 - Execution: RUN, END, STOP, CONT
 - Editing: NEW, LIST, DEL
 - Files: LOAD, SAVE, CATALOG
 - Arrays: RECALL, STORE
 
 **Memory/System**:
+
 - Memory: POKE, CALL, WAIT
 - Bounds: LOMEM, HIMEM
 - Debugging: TRACE, NOTRACE, SPEED
@@ -241,12 +267,14 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 - Tape: TAPE
 
 **ProDOS Commands**:
+
 - Files: CREATE, DELETE, RENAME, LOCK, UNLOCK
 - I/O: OPEN, CLOSE, READ, WRITE, APPEND, POSITION, FLUSH
 - Execution: EXEC, CHAIN, - (dash)
 - Directory: PREFIX, CAT
 
 **Implementation**:
+
 - Each statement type is a class derived from `Statement`
 - `execute()` method performs the statement's action
 - Statements access interpreter state via passed `Interpreter*`
@@ -256,32 +284,38 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 **Purpose**: Provide Apple II-compatible graphics rendering.
 
 **Architecture**:
+
 - Two-tiered design: off-screen buffer + optional window rendering
 - Off-screen buffer always maintained for SCRN() queries
 - Window rendering via Raylib (optional, graceful fallback)
 
 **Graphics Modes**:
+
 - **Text Mode**: 40-column or 80-column text
 - **Low-Res Mode (GR)**: 40×40 pixels, 16 colors
 - **High-Res Mode (HGR/HGR2)**: 280×192 pixels, 6 colors
 
 **Rendering Pipeline**:
+
 ```
 Graphics Command → Graphics Buffer Update → Raylib Window Render
 ```
 
 **Key Components**:
+
 - `Graphics` (singleton): Command interface and state management
 - `GraphicsRenderer`: Raylib rendering backend
 - `GraphicsConfig`: Configuration (mode, scale, text columns)
 
 **Shape Tables**:
+
 - Binary format with vector data
 - ROTATE and SCALE transformations
 - DRAW (normal) and XDRAW (XOR) modes
 - SHLOAD from files or tape
 
 **Text Rendering**:
+
 - Ultimate Apple II Font (PrintChar21.ttf)
 - 7×8 pixel character cells
 - 40-column: 280 pixels wide
@@ -292,17 +326,20 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 **Purpose**: Emulate Applesoft's 40-bit floating-point format.
 
 **Format**:
+
 - 5 bytes total
 - 1 byte exponent (excess-128)
 - 4 bytes mantissa (normalized)
 - Sign bit in high bit of mantissa
 
 **Operations**:
+
 - Addition, subtraction, multiplication, division
 - Conversion to/from IEEE 754 double
 - Comparison operations
 
 **Design Notes**:
+
 - Preserves Applesoft numerical behavior
 - Handles edge cases (zero, infinity, NaN)
 - Used internally for all numeric computations
@@ -312,6 +349,7 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 **Purpose**: Provide REPL (Read-Eval-Print Loop) interface.
 
 **Features**:
+
 - Classic `]` prompt
 - Immediate command execution
 - Program line editing (numbered lines)
@@ -319,11 +357,13 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 - Tape change hotkey support
 
 **Command Types**:
+
 - **Immediate commands**: Execute immediately (PRINT, LIST, RUN, etc.)
 - **Program lines**: Stored with line numbers for later execution
 - **Editing**: Line replacement or deletion
 
 **Implementation**:
+
 - `InteractiveMode` class manages REPL loop
 - Uses `Interpreter` for command execution
 - Handles line input and parsing
@@ -334,6 +374,7 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 **Purpose**: Provide file I/O operations for BASIC programs and data.
 
 **Supported Operations**:
+
 - Program files: LOAD, SAVE
 - Directory listing: CATALOG, CAT
 - Binary files: BLOAD, BSAVE, BRUN
@@ -341,12 +382,14 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 - ProDOS operations: CREATE, DELETE, RENAME, OPEN, CLOSE, etc.
 
 **File Formats**:
+
 - Text format for BASIC programs (line-numbered text)
 - Binary format for arrays (SIZE header + data)
 - Binary format for shape tables
 - Sequential tape format for STORE/RECALL/SHLOAD
 
 **Cross-Platform**:
+
 - Uses C++ standard library (std::filesystem, std::fstream)
 - Path normalization for different OSes
 - Native file dialogs via platform APIs (zenity, kdialog, osascript, COM)
@@ -356,6 +399,7 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 **Purpose**: Emulate cassette tape for data persistence.
 
 **Features**:
+
 - Sequential record format
 - Arrays: STORE/RECALL
 - Shape tables: SHLOAD
@@ -363,11 +407,13 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 - File fallback when no tape loaded
 
 **Tape Format**:
+
 - Header: SIZE (4 bytes, little-endian)
 - Data: Variable-length record
 - Sequential access (rewind via TAPE command)
 
 **Use Cases**:
+
 - Save/load multiple arrays sequentially
 - Shape table distribution
 - Data persistence without explicit filenames
@@ -447,6 +493,7 @@ Graphics Command → Graphics Buffer Update → Raylib Window Render
 MSBasic simulates Apple II memory locations for compatibility:
 
 **Key Memory Locations**:
+
 - **$0069-$006A (105-106)**: LOMEM pointer
 - **$0073-$0074 (115-116)**: HIMEM pointer
 - **$00D8 (216)**: Error handler control
@@ -457,6 +504,7 @@ MSBasic simulates Apple II memory locations for compatibility:
 - **$C050-$C057**: Graphics mode soft switches
 
 **PEEK/POKE/CALL Implementation**:
+
 - Simulated memory array (64KB)
 - Bounds checking against LOMEM/HIMEM
 - Special handling for control addresses
@@ -473,6 +521,7 @@ MSBasic simulates Apple II memory locations for compatibility:
 ### CMake Configuration
 
 **Key Features**:
+
 - C++20 requirement
 - Optional Raylib auto-build via FetchContent
 - Font auto-fetch from kreativekorp.com
@@ -480,22 +529,26 @@ MSBasic simulates Apple II memory locations for compatibility:
 - CTest integration for `.bas` test suite
 
 **Version Management**:
+
 - Git-based versioning: `git describe --tags --dirty --always`
 - Fallback to default or override
 - Embedded in `version.h` header
 
 **Dependencies**:
+
 - Raylib 5.0+ (optional, auto-built)
 - X11 libraries (Linux only, for Raylib)
 - Standard C++20 toolchain
 
 **Build Targets**:
+
 - `msbasic`: Main executable
 - CTest tests: Each `.bas` file in `tests/` and `examples/`
 
 ### Font Integration
 
 **Automatic Font Fetching**:
+
 - CMake module: `cmake/FetchFont.cmake`
 - Downloads Ultimate Apple II Font at configure time
 - Caches in `assets/fonts/`
@@ -503,11 +556,13 @@ MSBasic simulates Apple II memory locations for compatibility:
 - Graceful fallback on failure
 
 **Font Files**:
+
 - `PrintChar21.ttf`: TrueType font (~50KB)
 - `apple2-charset.html`: Character set reference
 - `FreeLicense.txt`: License file
 
 **CI/CD Integration**:
+
 - GitHub Actions cache for fonts
 - Cache key based on `FetchFont.cmake` hash
 - Speeds up CI builds
@@ -519,6 +574,7 @@ MSBasic simulates Apple II memory locations for compatibility:
 **Location**: `tests/` and `examples/` directories
 
 **Test Types**:
+
 1. **Language Feature Tests**: Arrays, loops, conditionals, functions, etc.
 2. **Graphics Tests**: Drawing, modes, shapes
 3. **System Tests**: PEEK/POKE, memory, errors
@@ -526,11 +582,13 @@ MSBasic simulates Apple II memory locations for compatibility:
 5. **Example Programs**: Demonstrations and edge cases
 
 **Execution**:
+
 - CTest runs each `.bas` file
 - Success: Program exits with code 0
 - Failure: Non-zero exit or runtime error
 
 **Coverage**:
+
 - 75+ test programs
 - ~98% feature coverage
 - Core language features: 100%
@@ -549,17 +607,20 @@ MSBasic simulates Apple II memory locations for compatibility:
 ### Platform-Specific Code
 
 **Conditional Compilation**:
+
 - `PLATFORM_LINUX`, `PLATFORM_MACOS`, `PLATFORM_WINDOWS` defines
 - Guards for Windows vs. POSIX APIs
 
 **Platform Differences**:
 
 **Windows**:
+
 - Virtual Terminal mode for ANSI support
 - Console API for cursor positioning
 - COM file dialogs
 
 **Linux/macOS (POSIX)**:
+
 - ANSI escape sequences
 - X11 for graphics (Linux)
 - Cocoa for graphics (macOS)
@@ -578,11 +639,13 @@ MSBasic simulates Apple II memory locations for compatibility:
 ### Error Types
 
 **Syntax Errors**:
+
 - Detected during tokenization/parsing
 - Reported immediately
 - Prevent program execution
 
 **Runtime Errors**:
+
 - Type mismatch
 - Division by zero
 - Out of memory
@@ -592,6 +655,7 @@ MSBasic simulates Apple II memory locations for compatibility:
 - File I/O errors
 
 **ProDOS Error Codes**:
+
 - Range: 2-21
 - Stored in memory location 222
 - Examples: PATH NOT FOUND, DISK FULL, FILE LOCKED
@@ -655,13 +719,10 @@ MSBasic simulates Apple II memory locations for compatibility:
 
 ## References
 
-- [Applesoft BASIC Commands](../Research/applesoft_basic_commands.md)
-- [Applesoft BASIC Functions](../Research/applesoft_basic_functions.md)
-- [Applesoft BASIC Language Features](../Research/applesoft_basic_language_features.md)
-- [Applesoft Error Messages](../Research/applesoft_error_messages.md)
-- [Applesoft PEEK/POKE/CALL Addresses](../Research/applesoft_peek_poke_call_addresses.md)
 - [Implementation Features](features.md)
 - [README](../README.md)
+
+Additional reference materials for Applesoft BASIC (commands, functions, language features, error messages, and memory addresses) are available in the Research folder but are not included in the API documentation.
 
 ## Glossary
 

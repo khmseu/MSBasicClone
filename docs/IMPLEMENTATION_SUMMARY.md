@@ -5,6 +5,7 @@
 ### 1. Architecture Documentation
 
 Created comprehensive architecture documentation in `docs/architecture.md`:
+
 - **Overview**: Project goals and design principles
 - **System Architecture**: Detailed component breakdown with data flow diagrams
 - **Component Details**: In-depth explanation of 11 major components:
@@ -33,6 +34,7 @@ Created comprehensive architecture documentation in `docs/architecture.md`:
 ### 2. Doxygen Configuration
 
 Created `Doxyfile` configuration for API documentation generation:
+
 - **Project Settings**: Name, version, brief description
 - **Output Formats**: HTML and LaTeX (PDF-ready)
 - **Input Sources**: All header files in `src/`, plus markdown docs
@@ -54,6 +56,7 @@ Created `Doxyfile` configuration for API documentation generation:
 Added comprehensive Doxygen-style comments to core header files:
 
 #### `src/types.h`
+
 - File-level documentation explaining core type system
 - Detailed documentation for `TokenType` enum
 - Complete `Value` class documentation:
@@ -65,6 +68,7 @@ Added comprehensive Doxygen-style comments to core header files:
 - `ProgramLine` struct documentation
 
 #### `src/tokenizer.h`
+
 - File-level documentation explaining lexical analysis
 - Comprehensive `Tokenizer` class documentation:
   - Purpose and responsibilities
@@ -74,6 +78,7 @@ Added comprehensive Doxygen-style comments to core header files:
   - Member variable documentation
 
 #### `src/parser.h`
+
 - File-level documentation with operator precedence details
 - `Expression` base class documentation
 - `Statement` base class documentation
@@ -85,6 +90,7 @@ Added comprehensive Doxygen-style comments to core header files:
   - Helper method documentation
 
 #### `src/variables.h`
+
 - File-level documentation explaining variable management
 - Comprehensive `Variables` class documentation:
   - Variable naming rules and normalization
@@ -100,7 +106,8 @@ Added comprehensive Doxygen-style comments to core header files:
 
 Created documentation infrastructure and guides:
 
-#### `docs/README.md` (167 lines)
+#### `docs/docs_overview.md` (167 lines)
+
 - Documentation overview and structure
 - Build instructions for Doxygen
 - Platform-specific installation guides
@@ -110,23 +117,27 @@ Created documentation infrastructure and guides:
 - Troubleshooting section
 
 #### CMake Integration
+
 - Added `find_package(Doxygen)` to CMakeLists.txt
 - Created `docs` custom target for building documentation
 - Added informative messages about Doxygen availability
 - Integrated with existing build system
 
 #### `.gitignore` Updates
+
 - Added `docs/api/` to exclude generated documentation
 - Preserves source documentation while ignoring generated files
 
 #### `README.md` Updates
+
 - Added "Documentation" section at the top
-- Links to architecture.md, features.md, and docs/README.md
+- Links to architecture.md, features.md, and docs/docs_overview.md
 - Improved discoverability of documentation
 
 ### 5. Documentation Generation
 
 Successfully built API documentation:
+
 - **HTML Output**: 354 HTML pages generated
   - Searchable interface
   - Tree view navigation
@@ -163,7 +174,7 @@ Successfully built API documentation:
 
 - **Markdown Documentation**: 3 files
   - docs/architecture.md (682 lines)
-  - docs/README.md (167 lines)
+  - docs/docs_overview.md (167 lines)
   - Updated README.md with documentation links
 
 ### Generated Output
@@ -232,6 +243,7 @@ documentation. The generated HTML and LaTeX outputs provide accessible,
 professional documentation in multiple formats.
 
 **Key Achievements**:
+
 - ✅ Comprehensive 682-line architecture document
 - ✅ Complete Doxygen configuration
 - ✅ 400+ lines of inline Doxygen comments
@@ -241,6 +253,7 @@ professional documentation in multiple formats.
 - ✅ Guidelines for future documentation
 
 **Next Steps for Complete Coverage**:
+
 1. Document remaining header files (interpreter.h, functions.h, etc.)
 2. Add inline comments to key implementation files
 3. Create tutorial and cookbook documentation

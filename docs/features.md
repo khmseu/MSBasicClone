@@ -812,7 +812,7 @@ The interpreter is production-ready for:
 - Clear variable naming
 - Comprehensive comments
 - Error handling with helpful messages
-- Cross-platform compatibility (#ifdef guards)
+- Cross-platform compatibility (`#ifdef` guards)
 
 ### Font Integration
 
