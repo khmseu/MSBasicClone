@@ -23,9 +23,11 @@ static int gLomem = 2048;  // $0800
 static int gHimem = 49152; // $C000
 } // namespace
 
+// Format a 16-bit address as a 4-digit uppercase hexadecimal string (0xXXXX).
+// Used for displaying memory addresses in error messages and CALL output.
 std::string formatHexAddress(int addr) {
   std::ostringstream oss;
-  oss << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << addr;
+  oss << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(4) << (addr & 0xFFFF);
   return oss.str();
 }
 
