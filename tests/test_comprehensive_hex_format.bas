@@ -1,0 +1,22 @@
+10 REM Comprehensive test for hex address formatting
+20 PRINT "=== HEX ADDRESS FORMAT TEST ==="
+30 PRINT
+40 PRINT "TESTING CALL ADDRESSES:"
+50 PRINT "----------------------"
+60 REM Test several CALL addresses to verify $ format
+70 CALL 1234
+80 CALL 768
+90 CALL 1002
+100 PRINT
+110 PRINT "TESTING PEEK/POKE ERROR MESSAGES:"
+120 PRINT "---------------------------------"
+130 ON ERROR GOTO 200
+140 REM This should fail with a memory range error showing $ format
+150 POKE 100, 5
+160 PRINT "ERROR: SHOULD HAVE RAISED MEMORY RANGE ERROR"
+170 END
+200 PRINT "CAUGHT MEMORY RANGE ERROR (SEE $ FORMAT ABOVE)"
+210 ON ERROR GOTO 0
+220 PRINT
+230 PRINT "ALL TESTS PASSED!"
+240 END

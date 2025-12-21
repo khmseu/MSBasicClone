@@ -50,13 +50,13 @@ Interpreter::Interpreter(const GraphicsConfig& config)
 
   // Initialize special memory locations
   // LOMEM pointer (locations 105-106)
-  pokeMemory(105, lomem_ & 0xFF);
-  pokeMemory(106, (lomem_ >> 8) & 0xFF);
+  pokeMemory(0x0069, lomem_ & 0xFF);
+  pokeMemory(0x006A, (lomem_ >> 8) & 0xFF);
   // HIMEM pointer (locations 115-116)
-  pokeMemory(115, himem_ & 0xFF);
-  pokeMemory(116, (himem_ >> 8) & 0xFF);
+  pokeMemory(0x0073, himem_ & 0xFF);
+  pokeMemory(0x0074, (himem_ >> 8) & 0xFF);
   // Cursor vertical position (location 37)
-  pokeMemory(37, outputRow_);
+  pokeMemory(0x0025, outputRow_);
 }
 
 void Interpreter::parseLine(const std::string &line, LineNumber &lineNum,
@@ -208,13 +208,13 @@ void Interpreter::runFrom(LineNumber lineNum) {
           // Location 218: error line number (low byte)
           // Location 219: error line number (high byte)
           // Location 222: error code (only set if not already set by handleError)
-          pokeMemory(218, errorLine_ & 0xFF);
-          pokeMemory(219, (errorLine_ >> 8) & 0xFF);
+          pokeMemory(0x00DA, errorLine_ & 0xFF);
+          pokeMemory(0x00DB, (errorLine_ >> 8) & 0xFF);
           
           // Only set generic error code if no specific error code was set
-          int currentErrorCode = peekMemory(222);
+          int currentErrorCode = peekMemory(0x00DE);
           if (currentErrorCode == 0) {
-            pokeMemory(222, 16);  // Generic error code
+            pokeMemory(0x00DE, 16);  // Generic error code
           }
           
           gotoLine(errorHandlerLine_);
@@ -994,63 +994,63 @@ void Interpreter::brunFile(const std::string &filename, int address) {
 void Interpreter::callAddress(int address) {
   // Handle negative addresses (Apple II convention)
   if (address < 0) {
-    address = 65536 + address;
+    address = 0x10000 + address;
   }
   
   // Handle special Apple II CALL addresses
   switch (address) {
-    case 62248: // -3288: Stack cleanup routine
+    case 0xF308: // -3288: Stack cleanup routine
       // No-op in our implementation
       break;
       
-    case 62450: // -3086: Clear hi-res page to black
+    case 0xF3D2: // -3086: Clear hi-res page to black
       // Would clear graphics buffer in full implementation
-      std::cout << "CALL 0xF3D2: CLEAR HI-RES TO BLACK (STUB)\n";
+      std::cout << "CALL $F3D2: CLEAR HI-RES TO BLACK (STUB)\n";
       break;
       
-    case 62454: // -3082: Clear hi-res to last HPLOT color
-      std::cout << "CALL 0xF3D6: CLEAR HI-RES TO COLOR (STUB)\n";
+    case 0xF3D6: // -3082: Clear hi-res to last HPLOT color
+      std::cout << "CALL $F3D6: CLEAR HI-RES TO COLOR (STUB)\n";
       break;
       
-    case 63538: // -1998: BKGND (background color)
-      std::cout << "CALL 0xF832: SET BACKGROUND (STUB)\n";
+    case 0xF832: // -1998: BKGND (background color)
+      std::cout << "CALL $F832: SET BACKGROUND (STUB)\n";
       break;
       
-    case 64578: // -958: Clear from cursor to bottom-right
-      std::cout << "CALL 0xFC42: CLEAR TO BOTTOM (STUB)\n";
+    case 0xFC42: // -958: Clear from cursor to bottom-right
+      std::cout << "CALL $FC42: CLEAR TO BOTTOM (STUB)\n";
       break;
       
-    case 64600: // -936: HOME (clear screen, home cursor)
+    case 0xFC58: // -936: HOME (clear screen, home cursor)
       std::cout << "\033[2J\033[H";  // ANSI clear screen
       outputRow_ = 0;
-      pokeMemory(37, outputRow_);
+      pokeMemory(0x0025, outputRow_);
       break;
       
-    case 64614: // -922: Line feed
+    case 0xFC66: // -922: Line feed
       std::cout << "\n";
       outputRow_++;
       if (outputRow_ >= 24) outputRow_ = 23;
-      pokeMemory(37, outputRow_);
+      pokeMemory(0x0025, outputRow_);
       break;
       
-    case 64624: // -912: Scroll text window up
-      std::cout << "CALL 0xFC70: SCROLL UP (STUB)\n";
+    case 0xFC70: // -912: Scroll text window up
+      std::cout << "CALL $FC70: SCROLL UP (STUB)\n";
       break;
       
-    case 64668: // -868: CLREOL (clear to end of line)
+    case 0xFC9C: // -868: CLREOL (clear to end of line)
       std::cout << "\033[K";  // ANSI clear to end of line
       break;
       
-    case 65385: // -151: Enter Monitor
-      std::cout << "CALL 0xFF69: MONITOR (NOT IMPLEMENTED)\n";
+    case 0xFF69: // -151: Enter Monitor
+      std::cout << "CALL $FF69: MONITOR (NOT IMPLEMENTED)\n";
       break;
       
-    case 768: // Common user ML routine location (page 3)
-      std::cout << "CALL 0x0300: USER ROUTINE (STUB)\n";
+    case 0x0300: // Common user ML routine location (page 3)
+      std::cout << "CALL $0300: USER ROUTINE (STUB)\n";
       break;
       
-    case 1002: // Restore ProDOS connection
-      std::cout << "CALL 0x03EA: RESTORE PRODOS (STUB)\n";
+    case 0x03EA: // Restore ProDOS connection
+      std::cout << "CALL $03EA: RESTORE PRODOS (STUB)\n";
       break;
       
     default:
@@ -1359,8 +1359,8 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
     // Store shape table pointer (using a simplified approach)
     // In real Apple II, this would be the memory address of the shape table
     // For our implementation, we just acknowledge the file was loaded
-    pokeMemory(232, 0);  // Low byte of shape table pointer
-    pokeMemory(233, 0);  // High byte of shape table pointer
+    pokeMemory(0x00E8, 0);  // Low byte of shape table pointer
+    pokeMemory(0x00E9, 0);  // High byte of shape table pointer
     
     // Note: Full shape table parsing and rendering would require decoding
     // the vector plotting commands in each shape definition. This is a
@@ -1414,7 +1414,7 @@ void Interpreter::vtab(int row1) {
     printNewline();
   }
   // Update memory location 37 (cursor vertical position)
-  pokeMemory(37, outputRow_);
+  pokeMemory(0x0025, outputRow_);
 }
 
 void Interpreter::setInverse(bool on) {
@@ -1480,7 +1480,7 @@ void Interpreter::printNewline() {
   outputColumn_ = 0;
   outputRow_++;
   // Update memory location 37 (cursor vertical position)
-  pokeMemory(37, outputRow_);
+  pokeMemory(0x0025, outputRow_);
 }
 
 void Interpreter::printToNextZone() {
@@ -1562,7 +1562,7 @@ void Interpreter::handleError(const std::string &message) {
 
 void Interpreter::handleError(const std::string &message, int errorCode) {
   // Store error code in memory location 222 for ProDOS compatibility
-  pokeMemory(222, errorCode);
+  pokeMemory(0x00DE, errorCode);
   throw std::runtime_error(message);
 }
 
