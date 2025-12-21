@@ -1156,6 +1156,8 @@ void Interpreter::storeArray(const std::string &arrayName) {
         }
       } else {
         record.push_back('N');
+        // Serialize double in native byte order
+        // Note: For cross-platform tape compatibility, consider using a portable format
         double num = value.getNumber();
         uint8_t* numBytes = reinterpret_cast<uint8_t*>(&num);
         for (size_t i = 0; i < sizeof(double); ++i) {
@@ -1233,8 +1235,10 @@ void Interpreter::recallArray(const std::string &arrayName) {
       std::string recordName(reinterpret_cast<char*>(&record[pos]), nameLen);
       pos += nameLen;
       
-      // Verify it matches the requested array name (normalized)
-      // For now, we'll just use whatever is on the tape
+      // For tape format, we use the array name stored in the record
+      // rather than requiring it to match the requested name
+      // This allows sequential reading of different arrays from tape
+      (void)arrayName; // Suppress unused parameter warning
       
       // Read dimensions
       if (pos >= record.size()) {
@@ -1308,7 +1312,8 @@ void Interpreter::recallArray(const std::string &arrayName) {
           value = Value(str);
           pos += strLen;
         } else if (type == 'N') {
-          // Read double
+          // Read double in native byte order
+          // Note: Tape files should be used on the same architecture for portability
           if (pos + sizeof(double) > record.size()) {
             throw std::runtime_error("INVALID TAPE FORMAT");
           }

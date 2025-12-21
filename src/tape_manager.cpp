@@ -3,6 +3,9 @@
 #include <cstring>
 #include <iostream>
 
+// Maximum record size (1 MB) - prevents excessive memory allocation from corrupt tapes
+constexpr uint32_t MAX_RECORD_SIZE = 1024 * 1024;
+
 #if defined(PLATFORM_WINDOWS)
 #include <windows.h>
 #include <commdlg.h>
@@ -91,7 +94,9 @@ void TapeManager::writeRecord(const std::vector<uint8_t>& data) {
         throw std::runtime_error("TAPE NOT OPEN FOR WRITING");
     }
     
-    // Write record size as 4-byte little-endian integer
+    // Write record size as 4-byte integer in native byte order
+    // Note: For cross-platform compatibility, tape files should be used on the same architecture
+    // or implement explicit little-endian serialization
     uint32_t size = static_cast<uint32_t>(data.size());
     file_.write(reinterpret_cast<const char*>(&size), sizeof(size));
     
@@ -118,7 +123,7 @@ std::vector<uint8_t> TapeManager::readRecord() {
         throw std::runtime_error("END OF TAPE");
     }
     
-    if (size == 0 || size > 1024 * 1024) { // Sanity check: max 1MB per record
+    if (size == 0 || size > MAX_RECORD_SIZE) {
         throw std::runtime_error("INVALID TAPE FORMAT");
     }
     
