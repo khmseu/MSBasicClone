@@ -36,15 +36,25 @@ void TapeManager::openForRead() {
         throw std::runtime_error("NO TAPE LOADED");
     }
     
-    close();
-    
-    file_.open(currentTape_, std::ios::in | std::ios::binary);
-    if (!file_) {
-        throw std::runtime_error("TAPE READ ERROR");
+    // If already open in read mode, keep position
+    if (isOpen() && readMode_) {
+        return;
     }
     
-    readMode_ = true;
-    position_ = 0;
+    // If open in write mode, close and reopen in read mode
+    if (isOpen() && !readMode_) {
+        close();
+    }
+    
+    // Open for reading only if not already open
+    if (!isOpen()) {
+        file_.open(currentTape_, std::ios::in | std::ios::binary);
+        if (!file_) {
+            throw std::runtime_error("TAPE READ ERROR");
+        }
+        readMode_ = true;
+        position_ = 0;
+    }
 }
 
 void TapeManager::openForWrite() {
@@ -52,19 +62,29 @@ void TapeManager::openForWrite() {
         throw std::runtime_error("NO TAPE LOADED");
     }
     
-    close();
-    
-    // Open in append mode to preserve existing data
-    file_.open(currentTape_, std::ios::out | std::ios::binary | std::ios::app);
-    if (!file_) {
-        throw std::runtime_error("TAPE WRITE ERROR");
+    // If already open in write mode, keep position
+    if (isOpen() && !readMode_) {
+        return;
     }
     
-    readMode_ = false;
+    // If open in read mode, close and reopen in write mode
+    if (isOpen() && readMode_) {
+        close();
+    }
     
-    // Get current position for append mode
-    file_.seekp(0, std::ios::end);
-    position_ = file_.tellp();
+    // Open for writing only if not already open
+    if (!isOpen()) {
+        // Open in read-write mode to allow positioning
+        file_.open(currentTape_, std::ios::in | std::ios::out | std::ios::binary | std::ios::app);
+        if (!file_) {
+            throw std::runtime_error("TAPE WRITE ERROR");
+        }
+        readMode_ = false;
+        
+        // Get current position for append mode
+        file_.seekp(0, std::ios::end);
+        position_ = file_.tellp();
+    }
 }
 
 void TapeManager::close() {

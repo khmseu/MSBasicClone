@@ -235,13 +235,15 @@ The interpreter supports cassette tape emulation for array and shape table persi
 
 **Using BASIC commands:**
 ```basic
-10 TAPE "/tmp/mytape.tap"    REM Set current tape file
-20 TAPE                       REM Display current tape
-30 DIM A(5)
-40 FOR I = 0 TO 5: A(I) = I * 10: NEXT I
-50 STORE A                    REM Save array to tape
-60 FOR I = 0 TO 5: A(I) = 0: NEXT I
-70 RECALL A                   REM Load array from tape
+10 TAPE "/tmp/mytape.tap"    REM Set current tape file (rewinds)
+20 DIM A(5), B(5)
+30 FOR I = 0 TO 5: A(I) = I * 10: NEXT I
+40 FOR I = 0 TO 5: B(I) = I * 100: NEXT I
+50 STORE A                    REM Save first array
+60 STORE B                    REM Save second array (appends, maintains position)
+70 TAPE "/tmp/mytape.tap"    REM Set tape again to rewind
+80 RECALL A                   REM Read first array
+90 RECALL B                   REM Read second array (position maintained)
 ```
 
 **Tape Features:**
@@ -251,8 +253,9 @@ The interpreter supports cassette tape emulation for array and shape table persi
 - Falls back to file-based storage when no tape loaded
 - Use `TAPE` with no argument to view current tape
 - OS-native file selector support (zenity/kdialog on Linux, osascript on macOS, COM on Windows)
+- **Tape maintains position across operations** - only rewinds when setting a new tape file
 
-**Note:** Tape access is sequential - each RECALL/SHLOAD opens from the beginning, matching authentic cassette tape behavior.
+**Note:** The tape file stays open and maintains position between STORE/RECALL/SHLOAD operations, allowing sequential reading/writing of multiple records. Use `TAPE "filename"` to rewind to the beginning.
 
 **Graphics Mode** (default): When graphics are enabled, the interpreter will attempt to open a window for rendering graphics commands (GR, HGR, HPLOT, etc.). If no display is available (e.g., in a headless environment), graphics will fall back to off-screen buffer mode only.
 

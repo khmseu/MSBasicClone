@@ -1168,7 +1168,7 @@ void Interpreter::storeArray(const std::string &arrayName) {
     
     // Write record to tape
     tapeManager_.writeRecord(record);
-    tapeManager_.close();
+    // Keep tape open to maintain position
     
   } else {
     // Fall back to file-based storage
@@ -1331,10 +1331,10 @@ void Interpreter::recallArray(const std::string &arrayName) {
       // Set the array
       variables_.setArrayData(arrayName, dimensions, data);
       
-      tapeManager_.close();
+      // Keep tape open to maintain position
       
     } catch (const std::exception &e) {
-      tapeManager_.close();
+      // Don't close tape on error - let user handle it
       throw;
     }
     
@@ -1556,11 +1556,11 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
       pokeMemory(0x00E8, 0);  // Low byte of shape table pointer
       pokeMemory(0x00E9, 0);  // High byte of shape table pointer
       
-      tapeManager_.close();
+      // Keep tape open to maintain position
       return;
       
     } catch (const std::exception &e) {
-      tapeManager_.close();
+      // Don't close tape on error
       throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
     }
   }
