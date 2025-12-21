@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -1087,130 +1088,338 @@ void Interpreter::storeArray(const std::string &arrayName) {
     throw std::runtime_error("UNDEFINED ARRAY ERROR");
   }
 
-  std::string filename = sanitizeArrayName(arrayName);
-
-  std::ofstream file(filename);
-  if (!file) {
-    throw std::runtime_error("FILE ERROR");
-  }
-
-  const auto &dimensions = variables_.getArrayDimensions(arrayName);
-  const auto &data = variables_.getArrayData(arrayName);
-
-  // Write dimensions
-  file << dimensions.size();
-  for (int dim : dimensions) {
-    file << " " << dim;
-  }
-  file << "\n";
-
-  // Write data
-  file << data.size() << "\n";
-  for (const auto &entry : data) {
-    const auto &indices = entry.first;
-    const auto &value = entry.second;
+  // Use tape if available, otherwise fall back to file
+  if (tapeManager_.hasTape()) {
+    // Open tape for writing
+    tapeManager_.openForWrite();
     
-    // Write indices
-    for (size_t i = 0; i < indices.size(); ++i) {
-      if (i > 0) file << ",";
-      file << indices[i];
+    const auto &dimensions = variables_.getArrayDimensions(arrayName);
+    const auto &data = variables_.getArrayData(arrayName);
+    
+    // Build record data
+    std::vector<uint8_t> record;
+    
+    // Write array name
+    uint8_t nameLen = static_cast<uint8_t>(arrayName.length());
+    record.push_back(nameLen);
+    for (char c : arrayName) {
+      record.push_back(static_cast<uint8_t>(c));
     }
-    file << " ";
     
-    // Write value
-    if (value.isString()) {
-      file << "S " << value.getString() << "\n";
-    } else {
-      file << "N " << value.getNumber() << "\n";
+    // Write dimensions
+    uint8_t numDims = static_cast<uint8_t>(dimensions.size());
+    record.push_back(numDims);
+    for (int dim : dimensions) {
+      uint32_t dimVal = static_cast<uint32_t>(dim);
+      record.push_back(dimVal & 0xFF);
+      record.push_back((dimVal >> 8) & 0xFF);
+      record.push_back((dimVal >> 16) & 0xFF);
+      record.push_back((dimVal >> 24) & 0xFF);
+    }
+    
+    // Write data count
+    uint32_t dataCount = static_cast<uint32_t>(data.size());
+    record.push_back(dataCount & 0xFF);
+    record.push_back((dataCount >> 8) & 0xFF);
+    record.push_back((dataCount >> 16) & 0xFF);
+    record.push_back((dataCount >> 24) & 0xFF);
+    
+    // Write data entries
+    for (const auto &entry : data) {
+      const auto &indices = entry.first;
+      const auto &value = entry.second;
+      
+      // Write number of indices
+      uint8_t numIndices = static_cast<uint8_t>(indices.size());
+      record.push_back(numIndices);
+      
+      // Write indices
+      for (int idx : indices) {
+        uint32_t idxVal = static_cast<uint32_t>(idx);
+        record.push_back(idxVal & 0xFF);
+        record.push_back((idxVal >> 8) & 0xFF);
+        record.push_back((idxVal >> 16) & 0xFF);
+        record.push_back((idxVal >> 24) & 0xFF);
+      }
+      
+      // Write value
+      if (value.isString()) {
+        record.push_back('S');
+        std::string str = value.getString();
+        uint32_t strLen = static_cast<uint32_t>(str.length());
+        record.push_back(strLen & 0xFF);
+        record.push_back((strLen >> 8) & 0xFF);
+        record.push_back((strLen >> 16) & 0xFF);
+        record.push_back((strLen >> 24) & 0xFF);
+        for (char c : str) {
+          record.push_back(static_cast<uint8_t>(c));
+        }
+      } else {
+        record.push_back('N');
+        double num = value.getNumber();
+        uint8_t* numBytes = reinterpret_cast<uint8_t*>(&num);
+        for (size_t i = 0; i < sizeof(double); ++i) {
+          record.push_back(numBytes[i]);
+        }
+      }
+    }
+    
+    // Write record to tape
+    tapeManager_.writeRecord(record);
+    tapeManager_.close();
+    
+  } else {
+    // Fall back to file-based storage
+    std::string filename = sanitizeArrayName(arrayName);
+
+    std::ofstream file(filename);
+    if (!file) {
+      throw std::runtime_error("FILE ERROR");
+    }
+
+    const auto &dimensions = variables_.getArrayDimensions(arrayName);
+    const auto &data = variables_.getArrayData(arrayName);
+
+    // Write dimensions
+    file << dimensions.size();
+    for (int dim : dimensions) {
+      file << " " << dim;
+    }
+    file << "\n";
+
+    // Write data
+    file << data.size() << "\n";
+    for (const auto &entry : data) {
+      const auto &indices = entry.first;
+      const auto &value = entry.second;
+      
+      // Write indices
+      for (size_t i = 0; i < indices.size(); ++i) {
+        if (i > 0) file << ",";
+        file << indices[i];
+      }
+      file << " ";
+      
+      // Write value
+      if (value.isString()) {
+        file << "S " << value.getString() << "\n";
+      } else {
+        file << "N " << value.getNumber() << "\n";
+      }
     }
   }
 }
 
 void Interpreter::recallArray(const std::string &arrayName) {
-  std::string filename = sanitizeArrayName(arrayName);
-
-  std::ifstream file(filename);
-  if (!file) {
-    throw std::runtime_error("PATH NOT FOUND ERROR");
-  }
-
-  try {
-    // Read dimensions
-    size_t numDims;
-    file >> numDims;
-    if (!file || numDims == 0 || numDims > kMaxArrayDimensions) {
-      throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+  // Use tape if available, otherwise fall back to file
+  if (tapeManager_.hasTape()) {
+    // Open tape for reading
+    tapeManager_.openForRead();
+    
+    try {
+      // Read record from tape
+      std::vector<uint8_t> record = tapeManager_.readRecord();
+      size_t pos = 0;
+      
+      // Read array name
+      if (pos >= record.size()) {
+        throw std::runtime_error("INVALID TAPE FORMAT");
+      }
+      uint8_t nameLen = record[pos++];
+      
+      if (pos + nameLen > record.size()) {
+        throw std::runtime_error("INVALID TAPE FORMAT");
+      }
+      std::string recordName(reinterpret_cast<char*>(&record[pos]), nameLen);
+      pos += nameLen;
+      
+      // Verify it matches the requested array name (normalized)
+      // For now, we'll just use whatever is on the tape
+      
+      // Read dimensions
+      if (pos >= record.size()) {
+        throw std::runtime_error("INVALID TAPE FORMAT");
+      }
+      uint8_t numDims = record[pos++];
+      
+      if (numDims == 0 || numDims > kMaxArrayDimensions) {
+        throw std::runtime_error("INVALID TAPE FORMAT");
+      }
+      
+      std::vector<int> dimensions(numDims);
+      for (size_t i = 0; i < numDims; ++i) {
+        if (pos + 4 > record.size()) {
+          throw std::runtime_error("INVALID TAPE FORMAT");
+        }
+        uint32_t dimVal = record[pos] | (record[pos+1] << 8) | 
+                         (record[pos+2] << 16) | (record[pos+3] << 24);
+        dimensions[i] = static_cast<int>(dimVal);
+        pos += 4;
+      }
+      
+      // Read data count
+      if (pos + 4 > record.size()) {
+        throw std::runtime_error("INVALID TAPE FORMAT");
+      }
+      uint32_t dataCount = record[pos] | (record[pos+1] << 8) | 
+                          (record[pos+2] << 16) | (record[pos+3] << 24);
+      pos += 4;
+      
+      // Read data entries
+      std::map<std::vector<int>, Value> data;
+      for (size_t i = 0; i < dataCount; ++i) {
+        // Read number of indices
+        if (pos >= record.size()) {
+          throw std::runtime_error("INVALID TAPE FORMAT");
+        }
+        uint8_t numIndices = record[pos++];
+        
+        std::vector<int> indices(numIndices);
+        for (size_t j = 0; j < numIndices; ++j) {
+          if (pos + 4 > record.size()) {
+            throw std::runtime_error("INVALID TAPE FORMAT");
+          }
+          uint32_t idxVal = record[pos] | (record[pos+1] << 8) | 
+                           (record[pos+2] << 16) | (record[pos+3] << 24);
+          indices[j] = static_cast<int>(idxVal);
+          pos += 4;
+        }
+        
+        // Read value type
+        if (pos >= record.size()) {
+          throw std::runtime_error("INVALID TAPE FORMAT");
+        }
+        char type = static_cast<char>(record[pos++]);
+        
+        Value value;
+        if (type == 'S') {
+          // Read string length
+          if (pos + 4 > record.size()) {
+            throw std::runtime_error("INVALID TAPE FORMAT");
+          }
+          uint32_t strLen = record[pos] | (record[pos+1] << 8) | 
+                           (record[pos+2] << 16) | (record[pos+3] << 24);
+          pos += 4;
+          
+          if (pos + strLen > record.size()) {
+            throw std::runtime_error("INVALID TAPE FORMAT");
+          }
+          std::string str(reinterpret_cast<char*>(&record[pos]), strLen);
+          value = Value(str);
+          pos += strLen;
+        } else if (type == 'N') {
+          // Read double
+          if (pos + sizeof(double) > record.size()) {
+            throw std::runtime_error("INVALID TAPE FORMAT");
+          }
+          double num;
+          std::memcpy(&num, &record[pos], sizeof(double));
+          value = Value(num);
+          pos += sizeof(double);
+        } else {
+          throw std::runtime_error("INVALID TAPE FORMAT");
+        }
+        
+        data[indices] = value;
+      }
+      
+      // Set the array
+      variables_.setArrayData(arrayName, dimensions, data);
+      
+      tapeManager_.close();
+      
+    } catch (const std::exception &e) {
+      tapeManager_.close();
+      throw;
     }
     
-    std::vector<int> dimensions(numDims);
-    for (size_t i = 0; i < numDims; ++i) {
-      file >> dimensions[i];
-      if (!file || dimensions[i] < 0) {
-        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
-      }
-    }
+  } else {
+    // Fall back to file-based storage
+    std::string filename = sanitizeArrayName(arrayName);
 
-    // Read data count
-    size_t dataCount;
-    file >> dataCount;
+    std::ifstream file(filename);
     if (!file) {
-      throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      throw std::runtime_error("PATH NOT FOUND ERROR");
     }
-    file.ignore(); // Skip newline
 
-    std::map<std::vector<int>, Value> data;
-    for (size_t i = 0; i < dataCount; ++i) {
-      std::string line;
-      std::getline(file, line);
-      if (!file || line.empty()) {
+    try {
+      // Read dimensions
+      size_t numDims;
+      file >> numDims;
+      if (!file || numDims == 0 || numDims > kMaxArrayDimensions) {
         throw std::runtime_error("INVALID ARRAY FILE FORMAT");
       }
       
-      // Parse indices
-      size_t spacePos = line.find(' ');
-      if (spacePos == std::string::npos) {
-        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
-      }
-      std::string indicesStr = line.substr(0, spacePos);
-      std::string valueStr = line.substr(spacePos + 1);
-      
-      std::vector<int> indices;
-      size_t start = 0;
-      while (start < indicesStr.length()) {
-        size_t commaPos = indicesStr.find(',', start);
-        if (commaPos == std::string::npos) {
-          indices.push_back(std::stoi(indicesStr.substr(start)));
-          break;
-        } else {
-          indices.push_back(std::stoi(indicesStr.substr(start, commaPos - start)));
-          start = commaPos + 1;
+      std::vector<int> dimensions(numDims);
+      for (size_t i = 0; i < numDims; ++i) {
+        file >> dimensions[i];
+        if (!file || dimensions[i] < 0) {
+          throw std::runtime_error("INVALID ARRAY FILE FORMAT");
         }
       }
-      
-      // Parse value
-      if (valueStr.length() < 2) {
-        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
-      }
-      char type = valueStr[0];
-      std::string valContent = valueStr.substr(2);
-      Value value;
-      if (type == 'S') {
-        value = Value(valContent);
-      } else if (type == 'N') {
-        value = Value(std::stod(valContent));
-      } else {
-        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
-      }
-      
-      data[indices] = value;
-    }
 
-    // Set the array
-    variables_.setArrayData(arrayName, dimensions, data);
-  } catch (const std::invalid_argument &) {
-    throw std::runtime_error("INVALID ARRAY FILE FORMAT");
-  } catch (const std::out_of_range &) {
-    throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      // Read data count
+      size_t dataCount;
+      file >> dataCount;
+      if (!file) {
+        throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+      }
+      file.ignore(); // Skip newline
+
+      std::map<std::vector<int>, Value> data;
+      for (size_t i = 0; i < dataCount; ++i) {
+        std::string line;
+        std::getline(file, line);
+        if (!file || line.empty()) {
+          throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+        }
+        
+        // Parse indices
+        size_t spacePos = line.find(' ');
+        if (spacePos == std::string::npos) {
+          throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+        }
+        std::string indicesStr = line.substr(0, spacePos);
+        std::string valueStr = line.substr(spacePos + 1);
+        
+        std::vector<int> indices;
+        size_t start = 0;
+        while (start < indicesStr.length()) {
+          size_t commaPos = indicesStr.find(',', start);
+          if (commaPos == std::string::npos) {
+            indices.push_back(std::stoi(indicesStr.substr(start)));
+            break;
+          } else {
+            indices.push_back(std::stoi(indicesStr.substr(start, commaPos - start)));
+            start = commaPos + 1;
+          }
+        }
+        
+        // Parse value
+        if (valueStr.length() < 2) {
+          throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+        }
+        char type = valueStr[0];
+        std::string valContent = valueStr.substr(2);
+        Value value;
+        if (type == 'S') {
+          value = Value(valContent);
+        } else if (type == 'N') {
+          value = Value(std::stod(valContent));
+        } else {
+          throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+        }
+        
+        data[indices] = value;
+      }
+
+      // Set the array
+      variables_.setArrayData(arrayName, dimensions, data);
+    } catch (const std::invalid_argument &) {
+      throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+    } catch (const std::out_of_range &) {
+      throw std::runtime_error("INVALID ARRAY FILE FORMAT");
+    }
   }
 }
 
@@ -1791,4 +2000,20 @@ void Interpreter::writeFile(const std::string &filename, int record) {
 void Interpreter::interactive() {
   InteractiveMode interactive;
   interactive.run();
+}
+
+void Interpreter::setTapeFile(const std::string &filename) {
+  tapeManager_.setTapeFile(filename);
+}
+
+std::string Interpreter::getTapeFile() const {
+  return tapeManager_.getTapeFile();
+}
+
+void Interpreter::changeTapeFile() {
+  std::string filename = TapeManager::showFileSelector("Select Tape File");
+  if (!filename.empty()) {
+    tapeManager_.setTapeFile(filename);
+    std::cout << "TAPE CHANGED TO: " << filename << "\n";
+  }
 }

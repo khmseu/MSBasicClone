@@ -13,6 +13,8 @@ void printUsage(const char* progName) {
               << "  --no-graphics    Terminal-only mode (errors on graphics commands)\n"
               << "  --graphics       Enable graphics mode (default)\n"
               << "  --scale N        Window scale factor (default: 2)\n"
+              << "  --tape FILE      Set default tape file\n"
+              << "  --tape-hotkey KEY  Set tape change hotkey (default: ESC-T)\n"
               << "  --version        Show version information\n"
               << "  --help           Show this help message\n";
 }
@@ -21,6 +23,8 @@ int main(int argc, char* argv[]) {
     GraphicsConfig config;
     config.mode = RenderMode::Graphics;  // Default to graphics enabled
     std::string filename;
+    std::string tapeFile;
+    std::string tapeHotkey = "\x1B" "T";  // ESC-T by default
     bool hasFilename = false;
     
     // Parse command-line arguments
@@ -38,6 +42,22 @@ int main(int argc, char* argv[]) {
                 }
             } else {
                 std::cerr << "Error: --scale requires a numeric argument\n";
+                printUsage(argv[0]);
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--tape") == 0) {
+            if (i + 1 < argc) {
+                tapeFile = argv[++i];
+            } else {
+                std::cerr << "Error: --tape requires a filename argument\n";
+                printUsage(argv[0]);
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--tape-hotkey") == 0) {
+            if (i + 1 < argc) {
+                tapeHotkey = argv[++i];
+            } else {
+                std::cerr << "Error: --tape-hotkey requires a key sequence argument\n";
                 printUsage(argv[0]);
                 return 1;
             }
@@ -71,6 +91,13 @@ int main(int argc, char* argv[]) {
         if (hasFilename) {
             // Script mode - load and run BASIC file
             Interpreter interp(config);
+            
+            // Set tape options
+            if (!tapeFile.empty()) {
+                interp.setTapeFile(tapeFile);
+            }
+            interp.setTapeHotkey(tapeHotkey);
+            
             interp.loadProgram(filename);
             interp.run();
             return 0;

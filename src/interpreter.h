@@ -5,6 +5,7 @@
 #include "types.h"
 #include "variables.h"
 #include "graphics_config.h"
+#include "tape_manager.h"
 #include <map>
 #include <memory>
 #include <stack>
@@ -201,6 +202,13 @@ public:
   // Shape table loading
   void loadShapeTableFromFile(const std::string &filename);
 
+  // Tape operations
+  void setTapeFile(const std::string &filename);
+  std::string getTapeFile() const;
+  void changeTapeFile();  // Show file selector and change tape
+  void setTapeHotkey(const std::string &hotkey) { tapeHotkey_ = hotkey; }
+  std::string getTapeHotkey() const { return tapeHotkey_; }
+
   // State reset
   void clearState();
 
@@ -260,6 +268,10 @@ private:
 
   // Graphics configuration
   GraphicsConfig graphicsConfig_;
+
+  // Tape manager
+  TapeManager tapeManager_;
+  std::string tapeHotkey_ = "\x1B" "T"; // ESC-T by default
 
   // WHILE loop tracking
   struct WhileLoopInfo {
