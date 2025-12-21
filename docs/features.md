@@ -398,26 +398,25 @@ This document tracks the implementation status of Applesoft BASIC compatibility 
 
 #### Font Specifications
 
-- [x] Font downloaded: The Ultimate Apple II Font (PrintChar21)
+- [x] Font bundled: The Ultimate Apple II Font (PrintChar21)
 - [x] Character cell size: 7×8 pixels
 - [x] TrueType (.ttf) format
 - [x] License file included (FreeLicense.txt)
 
-#### Automatic Font Fetching
+#### Bundled Font Files
 
-- [x] Check for existing files (idempotent)
-- [x] Create fonts directory
-- [x] Download font (PrintChar21.ttf)
-- [x] Download charset map (apple2-charset.html)
-- [x] Download license (FreeLicense.txt)
-- [x] Graceful fallback on download failure
+- [x] Font files tracked in git repository
+- [x] Three files bundled: PrintChar21.ttf, apple2-charset.html, FreeLicense.txt
+- [x] Optional refresh from upstream with `REFRESH_BUNDLED_FONTS` option
+- [x] Automatic download fallback if files missing
+- [x] Graceful handling of download failures
 - [x] Set availability flag `APPLE2_FONT_AVAILABLE`
 
 #### CI/CD Integration
 
-- [x] GitHub Actions caching for fonts
-- [x] Cache invalidation on `FetchFont.cmake` changes
-- [x] Works across workflow runs
+- [x] No download required for CI builds (files bundled)
+- [x] GitHub Actions caching still works (harmless redundancy)
+- [x] Reliable builds without network dependencies
 
 #### Font Loading Implementation
 

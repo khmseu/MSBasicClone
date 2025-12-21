@@ -4,25 +4,38 @@ This directory contains font files for text rendering in graphics mode.
 
 ## Ultimate Apple II Font
 
-The Ultimate Apple II Font is **automatically downloaded** during the CMake build process.
+The Ultimate Apple II Font and related files are **bundled in this repository** for reliable builds.
 
-### Automatic Download
+### Bundled Files
 
-The build system will attempt to download:
+The following files are included in the repository:
 1. `PrintChar21.ttf` - The Ultimate Apple II Font
 2. `apple2-charset.html` - The Apple II character set map
+3. `FreeLicense.txt` - Font license from Kreative Korporation
 
-Both files are fetched from https://www.kreativekorp.com/ during the CMake configuration phase.
+All files are sourced from https://www.kreativekorp.com/
 
-### Manual Download (if automatic fails)
+### Refreshing Bundled Files
 
-If the automatic download fails (e.g., due to network restrictions), you can manually:
+To update the bundled files from upstream sources:
+
+```bash
+cmake -S . -B build -DREFRESH_BUNDLED_FONTS=ON
+```
+
+This will re-download:
+- The font package from https://www.kreativekorp.com/swdownload/fonts/retro/pr.zip
+- The charset map from https://www.kreativekorp.com/charset/?map=apple2
+
+### Manual Update (if automatic refresh fails)
+
+If the automatic refresh fails (e.g., due to network restrictions), you can manually:
 
 1. Visit: https://www.kreativekorp.com/software/fonts/apple2/
-2. Download the font file `PrintChar21.ttf`
-3. Place it in this directory
-4. Optionally download the charset map from: https://www.kreativekorp.com/charset/map/apple2/
-5. Save it as `apple2-charset.html` in this directory
+2. Download the "Print Char 21" font package
+3. Extract `PrintChar21.ttf` and `FreeLicense.txt` to this directory
+4. Visit: https://www.kreativekorp.com/charset/?map=apple2
+5. Save the page as `apple2-charset.html` in this directory
 
 ### Font Specifications
 
@@ -32,13 +45,22 @@ If the automatic download fails (e.g., due to network restrictions), you can man
 
 ### License
 
-The Ultimate Apple II Font is created by kreativekorp.com. Please review the license terms on their website before distribution.
+The Ultimate Apple II Font is created by Kreative Korporation. See `FreeLicense.txt` for the complete license terms. The font is free for use and redistribution under the Kreative Software Relay Fonts Free Use License.
 
 ## Build Integration
 
-The CMakeLists.txt automatically downloads font files using the `FetchFont.cmake` module. Font loading is optional - if no font file is found, Raylib's default font will be used as a fallback.
+The CMakeLists.txt checks for bundled font files using the `FetchFont.cmake` module. Font loading is optional - if no font file is found, Raylib's default font will be used as a fallback.
 
-## CI/CD Caching
+### Configuration Options
 
-In GitHub Actions CI, the fonts are cached to avoid repeated downloads. The cache key is based on the `FetchFont.cmake` script content.
+- `REFRESH_BUNDLED_FONTS`: Set to `ON` to force refresh of bundled files from upstream
+- `APPLE2_FONT_PACKAGE_URL`: Override the default font package download URL
+- `APPLE2_CHARSET_URL`: Override the default charset map download URL
+
+## Version Control
+
+These font files are tracked in git to ensure:
+- Reliable builds without network dependencies
+- Consistent font rendering across all environments
+- No CI/CD download failures
 
