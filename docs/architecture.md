@@ -22,7 +22,7 @@ MSBasic is a modern implementation of the Applesoft II BASIC interpreter written
 
 MSBasic follows a classic interpreter architecture with four main phases:
 
-```
+```text
 Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] → Execution
                                                            ↓
                                                     [Variables/Memory]
@@ -297,7 +297,7 @@ Source Code → [Tokenizer] → Tokens → [Parser] → AST → [Interpreter] �
 
 **Rendering Pipeline**:
 
-```
+```text
 Graphics Command → Graphics Buffer Update → Raylib Window Render
 ```
 
@@ -740,4 +740,4 @@ Additional reference materials for Applesoft BASIC (commands, functions, languag
 
 ---
 
-_Last Updated: 2025-12-21_
+Last Updated: 2025-12-21

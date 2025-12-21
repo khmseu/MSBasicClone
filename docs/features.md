@@ -642,7 +642,7 @@ Output features:
   - Windows console API on Windows
   - Falls back to 0 if unavailable
 
-### Device Control
+### Device Control Behavior
 
 Device handling:
 
@@ -714,7 +714,7 @@ ProDOS commands are **tokenized** but implementation status varies:
 
 ### Test Coverage Details
 
-**Tests Present: 75 Total Test Programs**
+#### Tests Present (75 total test programs)
 
 Sample test categories:
 
@@ -814,7 +814,7 @@ The interpreter is production-ready for:
 - Error handling with helpful messages
 - Cross-platform compatibility (`#ifdef` guards)
 
-### Font Integration
+### Font Integration (Deep Dive)
 
 **Overview:**
 
@@ -873,7 +873,7 @@ cmake -DAPPLE2_FONT_URL="https://alternative-source/font.ttf" \
       -S . -B build
 ```
 
-#### CI/CD Integration
+#### CI/CD Integration for Fonts
 
 **GitHub Actions Caching:**
 

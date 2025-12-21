@@ -21,6 +21,21 @@ lint:
     - markdownlint@0.47.0
     - prettier@3.7.4
     - trufflehog@3.92.4
+  ignore:
+    - linters:
+        - git-diff-check
+        - markdownlint
+        - prettier
+        - trufflehog
+      paths:
+        - "Research/**"
+    - linters:
+        - git-diff-check
+        - markdownlint
+        - prettier
+        - trufflehog
+      paths:
+        - "assets/fonts/**"
 actions:
   disabled:
     - trunk-announce

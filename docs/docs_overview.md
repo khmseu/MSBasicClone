@@ -64,6 +64,7 @@ The project uses Doxygen to generate API documentation from source code comments
    ```
 
 4. **Build PDF Documentation** (optional):
+
    ```bash
    cd docs/api/latex
    make
@@ -182,4 +183,4 @@ Should produce no warnings or errors for clean documentation.
 
 ---
 
-_Last Updated: 2025-12-21_
+Last Updated: 2025-12-21
