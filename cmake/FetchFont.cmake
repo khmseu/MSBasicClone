@@ -4,8 +4,9 @@
 
 function(fetch_apple2_font)
     set(FONT_DIR "${CMAKE_SOURCE_DIR}/assets/fonts")
+    set(CHARSET_DIR "${FONT_DIR}/charset")
     set(FONT_FILE "${FONT_DIR}/PrintChar21.ttf")
-    set(CHARSET_FILE "${FONT_DIR}/index.html")
+    set(CHARSET_FILE "${CHARSET_DIR}/index.html")
     set(LICENSE_FILE "${FONT_DIR}/FreeLicense.txt")
     set(FONT_PACKAGE_URL "https://www.kreativekorp.com/swdownload/fonts/retro/pr.zip")
     set(CHARSET_URL "https://www.kreativekorp.com/charset/map/mousetext/")
@@ -28,6 +29,12 @@ function(fetch_apple2_font)
         message(STATUS "Created fonts directory: ${FONT_DIR}")
     endif()
 
+    # Create charset subdirectory if it doesn't exist
+    if(NOT EXISTS "${CHARSET_DIR}")
+        file(MAKE_DIRECTORY "${CHARSET_DIR}")
+        message(STATUS "Created charset directory: ${CHARSET_DIR}")
+    endif()
+
     # Check if all bundled files exist
     set(ALL_FILES_PRESENT TRUE)
     if(NOT EXISTS "${FONT_FILE}" OR NOT EXISTS "${CHARSET_FILE}" OR NOT EXISTS "${LICENSE_FILE}")
@@ -48,7 +55,7 @@ function(fetch_apple2_font)
 
         # Find wget
         find_program(WGET_EXECUTABLE wget)
-        
+
         if(WGET_EXECUTABLE)
             # Use wget to download (server requires browser-like User-Agent)
             execute_process(
@@ -60,7 +67,7 @@ function(fetch_apple2_font)
                 OUTPUT_VARIABLE WGET_OUTPUT
                 ERROR_VARIABLE WGET_ERROR
             )
-            
+
             if(WGET_RESULT EQUAL 0 AND EXISTS "${TEMP_ZIP}")
                 message(STATUS "Successfully downloaded font package")
 
@@ -87,7 +94,7 @@ function(fetch_apple2_font)
                 message(WARNING "or directly from")
                 message(WARNING "  ${FONT_PACKAGE_URL}")
                 message(WARNING "And extract PrintChar21.ttf and FreeLicense.txt to: ${FONT_DIR}")
-                
+
                 # Clean up partial download if it exists
                 if(EXISTS "${TEMP_ZIP}")
                     file(REMOVE "${TEMP_ZIP}")
@@ -119,7 +126,7 @@ function(fetch_apple2_font)
                         --include-directories=/charset/map/mousetext/
                         -e robots=off
                         ${CHARSET_URL}
-                    WORKING_DIRECTORY "${FONT_DIR}"
+                    WORKING_DIRECTORY "${CHARSET_DIR}"
                     RESULT_VARIABLE WGET_RESULT
                     OUTPUT_VARIABLE WGET_OUTPUT
                     ERROR_VARIABLE WGET_ERROR
@@ -138,7 +145,7 @@ function(fetch_apple2_font)
                 message(WARNING "wget not found - cannot download charset map directory")
                 message(WARNING "Please install wget or manually download from:")
                 message(WARNING "  ${CHARSET_URL}")
-                message(WARNING "Save all files to: ${FONT_DIR}")
+                message(WARNING "Save all files to: ${CHARSET_DIR}")
             endif()
         endif()
     else()
