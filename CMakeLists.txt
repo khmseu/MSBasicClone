@@ -73,6 +73,7 @@ set(SOURCES
     src/float40.cpp
     src/graphics.cpp
     src/graphics_renderer.cpp
+    src/tape_manager.cpp
 )
 
 # Header files
@@ -90,6 +91,7 @@ set(HEADERS
     src/graphics.h
     src/graphics_config.h
     src/graphics_renderer.h
+    src/tape_manager.h
 )
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)

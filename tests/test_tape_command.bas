@@ -1,0 +1,5 @@
+10 REM TEST TAPE COMMAND
+20 TAPE
+30 TAPE "/tmp/mytape.tap"
+40 TAPE
+50 END

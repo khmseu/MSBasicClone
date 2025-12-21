@@ -98,6 +98,7 @@ enum class TokenType {
   USR,
   RECALL,
   STORE,
+  TAPE,
 
   // ProDOS commands
   DELETE,

@@ -1179,6 +1179,30 @@ private:
   std::string arrayName_;
 };
 
+class TapeStmt : public Statement {
+public:
+  explicit TapeStmt(const std::string &filename)
+      : filename_(filename) {}
+  void execute(Interpreter *interp) override {
+    if (filename_.empty()) {
+      // Show current tape
+      std::string current = interp->getTapeFile();
+      if (current.empty()) {
+        std::cout << "NO TAPE LOADED\n";
+      } else {
+        std::cout << "CURRENT TAPE: " << current << "\n";
+      }
+    } else {
+      // Set tape file
+      interp->setTapeFile(filename_);
+      std::cout << "TAPE SET TO: " << filename_ << "\n";
+    }
+  }
+
+private:
+  std::string filename_;
+};
+
 // ProDOS file operation statements
 class OpenFileStmt : public Statement {
 public:
@@ -1834,6 +1858,21 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
       pos++;
       return std::make_shared<StoreStmt>(arrayName);
     }
+  }
+  case TokenType::TAPE: {
+    pos++; // Skip TAPE
+    if (pos >= tokens.size()) {
+      // TAPE with no arguments - show current tape
+      return std::make_shared<TapeStmt>("");
+    }
+    if (tokens[pos].type == TokenType::STRING) {
+      // TAPE "filename" - set tape file
+      std::string filename = tokens[pos].value.getString();
+      pos++;
+      return std::make_shared<TapeStmt>(filename);
+    }
+    // TAPE with no arguments - show current tape
+    return std::make_shared<TapeStmt>("");
   }
   case TokenType::OPEN: {
     pos++; // Skip OPEN

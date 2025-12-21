@@ -33,8 +33,9 @@ A modern implementation of the Applesoft II BASIC interpreter written in C++20, 
   - NEW, RUN, LIST, END, STOP, CONT (continue after STOP)
   - LOAD, SAVE, CATALOG
   - DEL (delete line range)
-  - RECALL/STORE (load/save arrays to files)
-  - PRINT (with semicolon, comma separators, TAB, SPC)
+  - RECALL/STORE (load/save arrays to files or tape)
+  - TAPE (set/view current tape file)
+  - SHLOAD (load shape tables from files or tape)
   - INPUT (with optional prompts)
   - GET (single character input)
   - LET (assignment, also works without LET keyword)
@@ -215,7 +216,46 @@ The interpreter supports two modes for graphics handling:
 
 # Set window scale factor (1-10, default is 2)
 ./msbasic --scale 3 program.bas
+
+# Set default tape file for STORE/RECALL/SHLOAD
+./msbasic --tape /tmp/mytape.tap program.bas
+
+# Set tape change hotkey (default: ESC-T)
+./msbasic --tape-hotkey "^T" program.bas
 ```
+
+### Tape Emulation
+
+The interpreter supports cassette tape emulation for array and shape table persistence:
+
+**Using command-line:**
+```bash
+./msbasic --tape /tmp/mytape.tap program.bas
+```
+
+**Using BASIC commands:**
+```basic
+10 TAPE "/tmp/mytape.tap"    REM Set current tape file (rewinds)
+20 DIM A(5), B(5)
+30 FOR I = 0 TO 5: A(I) = I * 10: NEXT I
+40 FOR I = 0 TO 5: B(I) = I * 100: NEXT I
+50 STORE A                    REM Save first array
+60 STORE B                    REM Save second array (appends, maintains position)
+70 TAPE "/tmp/mytape.tap"    REM Set tape again to rewind
+80 RECALL A                   REM Read first array
+90 RECALL B                   REM Read second array (position maintained)
+```
+
+**Tape Features:**
+- Sequential record format with SIZE|DATA headers
+- Supports arrays (numeric and string) via STORE/RECALL
+- Supports shape tables via SHLOAD
+- Falls back to file-based storage when no tape loaded
+- Use `TAPE` with no argument to view current tape
+- OS-native file selector support (zenity/kdialog on Linux, osascript on macOS, COM on Windows)
+- **Tape maintains position across operations** - only rewinds when setting a new tape file
+
+**Note:** The tape file stays open and maintains position between STORE/RECALL/SHLOAD operations, allowing sequential reading/writing of multiple records. Use `TAPE "filename"` to rewind to the beginning.
 
 **Graphics Mode** (default): When graphics are enabled, the interpreter will attempt to open a window for rendering graphics commands (GR, HGR, HPLOT, etc.). If no display is available (e.g., in a headless environment), graphics will fall back to off-screen buffer mode only.
 
