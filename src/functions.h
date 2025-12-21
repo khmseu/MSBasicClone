@@ -37,6 +37,10 @@ Value funcUsr(const Value &addr);
 void pokeMemory(int addr, int val);
 int peekMemory(int addr);
 
+// Format an address as hex string (0xXXXX)
+// If mask16bit is true (default), masks to 16 bits; otherwise shows full value
+std::string formatHexAddress(int addr, bool mask16bit = true);
+
 // Configure memory bounds used by peek/poke and WAIT.
 // Addresses outside [lomem, himem] will trigger a runtime error.
 void setMemoryBounds(int lomem, int himem);
