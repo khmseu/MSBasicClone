@@ -228,15 +228,59 @@ void Interpreter::listProgram(int startLine, int endLine) {
   }
 }
 
+/**
+ * @brief Execute program (RUN command implementation)
+ * 
+ * Starts program execution from the first line.
+ * This is a convenience wrapper for runFrom(-1).
+ */
 void Interpreter::run() { runFrom(-1); }
 
+/**
+ * @brief Execute program starting from specified line
+ * 
+ * This is the main program execution loop implementing the Applesoft BASIC
+ * RUN and GOTO behaviors. It handles program flow, DATA caching, error
+ * trapping, and tracing.
+ * 
+ * Execution process:
+ * 1. Initialize execution state (running_ flag, immediate_ mode)
+ * 2. Build DATA cache by scanning all program lines
+ *    - This ensures READ can access DATA regardless of program flow
+ *    - dataOffsets_ maps line numbers to positions in dataValues_
+ * 3. Set program counter to starting line
+ * 4. Execute statements sequentially until:
+ *    - END or STOP statement sets running_ = false
+ *    - GOTO/GOSUB sets jumped_ flag
+ *    - Error occurs
+ *    - Program counter reaches end
+ * 
+ * Error Handling:
+ * - If ONERR handler is active (errorHandlerLine_ >= 0):
+ *   * Records error line and message
+ *   * Stores error info in memory locations 218-219 (line), 222 (code)
+ *   * Jumps to error handler line
+ * - If no ONERR handler:
+ *   * Prints error message and line number
+ *   * Stops execution
+ * 
+ * Special Features:
+ * - TRACE mode: Prints [lineNumber] before executing each line
+ * - SPEED delay: Optional delay after each statement for debugging
+ * - Control flow: jumped_ flag coordinates with GOTO/GOSUB/RETURN
+ * 
+ * @param lineNum Starting line number, or -1 to start from first line
+ */
 void Interpreter::runFrom(LineNumber lineNum) {
   running_ = true;
   immediate_ = false;
   resetOutputPosition();
 
   // Prepare DATA cache before execution so READ works regardless of control
-  // flow.
+  // flow. This scans all program lines and collects DATA statement values
+  // into a linear array (dataValues_) with an index mapping line numbers
+  // to positions (dataOffsets_). This allows RESTORE to reposition the
+  // data pointer to a specific line's data.
   dataPointer_ = 0;
   dataValues_.clear();
   dataOffsets_.clear();
@@ -245,6 +289,7 @@ void Interpreter::runFrom(LineNumber lineNum) {
     for (const auto &stmt : pair.second.statements) {
       size_t before = dataValues_.size();
       stmt->collectData(dataValues_);
+      // Record the offset of the first DATA statement in this line
       if (!recorded && dataValues_.size() > before) {
         dataOffsets_.push_back({pair.first, before});
         recorded = true;
@@ -252,9 +297,12 @@ void Interpreter::runFrom(LineNumber lineNum) {
     }
   }
 
+  // Set initial program counter position
   if (lineNum < 0 && !program_.empty()) {
+    // Start from first line (RUN with no argument)
     programCounter_ = program_.begin();
   } else {
+    // Start from specified line (RUN linenum or GOTO)
     programCounter_ = program_.find(lineNum);
     if (programCounter_ == program_.end()) {
       std::cout << "?UNDEF'D STATEMENT ERROR\n";
@@ -263,74 +311,117 @@ void Interpreter::runFrom(LineNumber lineNum) {
   }
 
   try {
+    // Main execution loop: iterate through program lines
     while (running_ && programCounter_ != program_.end()) {
       currentLine_ = programCounter_->first;
       jumped_ = false;
 
-      // TRACE output if enabled
+      // TRACE output if enabled: show line number before execution
       if (tracing_) {
         std::cout << "[" << currentLine_ << "]";
       }
 
       try {
+        // Execute all statements on this line
         for (auto &stmt : programCounter_->second.statements) {
           stmt->execute(this);
+          // Stop executing statements if we've jumped or stopped
           if (!running_ || jumped_)
             break;
+          // Apply SPEED delay between statements if configured
           applySpeedDelay();
         }
       } catch (const std::exception &e) {
+        // Error occurred - check if we have an error handler
         if (errorHandlerLine_ >= 0) {
+          // ONERR handler is active - prepare error state
           errorLine_ = currentLine_;
           lastError_ = e.what();
           
-          // Store error information in memory locations for PEEK
-          // Location 218: error line number (low byte)
-          // Location 219: error line number (high byte)
-          // Location 222: error code (only set if not already set by handleError)
+          // Store error information in memory locations for PEEK access
+          // These locations match Applesoft BASIC conventions:
+          // Location 218-219 (0xDA-0xDB): error line number (little-endian)
+          // Location 222 (0xDE): error code
           pokeMemory(0x00DA, errorLine_ & 0xFF);
           pokeMemory(0x00DB, (errorLine_ >> 8) & 0xFF);
           
           // Only set generic error code if no specific error code was set
+          // by handleError() or other error-generating code
           int currentErrorCode = peekMemory(0x00DE);
           if (currentErrorCode == 0) {
             pokeMemory(0x00DE, 16);  // Generic error code
           }
           
+          // Jump to error handler line
           gotoLine(errorHandlerLine_);
           continue;  // Continue executing from error handler
         } else {
+          // No error handler - print error and stop
           std::cout << "?" << e.what() << " IN LINE " << currentLine_ << "\n";
           running_ = false;
           break;
         }
       }
 
+      // Advance to next line if we didn't jump
+      // (GOTO, GOSUB, or control flow statements set jumped_ flag)
       if (!jumped_) {
         ++programCounter_;
       }
     }
   } catch (const std::exception &e) {
-    // Catch any unhandled exceptions from the main loop
+    // Catch any unhandled exceptions from the main execution loop
+    // This is a safety net for errors that escape the inner try-catch
     std::cout << "?" << e.what() << "\n";
     running_ = false;
   }
 
+  // Ensure execution state is clean after run completes
   running_ = false;
   paused_ = false;
 }
 
+/**
+ * @brief Execute an immediate command or add a program line
+ * 
+ * This is the main entry point for processing user input in interactive mode.
+ * It handles two types of input:
+ * 
+ * 1. Numbered lines (e.g., "10 PRINT "HELLO""):
+ *    - Adds or updates a program line
+ *    - If code is empty, deletes the line
+ * 
+ * 2. Immediate commands (no line number):
+ *    - Special commands handled directly (RUN, LIST, NEW, etc.)
+ *    - Other statements executed immediately in immediate mode
+ * 
+ * Special Command Processing:
+ * - RUN [line]: Start execution from beginning or specified line
+ * - LIST [start[,end]]: Display program lines
+ * - NEW: Clear program and variables
+ * - LOAD, SAVE, CATALOG, DEL: File/program management
+ * - CONT: Continue after STOP
+ * 
+ * The function uses case-insensitive command matching and trims whitespace
+ * from arguments. Syntax errors in special commands print an error message
+ * but don't stop the interpreter.
+ * 
+ * @param line Input line from user (may have line number or be immediate)
+ */
 void Interpreter::executeImmediate(const std::string &line) {
   LineNumber lineNum;
   std::string code;
 
+  // Parse to separate line number (if present) from code
   parseLine(line, lineNum, code);
 
   if (lineNum >= 0) {
-    // Line with number - add to program
+    // Line with number - add to or delete from program
     addLine(lineNum, code);
   } else {
-    // Immediate command
+    // Immediate command - execute directly
+    
+    // Helper lambda to trim whitespace from strings
     auto trim = [](std::string s) {
       auto isSpace = [](unsigned char ch) { return std::isspace(ch) != 0; };
       s.erase(s.begin(), std::find_if(s.begin(), s.end(),
@@ -342,6 +433,7 @@ void Interpreter::executeImmediate(const std::string &line) {
       return s;
     };
 
+    // Extract command word and arguments
     std::string trimmed = trim(code);
     std::string upperTrim = trimmed;
     std::transform(upperTrim.begin(), upperTrim.end(), upperTrim.begin(),
@@ -355,10 +447,12 @@ void Interpreter::executeImmediate(const std::string &line) {
                            ? std::string()
                            : trim(trimmed.substr(spacePos));
 
+    // Handle special immediate-mode commands
     if (command == "RUN") {
       if (args.empty()) {
-        run();
+        run();  // RUN with no argument - start from beginning
       } else {
+        // RUN with line number - start from that line
         try {
           int start = std::stoi(args);
           runFrom(start);
@@ -368,8 +462,9 @@ void Interpreter::executeImmediate(const std::string &line) {
       }
     } else if (command == "LIST") {
       if (args.empty()) {
-        listProgram();
+        listProgram();  // LIST all lines
       } else {
+        // LIST with range: LIST start[,end]
         int start = -1;
         int end = -1;
         auto commaPos = args.find(',');
@@ -662,6 +757,25 @@ void Interpreter::executeImmediate(const std::string &line) {
   }
 }
 
+/**
+ * @brief Jump to a program line (GOTO implementation)
+ * 
+ * Changes the program counter to execute from the specified line number.
+ * This is the core implementation of GOTO and is also used by GOSUB,
+ * error handlers (ONERR), and ON...GOTO statements.
+ * 
+ * The function validates that the target line exists in the program and
+ * throws "UNDEF'D STATEMENT ERROR" if not found. The jumped_ flag is set
+ * to prevent automatic advancement to the next line.
+ * 
+ * Implementation notes:
+ * - Does not affect the GOSUB stack (unlike gosub())
+ * - Sets jumped_ flag to override normal sequential execution
+ * - Used by: GOTO, error handlers, ON...GOTO, RESTORE (for DATA)
+ * 
+ * @param lineNum Target line number to jump to
+ * @throws std::runtime_error if line number not found in program
+ */
 void Interpreter::gotoLine(LineNumber lineNum) {
   auto it = program_.find(lineNum);
   if (it == program_.end()) {
@@ -671,6 +785,34 @@ void Interpreter::gotoLine(LineNumber lineNum) {
   jumped_ = true;
 }
 
+/**
+ * @brief Call a subroutine (GOSUB implementation)
+ * 
+ * Saves the current line number on the return stack and jumps to the
+ * specified subroutine line. The RETURN statement will pop the stack
+ * and continue execution after the GOSUB.
+ * 
+ * Stack structure:
+ * - Each GOSUB pushes the current line number (not program counter)
+ * - RETURN pops the line and continues from the NEXT line
+ * - Nested GOSUBs work through standard stack behavior
+ * - Stack is cleared by CLR or program termination
+ * 
+ * Error conditions:
+ * - Target line not found: "UNDEF'D STATEMENT ERROR"
+ * - Stack overflow: Limited only by system memory
+ * - Unmatched RETURN: "RETURN WITHOUT GOSUB ERROR" (checked in returnFromGosub)
+ * 
+ * Example:
+ *   10 GOSUB 100  ' Push line 10, jump to 100
+ *   20 PRINT "BACK"
+ *   ...
+ *   100 PRINT "SUB"
+ *   110 RETURN     ' Pop line 10, continue at line 20
+ * 
+ * @param lineNum Target subroutine line number
+ * @throws std::runtime_error if line number not found
+ */
 void Interpreter::gosub(LineNumber lineNum) {
   gosubStack_.push(currentLine_);
   auto it = program_.find(lineNum);
@@ -681,6 +823,27 @@ void Interpreter::gosub(LineNumber lineNum) {
   jumped_ = true;
 }
 
+/**
+ * @brief Return from subroutine (RETURN implementation)
+ * 
+ * Pops a line number from the GOSUB stack and continues execution at the
+ * line immediately following that line. This completes a GOSUB/RETURN pair.
+ * 
+ * Implementation details:
+ * - Pops the return line from the stack
+ * - Finds that line in the program
+ * - Advances to the NEXT line (incrementing the iterator)
+ * - Sets jumped_ flag to prevent further advancement
+ * 
+ * Special case: If the return line no longer exists (deleted after GOSUB),
+ * execution continues from the next available line.
+ * 
+ * Error handling:
+ * - Empty stack: "RETURN WITHOUT GOSUB ERROR"
+ * - Missing return line: Advances to next line if available
+ * 
+ * @throws std::runtime_error if GOSUB stack is empty
+ */
 void Interpreter::returnFromGosub() {
   if (gosubStack_.empty()) {
     throw std::runtime_error("RETURN WITHOUT GOSUB ERROR");
@@ -689,16 +852,56 @@ void Interpreter::returnFromGosub() {
   gosubStack_.pop();
 
   // Continue after the GOSUB line
+  // Find the line we returned from and advance to the next one
   auto it = program_.find(returnLine);
   if (it != program_.end()) {
-    ++it;
+    ++it;  // Move to next line
     programCounter_ = it;
     jumped_ = true;
   }
 }
 
+/**
+ * @brief Stop program execution permanently (END implementation)
+ * 
+ * Terminates program execution by clearing the running_ flag. Unlike STOP,
+ * END does not support continuation with CONT.
+ * 
+ * Typical usage:
+ * - END statement at end of main program
+ * - Prevents "fall-through" into subroutines at end of program
+ * 
+ * Example:
+ *   100 PRINT "DONE"
+ *   110 END
+ *   1000 REM SUBROUTINES FOLLOW
+ */
 void Interpreter::endProgram() { running_ = false; }
 
+/**
+ * @brief Pause program execution (STOP implementation)
+ * 
+ * Suspends program execution but maintains state for continuation with CONT.
+ * Unlike END, STOP allows resuming execution from the next line.
+ * 
+ * State preservation:
+ * - Sets paused_ flag to indicate continuation is possible
+ * - Saves current line in continueAfterLine_
+ * - Clears running_ flag to exit execution loop
+ * - Preserves all variables, stacks, and program state
+ * 
+ * Used for:
+ * - Interactive debugging (insert STOP to examine variables)
+ * - Controlled program pauses
+ * - Breakpoint simulation
+ * 
+ * Example:
+ *   10 FOR I = 1 TO 10
+ *   20 PRINT I
+ *   30 IF I = 5 THEN STOP
+ *   40 NEXT I
+ *   ' Can type CONT to resume from line 40
+ */
 void Interpreter::stop() {
   // Stop execution but remember where to continue
   paused_ = true;
@@ -706,6 +909,40 @@ void Interpreter::stop() {
   running_ = false;
 }
 
+/**
+ * @brief Continue execution after STOP (CONT implementation)
+ * 
+ * Resumes program execution from the point where it was stopped by a STOP
+ * statement. This allows interactive debugging and controlled program flow.
+ * 
+ * Continuation process:
+ * 1. Validate that program is in paused state
+ * 2. Find the line where STOP occurred
+ * 3. Advance to the NEXT line (don't re-execute STOP line)
+ * 4. Resume normal execution loop
+ * 
+ * State validation:
+ * - Must have paused_ flag set (STOP was executed)
+ * - Must have valid continueAfterLine_
+ * - Program and continue line must still exist
+ * 
+ * Error conditions:
+ * - Not paused: "CANT CONTINUE"
+ * - Program cleared: "CANT CONTINUE"
+ * - Continue line deleted: "CANT CONTINUE"
+ * 
+ * Example session:
+ *   ] 10 PRINT "START"
+ *   ] 20 STOP
+ *   ] 30 PRINT "END"
+ *   ] RUN
+ *   START
+ *   (program stops at line 20)
+ *   ] CONT
+ *   END
+ * 
+ * @throws std::runtime_error if continuation is not possible
+ */
 void Interpreter::cont() {
   if (!paused_ || program_.empty() || continueAfterLine_ < 0) {
     throw std::runtime_error("CANT CONTINUE");
@@ -715,13 +952,14 @@ void Interpreter::cont() {
   if (it == program_.end()) {
     throw std::runtime_error("CANT CONTINUE");
   }
-  ++it; // next line
+  ++it; // Advance to next line
   programCounter_ = it;
   running_ = true;
   immediate_ = false;
   paused_ = false;
 
   try {
+    // Resume execution loop (similar to runFrom but continues where stopped)
     while (running_ && programCounter_ != program_.end()) {
       currentLine_ = programCounter_->first;
       jumped_ = false;

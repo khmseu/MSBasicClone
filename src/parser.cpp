@@ -1527,8 +1527,42 @@ void WendStmt::execute(Interpreter *interp) { interp->nextWhileLoop(); }
 void PopStmt::execute(Interpreter *interp) { interp->popGosub(); }
 
 // Parser implementation
+/**
+ * @brief Construct a new Parser object
+ * 
+ * Initializes an empty parser. The parser is stateless and can be reused
+ * for parsing multiple token sequences.
+ */
 Parser::Parser() {}
 
+/**
+ * @brief Parse a token sequence into statement AST nodes
+ * 
+ * This is the main entry point for parsing. It converts a flat sequence of
+ * tokens (from the tokenizer) into a structured sequence of Statement objects
+ * that can be executed by the interpreter.
+ * 
+ * Parsing process:
+ * 1. Skip newlines and empty tokens
+ * 2. Handle statement separators (colons) for multi-statement lines
+ * 3. Dispatch to specific statement parsers based on first token
+ * 4. Build statement objects and add to result vector
+ * 
+ * Multi-statement lines:
+ * Applesoft BASIC allows multiple statements on one line separated by colons:
+ *   10 PRINT "A": X = 5: PRINT X
+ * This function handles the colon separation and parses each statement
+ * independently.
+ * 
+ * Error handling:
+ * - Invalid syntax throws std::runtime_error from individual parsers
+ * - Unexpected tokens are reported as syntax errors
+ * - Position tracking ensures error messages can identify problem location
+ * 
+ * @param tokens Token sequence from tokenizer
+ * @return Vector of parsed Statement objects ready for execution
+ * @throws std::runtime_error on syntax errors
+ */
 std::vector<std::shared_ptr<Statement>>
 Parser::parse(const std::vector<Token> &tokens) {
   std::vector<std::shared_ptr<Statement>> statements;
@@ -1541,12 +1575,14 @@ Parser::parse(const std::vector<Token> &tokens) {
       continue;
     }
 
-    // Check for statement separator
+    // Check for statement separator (colon)
+    // Multiple statements on one line: 10 PRINT "A": PRINT "B"
     if (tokens[pos].type == TokenType::COLON) {
       pos++;
       continue;
     }
 
+    // Parse next statement and add to result
     auto stmt = parseStatement(tokens, pos);
     if (stmt) {
       statements.push_back(stmt);
@@ -1556,6 +1592,34 @@ Parser::parse(const std::vector<Token> &tokens) {
   return statements;
 }
 
+/**
+ * @brief Parse a single statement from token sequence
+ * 
+ * Dispatches to specific statement parsers based on the first token type.
+ * This is the central dispatch point for all BASIC statement types.
+ * 
+ * Statement categories:
+ * - I/O: PRINT, INPUT, GET
+ * - Assignment: LET, variable = expression
+ * - Control flow: IF/THEN/ELSE, FOR/NEXT, WHILE/WEND, GOTO, GOSUB, RETURN
+ * - Data: DATA, READ, RESTORE, DIM
+ * - Graphics: GR, HGR, HPLOT, COLOR, DRAW, etc.
+ * - System: NEW, END, STOP, CLR, HOME, TEXT
+ * - Functions: DEF FN
+ * - Error handling: ONERR, RESUME
+ * - File I/O: LOAD, SAVE, etc.
+ * 
+ * Parsing strategy:
+ * - Each statement type has a dedicated parse function (parseIf, parsePrint, etc.)
+ * - Parser functions consume tokens and advance the position reference
+ * - Return nullptr if no valid statement found at current position
+ * - Throw exception on syntax errors
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position in token sequence (updated by parser)
+ * @return Parsed Statement object, or nullptr if no statement found
+ * @throws std::runtime_error on syntax errors
+ */
 std::shared_ptr<Statement>
 Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
   if (pos >= tokens.size())
@@ -1563,6 +1627,7 @@ Parser::parseStatement(const std::vector<Token> &tokens, size_t &pos) {
 
   Token &token = const_cast<Token &>(tokens[pos]);
 
+  // Dispatch to appropriate statement parser based on token type
   switch (token.type) {
   case TokenType::PRINT:
     return parsePrint(tokens, pos);
@@ -2366,15 +2431,66 @@ Parser::parseLetOrAssignment(const std::vector<Token> &tokens, size_t &pos) {
   return std::make_shared<ArrayLetStmt>(varName, indices, expr);
 }
 
+// ============================================================================
+// Expression Parsing with Operator Precedence
+// ============================================================================
+// The following functions implement recursive descent parsing for expressions
+// with proper operator precedence. Each level of precedence has its own
+// parse function that calls the next higher precedence level.
+//
+// Precedence hierarchy (lowest to highest):
+// 1. OR (logical or)
+// 2. AND (logical and)
+// 3. NOT (logical not)
+// 4. Relational (=, <>, <, >, <=, >=)
+// 5. Additive (+, -)
+// 6. Multiplicative (*, /, MOD)
+// 7. Unary (+, -)
+// 8. Power (^)
+// 9. Primary (literals, variables, functions, parentheses)
+//
+// This structure ensures that operations bind correctly:
+//   2 + 3 * 4 = 2 + (3 * 4) = 14  (not (2 + 3) * 4 = 20)
+//   X = 5 OR Y = 3  evaluates comparisons before OR
+// ============================================================================
+
+/**
+ * @brief Parse an expression with full operator precedence
+ * 
+ * Entry point for expression parsing. Dispatches to the lowest precedence
+ * level (OR expressions) which then recursively calls higher precedence
+ * levels to build the correct AST structure.
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position (updated by parsing)
+ * @return Expression AST node
+ */
 std::shared_ptr<Expression>
 Parser::parseExpression(const std::vector<Token> &tokens, size_t &pos) {
   return parseOrExpression(tokens, pos);
 }
 
+/**
+ * @brief Parse logical OR expressions (lowest precedence)
+ * 
+ * Handles OR operator which has lowest precedence. Parses left-associative
+ * chains of OR operations:
+ *   A OR B OR C = (A OR B) OR C
+ * 
+ * In Applesoft BASIC, OR performs bitwise OR on integer values:
+ *   0 OR 0 = 0 (false OR false = false)
+ *   0 OR 1 = 1 (false OR true = true)
+ *   Any non-zero value is considered true
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing OR chain or single AND expression
+ */
 std::shared_ptr<Expression>
 Parser::parseOrExpression(const std::vector<Token> &tokens, size_t &pos) {
   auto left = parseAndExpression(tokens, pos);
 
+  // Handle left-associative chain: A OR B OR C
   while (pos < tokens.size() && tokens[pos].type == TokenType::OR) {
     pos++;
     auto right = parseAndExpression(tokens, pos);
@@ -2384,10 +2500,27 @@ Parser::parseOrExpression(const std::vector<Token> &tokens, size_t &pos) {
   return left;
 }
 
+/**
+ * @brief Parse logical AND expressions
+ * 
+ * Handles AND operator with higher precedence than OR but lower than NOT.
+ * Parses left-associative chains:
+ *   A AND B AND C = (A AND B) AND C
+ * 
+ * In Applesoft BASIC, AND performs bitwise AND on integer values:
+ *   0 AND 0 = 0 (false AND false = false)
+ *   0 AND 1 = 0 (false AND true = false)
+ *   1 AND 1 = 1 (true AND true = true)
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing AND chain or single NOT expression
+ */
 std::shared_ptr<Expression>
 Parser::parseAndExpression(const std::vector<Token> &tokens, size_t &pos) {
   auto left = parseNotExpression(tokens, pos);
 
+  // Handle left-associative chain: A AND B AND C
   while (pos < tokens.size() && tokens[pos].type == TokenType::AND) {
     pos++;
     auto right = parseNotExpression(tokens, pos);
@@ -2397,10 +2530,26 @@ Parser::parseAndExpression(const std::vector<Token> &tokens, size_t &pos) {
   return left;
 }
 
+/**
+ * @brief Parse logical NOT expressions (prefix unary)
+ * 
+ * Handles NOT operator which has higher precedence than AND/OR.
+ * Can be chained: NOT NOT X = X
+ * 
+ * In Applesoft BASIC, NOT performs bitwise NOT (complement):
+ *   NOT 0 = -1 (all bits set)
+ *   NOT -1 = 0
+ *   NOT X = -(X + 1)
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing NOT operation or relational expression
+ */
 std::shared_ptr<Expression>
 Parser::parseNotExpression(const std::vector<Token> &tokens, size_t &pos) {
   if (pos < tokens.size() && tokens[pos].type == TokenType::NOT) {
     pos++;
+    // Recursively handle NOT chains
     auto operand = parseNotExpression(tokens, pos);
     return std::make_shared<NotExpr>(operand);
   }
@@ -2408,11 +2557,29 @@ Parser::parseNotExpression(const std::vector<Token> &tokens, size_t &pos) {
   return parseRelationalExpression(tokens, pos);
 }
 
+/**
+ * @brief Parse relational (comparison) expressions
+ * 
+ * Handles comparison operators: =, <>, <, >, <=, >=
+ * Unlike arithmetic operators, comparisons are not chained in BASIC:
+ *   A = B = C is parsed as A = (B = C), not (A = B) = C
+ * 
+ * Comparison results:
+ *   True: -1 (all bits set, Applesoft convention)
+ *   False: 0
+ * 
+ * String comparisons use lexicographic ordering.
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing comparison or additive expression
+ */
 std::shared_ptr<Expression>
 Parser::parseRelationalExpression(const std::vector<Token> &tokens,
                                   size_t &pos) {
   auto left = parseAdditiveExpression(tokens, pos);
 
+  // Check for comparison operator (not chained)
   if (pos < tokens.size()) {
     TokenType op = tokens[pos].type;
     if (op == TokenType::EQUAL || op == TokenType::NOT_EQUAL ||
@@ -2427,10 +2594,29 @@ Parser::parseRelationalExpression(const std::vector<Token> &tokens,
   return left;
 }
 
+/**
+ * @brief Parse additive expressions (+ and -)
+ * 
+ * Handles addition and subtraction with left-to-right associativity:
+ *   A + B - C + D = ((A + B) - C) + D
+ * 
+ * String concatenation:
+ *   "HELLO" + "WORLD" = "HELLOWORLD"
+ * 
+ * Type coercion:
+ *   Numeric + Numeric = Numeric
+ *   String + String = String
+ *   String + Numeric or Numeric + String raises TYPE MISMATCH ERROR
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing addition/subtraction or multiplicative expression
+ */
 std::shared_ptr<Expression>
 Parser::parseAdditiveExpression(const std::vector<Token> &tokens, size_t &pos) {
   auto left = parseMultiplicativeExpression(tokens, pos);
 
+  // Handle left-associative chain: A + B - C
   while (pos < tokens.size()) {
     TokenType op = tokens[pos].type;
     if (op == TokenType::PLUS || op == TokenType::MINUS) {
@@ -2445,11 +2631,30 @@ Parser::parseAdditiveExpression(const std::vector<Token> &tokens, size_t &pos) {
   return left;
 }
 
+/**
+ * @brief Parse multiplicative expressions (*, /, MOD)
+ * 
+ * Handles multiplication, division, and modulo with left-to-right associativity:
+ *   A * B / C MOD D = ((A * B) / C) MOD D
+ * 
+ * Operator semantics:
+ *   * : Standard multiplication
+ *   / : Floating-point division (5 / 2 = 2.5)
+ *   MOD : Integer modulo (5 MOD 2 = 1)
+ * 
+ * Division by zero raises DIVISION BY ZERO ERROR.
+ * MOD 0 raises ILLEGAL QUANTITY ERROR.
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing multiplication/division or unary expression
+ */
 std::shared_ptr<Expression>
 Parser::parseMultiplicativeExpression(const std::vector<Token> &tokens,
                                       size_t &pos) {
   auto left = parseUnaryExpression(tokens, pos);
 
+  // Handle left-associative chain: A * B / C
   while (pos < tokens.size()) {
     TokenType op = tokens[pos].type;
     if (op == TokenType::MULTIPLY || op == TokenType::DIVIDE ||
@@ -2465,12 +2670,32 @@ Parser::parseMultiplicativeExpression(const std::vector<Token> &tokens,
   return left;
 }
 
+/**
+ * @brief Parse unary expressions (prefix + and -)
+ * 
+ * Handles unary plus and minus operators which have higher precedence than
+ * binary operators but lower than power (^).
+ * 
+ * Can be chained:
+ *   --X = X (double negation)
+ *   -+X = -X
+ * 
+ * Examples:
+ *   -5 = negative five
+ *   -X^2 = -(X^2), not (-X)^2
+ *   +5 = positive five (usually redundant)
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing unary operation or power expression
+ */
 std::shared_ptr<Expression>
 Parser::parseUnaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   if (pos < tokens.size() && (tokens[pos].type == TokenType::PLUS ||
                               tokens[pos].type == TokenType::MINUS)) {
     TokenType op = tokens[pos].type;
     pos++;
+    // Recursively handle unary chains: --X
     auto operand = parseUnaryExpression(tokens, pos);
     return std::make_shared<UnaryExpr>(op, operand);
   }
@@ -2478,6 +2703,28 @@ Parser::parseUnaryExpression(const std::vector<Token> &tokens, size_t &pos) {
   return parsePowerExpression(tokens, pos);
 }
 
+/**
+ * @brief Parse power (exponentiation) expressions
+ * 
+ * Handles the exponentiation operator (^) which has highest precedence
+ * among binary operators.
+ * 
+ * Right-associative:
+ *   2 ^ 3 ^ 2 = 2 ^ (3 ^ 2) = 2 ^ 9 = 512
+ *   (not (2 ^ 3) ^ 2 = 8 ^ 2 = 64)
+ * 
+ * This is the standard mathematical convention for exponentiation.
+ * 
+ * Examples:
+ *   2 ^ 3 = 8
+ *   -2 ^ 2 = -(2 ^ 2) = -4 (unary minus has lower precedence)
+ *   (-2) ^ 2 = 4
+ *   X ^ 0.5 = square root of X
+ * 
+ * @param tokens Token sequence
+ * @param pos Current position
+ * @return Expression representing power operation or primary expression
+ */
 std::shared_ptr<Expression>
 Parser::parsePowerExpression(const std::vector<Token> &tokens, size_t &pos) {
   auto left = parsePrimaryExpression(tokens, pos);
