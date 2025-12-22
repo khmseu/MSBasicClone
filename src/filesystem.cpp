@@ -1,3 +1,24 @@
+/**
+ * @file filesystem.cpp
+ * @brief Cross-platform filesystem operations for BASIC file I/O
+ * 
+ * This file implements platform-independent filesystem operations used by
+ * the BASIC interpreter for commands like LOAD, SAVE, CATALOG, and file
+ * selector dialogs.
+ * 
+ * Key features:
+ * - Cross-platform file listing (Windows and POSIX)
+ * - BASIC program file reading/writing with line number preservation
+ * - Binary array data I/O for RECALL/STORE commands
+ * - Native file selector dialogs (zenity/kdialog/osascript/Windows COM)
+ * - ProDOS-compatible error messages
+ * 
+ * Platform-specific implementations:
+ * - Windows: Uses WIN32 API (FindFirstFile, CoCreateInstance for dialogs)
+ * - Linux: Uses dirent.h (opendir/readdir) and zenity/kdialog
+ * - macOS: Uses dirent.h and osascript for file selection
+ */
+
 #include "filesystem.h"
 #include <fstream>
 #include <sstream>
@@ -19,6 +40,15 @@
 
 namespace fs = std::filesystem;
 
+/**
+ * @brief List files in a directory
+ * 
+ * Returns information about all files in the specified directory, excluding
+ * "." and ".." entries. Uses platform-specific APIs for optimal performance.
+ * 
+ * @param path Directory path to list
+ * @return Vector of FileInfo structures with name, size, and isDirectory
+ */
 std::vector<FileInfo> listFiles(const std::string& path) {
     std::vector<FileInfo> files;
     
@@ -66,11 +96,29 @@ std::vector<FileInfo> listFiles(const std::string& path) {
     return files;
 }
 
+/**
+ * @brief Check if a file exists
+ * 
+ * Simple existence check by attempting to open the file for reading.
+ * 
+ * @param filename Path to file
+ * @return true if file exists and is readable, false otherwise
+ */
 bool fileExists(const std::string& filename) {
     std::ifstream file(filename);
     return file.good();
 }
 
+/**
+ * @brief Read entire text file into a string
+ * 
+ * Reads the file contents into memory as a string. Used for loading
+ * BASIC program files.
+ * 
+ * @param filename Path to file
+ * @return File contents as string
+ * @throws std::runtime_error with "PATH NOT FOUND ERROR" if file cannot be opened
+ */
 std::string readTextFile(const std::string& filename) {
     std::ifstream file(filename);
     if (!file) {
