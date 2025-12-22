@@ -4205,11 +4205,38 @@ std::shared_ptr<Statement> Parser::parseShload(const std::vector<Token> &tokens,
   return std::make_shared<ShloadStmt>();
 }
 
+/**
+ * @brief Check if current token matches expected type (parser helper)
+ * 
+ * Tests whether the token at the specified position matches the given type
+ * without consuming it. This is a lookahead helper used throughout the parser
+ * for decision-making without advancing the parse position.
+ * 
+ * Usage in parsing:
+ * - Check for optional tokens (e.g., THEN after IF)
+ * - Lookahead for operator precedence decisions
+ * - Validate token sequences
+ * 
+ * @param tokens Token vector being parsed
+ * @param pos Current position in token vector
+ * @param type Expected token type to match
+ * @return true if token at pos matches type, false otherwise
+ */
 bool Parser::match(const std::vector<Token> &tokens, size_t pos,
                    TokenType type) const {
   return pos < tokens.size() && tokens[pos].type == type;
 }
 
+/**
+ * @brief Check if at end of token stream (parser helper)
+ * 
+ * Determines whether the parser has consumed all tokens. Used to detect
+ * end of statement or expression parsing.
+ * 
+ * @param tokens Token vector being parsed
+ * @param pos Current position in token vector
+ * @return true if position is at or past end of token vector
+ */
 bool Parser::isAtEnd(const std::vector<Token> &tokens, size_t pos) const {
   return pos >= tokens.size();
 }

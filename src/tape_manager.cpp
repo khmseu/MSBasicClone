@@ -191,6 +191,36 @@ void TapeManager::rewind() {
     position_ = 0;
 }
 
+/**
+ * @brief Write a record to tape (sequential write)
+ * 
+ * Writes a data record to the tape file at the current position. Each record
+ * consists of a 4-byte size header followed by the data bytes. This
+ * implements the sequential tape write behavior of Applesoft BASIC.
+ * 
+ * Record format:
+ * - Size header: 4 bytes (uint32_t) in native byte order
+ * - Data: Variable length based on size header
+ * 
+ * Behavior:
+ * - Writes at current file position (sequential)
+ * - Automatically flushes to disk after write
+ * - Updates position counter
+ * - Position maintained across multiple writes
+ * 
+ * Error conditions:
+ * - Tape not open: "TAPE NOT OPEN FOR WRITING"
+ * - In read mode: "TAPE NOT OPEN FOR WRITING"
+ * - Write failure: "TAPE WRITE ERROR"
+ * 
+ * Cross-platform note:
+ * - Uses native byte order for size (not portable across architectures)
+ * - For cross-platform compatibility, use tapes on same architecture
+ * - Future: Could implement little-endian serialization
+ * 
+ * @param data Byte vector containing record data to write
+ * @throws std::runtime_error if tape not open for writing or write fails
+ */
 void TapeManager::writeRecord(const std::vector<uint8_t>& data) {
     if (!isOpen() || readMode_) {
         throw std::runtime_error("TAPE NOT OPEN FOR WRITING");
@@ -215,6 +245,38 @@ void TapeManager::writeRecord(const std::vector<uint8_t>& data) {
     updatePosition();
 }
 
+/**
+ * @brief Read a record from tape (sequential read)
+ * 
+ * Reads the next data record from the tape file at the current position.
+ * Each record consists of a 4-byte size header followed by the data bytes.
+ * This implements the sequential tape read behavior of Applesoft BASIC.
+ * 
+ * Record format:
+ * - Size header: 4 bytes (uint32_t) in native byte order
+ * - Data: Variable length based on size header
+ * 
+ * Behavior:
+ * - Reads from current file position (sequential)
+ * - Advances position for next read
+ * - Returns data as byte vector
+ * - Validates size against MAX_RECORD_SIZE (1 MB)
+ * 
+ * Error conditions:
+ * - Tape not open: "TAPE NOT OPEN FOR READING"
+ * - In write mode: "TAPE NOT OPEN FOR READING"
+ * - End of file: "END OF TAPE"
+ * - Invalid size (0 or > 1MB): "INVALID TAPE FORMAT"
+ * - Partial read: "TAPE READ ERROR"
+ * 
+ * Size validation:
+ * - Maximum 1 MB prevents corruption issues
+ * - Zero size indicates format error
+ * - Checks gcount() to verify complete read
+ * 
+ * @return Vector of bytes containing record data
+ * @throws std::runtime_error if tape not open for reading, EOF, or read fails
+ */
 std::vector<uint8_t> TapeManager::readRecord() {
     if (!isOpen() || !readMode_) {
         throw std::runtime_error("TAPE NOT OPEN FOR READING");
@@ -274,6 +336,44 @@ void TapeManager::updatePosition() {
     }
 }
 
+/**
+ * @brief Show platform-specific file selector dialog
+ * 
+ * Displays a native file selection dialog for choosing tape files. The
+ * implementation varies by platform to provide the best native experience.
+ * 
+ * Platform implementations:
+ * 
+ * Windows:
+ * - Uses GetOpenFileNameA() from Win32 API
+ * - Native Windows file dialog with .tap filter
+ * - Returns absolute path to selected file
+ * 
+ * macOS:
+ * - Uses osascript with AppleScript
+ * - Command: 'choose file with prompt "..." of type {"public.data"}'
+ * - Returns POSIX path to selected file
+ * - Strips trailing newline from osascript output
+ * 
+ * Linux:
+ * - First tries zenity (GNOME/GTK file dialog)
+ * - Falls back to kdialog (KDE file dialog)
+ * - Returns path if either tool available
+ * - Returns empty string if no dialog tool found
+ * 
+ * Return value:
+ * - On success: Absolute path to selected file
+ * - On cancel: Empty string
+ * - On error: Empty string
+ * 
+ * Usage:
+ * - Called when ESC-T hotkey pressed (or configured hotkey)
+ * - Allows user to change tape file at runtime
+ * - Path passed to setTapeFile() if non-empty
+ * 
+ * @param title Dialog title/prompt text
+ * @return Selected file path, or empty string if cancelled/failed
+ */
 std::string TapeManager::showFileSelector(const std::string& title) {
 #if defined(PLATFORM_WINDOWS)
     char filename[MAX_PATH] = "";

@@ -160,6 +160,14 @@ bool GraphicsRenderer::shouldClose() const {
     return false;
 }
 
+/**
+ * @brief Begin a new frame for rendering (Raylib wrapper)
+ * 
+ * Starts Raylib's drawing mode for the current frame. Must be called before
+ * any drawing operations. Paired with endFrame().
+ * 
+ * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ */
 void GraphicsRenderer::beginFrame() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
@@ -168,6 +176,14 @@ void GraphicsRenderer::beginFrame() {
 #endif
 }
 
+/**
+ * @brief End the current frame and present it (Raylib wrapper)
+ * 
+ * Ends Raylib's drawing mode and presents the frame to the window. Must be
+ * called after all drawing operations. Paired with beginFrame().
+ * 
+ * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ */
 void GraphicsRenderer::endFrame() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
@@ -176,6 +192,15 @@ void GraphicsRenderer::endFrame() {
 #endif
 }
 
+/**
+ * @brief Clear the screen to black (Raylib wrapper)
+ * 
+ * Clears the entire screen to black, matching the Apple II default
+ * background color. Called at the start of each frame or when screen
+ * clear is requested.
+ * 
+ * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ */
 void GraphicsRenderer::clear() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
@@ -185,6 +210,28 @@ void GraphicsRenderer::clear() {
 #endif
 }
 
+/**
+ * @brief Draw a single pixel at scaled resolution (Raylib wrapper)
+ * 
+ * Draws a pixel at the specified (x,y) coordinates with the given color.
+ * The pixel is automatically scaled according to config_.scaleFactor to
+ * maintain aspect ratio on modern displays.
+ * 
+ * Color format:
+ * - 24-bit RGB: 0xRRGGBB
+ * - Converted to Raylib Color struct
+ * - Alpha always set to 255 (opaque)
+ * 
+ * Scaling:
+ * - Each "pixel" is drawn as a rectangle of size scaleFactor × scaleFactor
+ * - Coordinates are multiplied by scaleFactor
+ * 
+ * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ * 
+ * @param x X coordinate in Apple II screen space
+ * @param y Y coordinate in Apple II screen space
+ * @param color RGB color value (0xRRGGBB format)
+ */
 void GraphicsRenderer::drawPixel(int x, int y, int color) {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
@@ -257,6 +304,29 @@ void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color
 #endif
 }
 
+/**
+ * @brief Draw a single character with Apple II font (Raylib wrapper)
+ * 
+ * Draws a single character at the specified position using the Apple II
+ * font (if loaded) or a fallback font. This is used for text rendering
+ * in graphics modes.
+ * 
+ * Font handling:
+ * - If Apple II font loaded: Uses DrawTextEx with custom font
+ * - Otherwise: Falls back to built-in Raylib font
+ * - Character is scaled according to config_.scaleFactor
+ * 
+ * Color format:
+ * - 24-bit RGB: 0xRRGGBB
+ * - Converted to Raylib Color struct
+ * 
+ * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ * 
+ * @param ch Character to draw
+ * @param x X coordinate in Apple II screen space
+ * @param y Y coordinate in Apple II screen space
+ * @param color RGB color value (0xRRGGBB format)
+ */
 void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
@@ -294,6 +364,31 @@ void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
 #endif
 }
 
+/**
+ * @brief Load Apple II font for authentic text rendering
+ * 
+ * Attempts to load the "Ultimate Apple II" font (PrintChar21.ttf) from
+ * several common locations. This font provides authentic Apple II text
+ * appearance in graphics modes.
+ * 
+ * Search paths (in order):
+ * 1. assets/fonts/PrintChar21.ttf (relative to executable)
+ * 2. ../assets/fonts/PrintChar21.ttf (one directory up)
+ * 3. /usr/share/fonts/apple2/PrintChar21.ttf (system fonts on Unix)
+ * 
+ * Behavior:
+ * - Searches paths in order until font found
+ * - If found: Loads with Raylib's LoadFontEx() at 8pt base size
+ * - If not found: Falls back to built-in Raylib font
+ * - Sets fontLoaded_ flag for drawText/drawChar to check
+ * 
+ * File checking:
+ * - Uses access() system call to check file existence
+ * - Validates before attempting to load
+ * - Prevents Raylib warnings about missing files
+ * 
+ * Only active when HAVE_RAYLIB is defined.
+ */
 void GraphicsRenderer::loadApple2Font() {
 #ifdef HAVE_RAYLIB
     // Search for the Ultimate Apple II Font in common locations
@@ -359,6 +454,32 @@ void GraphicsRenderer::loadApple2Font() {
 #endif
 }
 
+/**
+ * @brief Convert Apple II color code to RGB value
+ * 
+ * Converts an Apple II color code (0-15) to a 24-bit RGB color value.
+ * This provides an approximation of the Apple II color palette for
+ * modern displays.
+ * 
+ * Apple II color codes:
+ * - 0: Black          - 8: Brown
+ * - 1: Magenta/Red    - 9: Orange
+ * - 2: Dark Blue     - 10: Gray
+ * - 3: Purple        - 11: Pink
+ * - 4: Dark Green    - 12: Light Green
+ * - 5: Gray          - 13: Yellow
+ * - 6: Medium Blue   - 14: Aqua
+ * - 7: Light Blue    - 15: White
+ * 
+ * Color approximation:
+ * - Simplified palette (Apple II had complex NTSC artifacts)
+ * - Fixed RGB values for consistency
+ * - Suitable for modern RGB displays
+ * - Does not emulate composite video effects
+ * 
+ * @param appleColor Apple II color code (0-15)
+ * @return 24-bit RGB color value (0xRRGGBB format)
+ */
 unsigned int GraphicsRenderer::convertColor(int appleColor) const {
     // Apple II color palette (simplified)
     // This is a basic approximation of Apple II colors

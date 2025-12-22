@@ -741,6 +741,32 @@ void Graphics::loadShape(int shapeNum,
   shapeTable_[shapeNum] = points;
 }
 
+/**
+ * @brief Query terminal window size (platform-specific helper)
+ * 
+ * Attempts to determine the current terminal window size in characters
+ * (columns and rows). Uses platform-specific methods to query the terminal
+ * or console.
+ * 
+ * Platform implementations:
+ * - Windows: GetConsoleScreenBufferInfo() API
+ * - Unix/Linux: ioctl(TIOCGWINSZ) system call
+ * - Fallback: COLUMNS and LINES environment variables
+ * 
+ * This is used by the POS() function to determine horizontal cursor position
+ * and for text window management.
+ * 
+ * Return value:
+ * - true: Successfully determined terminal size (outputs set)
+ * - false: Could not determine size (outputs unchanged)
+ * 
+ * Default fallback values (not set here):
+ * - 80 columns × 24 rows (standard terminal size)
+ * 
+ * @param columns Output parameter for terminal width in characters
+ * @param rows Output parameter for terminal height in characters
+ * @return true if size determined successfully, false otherwise
+ */
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {
 #ifdef PLATFORM_WINDOWS
   HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
