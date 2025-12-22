@@ -176,6 +176,9 @@ file(GLOB BAS_TEST_FILES
     "${CMAKE_SOURCE_DIR}/examples/*.bas"
 )
 
+# Exclude interactive examples that require user input (e.g., GET/INPUT).
+list(FILTER BAS_TEST_FILES EXCLUDE REGEX ".*textmode_demo\\.bas$")
+
 foreach(BAS_FILE ${BAS_TEST_FILES})
     get_filename_component(BAS_NAME "${BAS_FILE}" NAME_WE)
     add_test(
