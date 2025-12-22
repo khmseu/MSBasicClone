@@ -1,3 +1,28 @@
+/**
+ * @file graphics_renderer.cpp
+ * @brief Platform-specific graphics rendering implementation using Raylib
+ * 
+ * This file implements the GraphicsRenderer class which provides actual
+ * window creation and pixel rendering for MSBasic graphics commands.
+ * It uses the Raylib library when available for cross-platform graphics.
+ * 
+ * Key features:
+ * - Window creation with configurable scale factor
+ * - Pixel-perfect Apple II graphics rendering (280×192 base resolution)
+ * - Apple II font loading and rendering for text in graphics mode
+ * - Graceful fallback when display not available (headless mode)
+ * - Double-buffering via BeginDrawing/EndDrawing
+ * 
+ * The renderer is separate from Graphics logic to allow:
+ * 1. Testing graphics logic without display
+ * 2. Supporting multiple rendering backends
+ * 3. Running in headless environments (CI/CD, servers)
+ * 
+ * Conditional compilation:
+ * - HAVE_RAYLIB: Enables Raylib-based rendering
+ * - Without Raylib: Stubs return false, graphics commands work off-screen only
+ */
+
 #include "graphics_renderer.h"
 #include <stdexcept>
 #include <iostream>
@@ -15,6 +40,10 @@
 #include <raylib.h>
 #endif
 
+/**
+ * @brief Construct a GraphicsRenderer
+ * @param config Graphics configuration (scale, mode, etc.)
+ */
 GraphicsRenderer::GraphicsRenderer(const GraphicsConfig& config)
     : config_(config), initialized_(false), windowWidth_(0), windowHeight_(0)
 #ifdef HAVE_RAYLIB
@@ -23,10 +52,28 @@ GraphicsRenderer::GraphicsRenderer(const GraphicsConfig& config)
 {
 }
 
+/**
+ * @brief Destructor - ensures proper cleanup
+ */
 GraphicsRenderer::~GraphicsRenderer() {
     shutdown();
 }
 
+/**
+ * @brief Initialize the graphics window and renderer
+ * 
+ * Creates a Raylib window scaled to the configured factor (default 2x).
+ * Base resolution is 280×192 matching Apple II high-res mode.
+ * 
+ * Performs checks:
+ * - Verifies DISPLAY environment variable (Unix/Linux)
+ * - Tests window creation success
+ * - Loads Apple II font if available
+ * 
+ * Returns false if initialization fails, allowing off-screen operation.
+ * 
+ * @return true if window created successfully, false otherwise
+ */
 bool GraphicsRenderer::initialize() {
     if (initialized_) {
         return true;
@@ -80,6 +127,12 @@ bool GraphicsRenderer::initialize() {
     return false;
 }
 
+/**
+ * @brief Shutdown and cleanup the renderer
+ * 
+ * Unloads fonts, closes the window, and marks renderer as uninitialized.
+ * Safe to call multiple times.
+ */
 void GraphicsRenderer::shutdown() {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
@@ -94,6 +147,10 @@ void GraphicsRenderer::shutdown() {
 #endif
 }
 
+/**
+ * @brief Check if user requested window close
+ * @return true if window close requested, false otherwise
+ */
 bool GraphicsRenderer::shouldClose() const {
 #ifdef HAVE_RAYLIB
     if (initialized_) {
