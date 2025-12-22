@@ -5,6 +5,7 @@ This document describes the commenting standards for the MSBasic interpreter cod
 ## Overview
 
 All implementation files should have detailed structured comments that explain:
+
 - **What** the code does (brief summary)
 - **How** it works (algorithm details)
 - **Why** design decisions were made (rationale)
@@ -20,15 +21,15 @@ All comments use Doxygen-style formatting for API documentation generation:
 ```cpp
 /**
  * @brief Brief one-line description
- * 
+ *
  * Detailed multi-paragraph explanation with algorithm details,
  * implementation notes, and usage guidance.
- * 
+ *
  * Additional sections as needed:
  * - Behavior details
  * - Implementation notes
  * - Platform-specific considerations
- * 
+ *
  * @param paramName Description of parameter with constraints
  * @return Description of return value
  * @throws Exception description for error conditions
@@ -38,11 +39,12 @@ All comments use Doxygen-style formatting for API documentation generation:
 ### Required Elements
 
 1. **File Headers**: Every implementation file should have a comprehensive header:
+
    ```cpp
    /**
     * @file filename.cpp
     * @brief One-line purpose
-    * 
+    *
     * Detailed description covering:
     * - Key responsibilities
     * - Architecture/design patterns
@@ -70,6 +72,7 @@ All comments use Doxygen-style formatting for API documentation generation:
 ### What to Document
 
 #### High Priority
+
 - **Complex algorithms**: Step-by-step breakdowns
 - **Memory operations**: Address mappings, special locations
 - **Control flow**: State machines, jump logic, stack operations
@@ -79,12 +82,14 @@ All comments use Doxygen-style formatting for API documentation generation:
 - **Compatibility notes**: Applesoft BASIC semantics
 
 #### Medium Priority
+
 - **Data structures**: Purpose and invariants
 - **Helper functions**: Purpose and usage context
 - **Constants**: Meaning and origin
 - **Type conversions**: Coercion rules
 
 #### Lower Priority
+
 - **Trivial getters/setters**: Brief @brief is sufficient
 - **Standard patterns**: Well-known idioms need less explanation
 - **Self-documenting code**: Clear variable names reduce need for comments
@@ -96,13 +101,13 @@ Include BASIC syntax examples for user-facing features:
 ```cpp
 /**
  * @brief Draw horizontal line (HLIN implementation)
- * 
+ *
  * Draws a horizontal line from (x1,y) to (x2,y).
- * 
+ *
  * Usage in BASIC:
  *   HLIN 0,39 AT 20  (draw line across screen)
  *   HLIN 100,200 AT 96  (HGR mode horizontal line)
- * 
+ *
  * @param x1 Starting X coordinate
  * @param x2 Ending X coordinate
  * @param y Y coordinate (constant for horizontal line)
@@ -150,22 +155,22 @@ Use numbered steps for complex processes:
 ```cpp
 /**
  * @brief Write a byte value to memory (POKE implementation)
- * 
+ *
  * Implements the POKE statement which writes a byte to a memory address.
  * This function handles the complex address mapping of the Apple II including
  * special system addresses, I/O locations, and memory-mapped hardware.
- * 
+ *
  * Address Handling:
  * - Negative addresses are converted to 16-bit unsigned (Apple II convention)
  *   Example: POKE -16368,0 becomes POKE 49168,0 (clear keyboard strobe)
  * - Values are masked to 8 bits (0-255) to simulate byte storage
- * 
+ *
  * Special Addresses (bypass range checking):
  * - Zero page system variables (0x00-0xFF)
  * - Text window control (0x20-0x25)
  * - Memory pointers: LOMEM (0x69-0x6A), HIMEM (0x73-0x74)
  * [... more details ...]
- * 
+ *
  * @param addr Memory address to write to (may be negative)
  * @param val Value to write (will be masked to 0-255)
  * @throws std::runtime_error If address is outside valid range
@@ -177,16 +182,16 @@ Use numbered steps for complex processes:
 ```cpp
 /**
  * @brief Parse logical OR expressions (lowest precedence)
- * 
+ *
  * Handles OR operator which has lowest precedence. Parses left-associative
  * chains of OR operations:
  *   A OR B OR C = (A OR B) OR C
- * 
+ *
  * In Applesoft BASIC, OR performs bitwise OR on integer values:
  *   0 OR 0 = 0 (false OR false = false)
  *   0 OR 1 = 1 (false OR true = true)
  *   Any non-zero value is considered true
- * 
+ *
  * @param tokens Token sequence
  * @param pos Current position
  * @return Expression representing OR chain or single AND expression
@@ -198,26 +203,26 @@ Use numbered steps for complex processes:
 ```cpp
 /**
  * @brief Draw shape with XOR mode (XDRAW implementation)
- * 
+ *
  * Similar to draw() but uses XOR (exclusive or) mode for drawing. In XOR mode:
  * - Drawing on background sets pixels
  * - Drawing on existing pixels clears them
  * - Drawing the same shape twice returns to original state
- * 
+ *
  * XOR drawing is useful for:
  * - Animation (draw/erase/move/redraw without clearing screen)
  * - Cursors and temporary graphics
  * - Creating "invert" effects
- * 
+ *
  * XOR Logic:
  * - If pixel is off (0), set to current color
  * - If pixel is on (non-zero), set to off (0)
  * - This makes drawing reversible: XDRAW twice = no change
- * 
+ *
  * Usage in BASIC:
  *   XDRAW 1 AT 100,100  (draw shape 1)
  *   XDRAW 1 AT 100,100  (erase shape 1 - back to original)
- * 
+ *
  * @param shapeNum Shape number to draw in XOR mode
  * @param x X coordinate of origin (< 0 uses last position)
  * @param y Y coordinate of origin (< 0 uses last position)
@@ -227,17 +232,20 @@ Use numbered steps for complex processes:
 ## Files Requiring Documentation
 
 ### High Priority (Large Implementation Files)
+
 - `src/interpreter.cpp` - Runtime execution engine
 - `src/parser.cpp` - Syntax analyzer and AST builder
 - `src/functions.cpp` - Built-in functions and memory operations
 - `src/graphics.cpp` - Graphics operations and transformations
 
 ### Medium Priority
+
 - `src/statements.cpp` - Statement implementations
 - `src/tokenizer.cpp` - Lexical analyzer
 - `src/variables.cpp` - Variable storage management
 
 ### Already Well-Documented
+
 - `src/float40.cpp` - 40-bit float emulation
 - `src/filesystem.cpp` - Cross-platform file operations
 - Header files (.h) - API documentation
@@ -259,6 +267,7 @@ Use numbered steps for complex processes:
 ### Build Validation
 
 After adding documentation:
+
 ```bash
 # Verify code still compiles
 cmake -S . -B build
@@ -274,6 +283,7 @@ doxygen Doxyfile
 ## Anti-Patterns to Avoid
 
 ### Don't Document the Obvious
+
 ```cpp
 // Bad: Obvious from code
 int x = 5; // Set x to 5
@@ -283,6 +293,7 @@ int maxRetries = 5; // Applesoft BASIC allows 5 input retries on type mismatch
 ```
 
 ### Don't Repeat Code in Words
+
 ```cpp
 // Bad: Just repeats the code
 /**
@@ -294,7 +305,7 @@ int add(int a, int b) { return a + b; }
 // Good: Adds context
 /**
  * @brief Add with Float40 precision
- * 
+ *
  * Performs addition with Applesoft-compatible 40-bit floating point
  * precision, matching Apple II BASIC behavior for calculations.
  */
@@ -302,6 +313,7 @@ Float40 add(Float40 a, Float40 b);
 ```
 
 ### Don't Leave Outdated Comments
+
 ```cpp
 // Bad: Comment doesn't match code
 // Returns true if file exists
@@ -322,6 +334,7 @@ bool validatePath(const std::string& path) {
 ## Summary
 
 Good documentation:
+
 - Explains complex algorithms with step-by-step breakdowns
 - Includes usage examples in BASIC syntax
 - Documents edge cases and error conditions

@@ -121,10 +121,10 @@ if(raylib_FOUND)
     set(RAYLIB_AVAILABLE TRUE)
 else()
     message(STATUS "Raylib not found via find_package")
-    
+
     if(AUTO_BUILD_RAYLIB)
         message(STATUS "Attempting to build raylib from source...")
-        
+
         # Check for X11 on Unix-like systems (required for raylib)
         if(UNIX AND NOT APPLE)
             find_package(X11)
@@ -135,27 +135,41 @@ else()
                 set(RAYLIB_AVAILABLE FALSE)
             endif()
         endif()
-        
+
         if(NOT DEFINED RAYLIB_AVAILABLE OR RAYLIB_AVAILABLE)
             include(FetchContent)
-            
+
             FetchContent_Declare(
                 raylib
                 GIT_REPOSITORY https://github.com/raysan5/raylib.git
                 GIT_TAG 5.0
                 GIT_SHALLOW TRUE
             )
-            
+
             # Configure raylib build options
             set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
             set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
-            
+
             # Attempt to build raylib
             FetchContent_MakeAvailable(raylib)
-            
+
             if(TARGET raylib)
                 message(STATUS "Successfully built raylib from source - graphics rendering enabled")
                 add_compile_definitions(HAVE_RAYLIB)
+
+                # Suppress warnings in vendored dependencies
+                if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+                    target_compile_options(raylib PRIVATE -w)
+                    if(TARGET glfw)
+                        target_compile_options(glfw PRIVATE -w)
+                    endif()
+                elseif(MSVC)
+                    target_compile_options(raylib PRIVATE /w)
+                    if(TARGET glfw)
+                        target_compile_options(glfw PRIVATE /w)
+                    endif()
+                endif()
+
                 set(RAYLIB_AVAILABLE TRUE)
             else()
                 message(STATUS "Failed to build raylib - graphics will use off-screen buffer only")
