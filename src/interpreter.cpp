@@ -3618,6 +3618,37 @@ void Interpreter::catalogFiles(const std::string &path) {
   std::cout << "\n";
 }
 
+/**
+ * @brief Load and run program with optional starting line (CHAIN implementation)
+ * 
+ * Implements the CHAIN command which loads a new program and runs it while
+ * preserving all variables. Optionally starts execution from a specified
+ * line number instead of the beginning.
+ * 
+ * Behavior:
+ * - Clears the current program listing
+ * - Loads new program from file
+ * - Preserves all variables and arrays
+ * - Clears DATA/READ state
+ * - Starts execution from specified line or beginning
+ * 
+ * Difference from dash (-) command:
+ * - CHAIN allows specifying starting line
+ * - CHAIN is more flexible for program chaining
+ * - Both preserve variables
+ * 
+ * Error handling:
+ * - File not found: Displays error message
+ * - Invalid starting line: Propagated from runFrom()
+ * - Parse errors: Handled during program loading
+ * 
+ * BASIC Usage:
+ *   CHAIN "PROG2"        (run from beginning)
+ *   CHAIN "PROG2", 100   (run from line 100)
+ * 
+ * @param filename Path to BASIC program file
+ * @param startLine Line number to start from (0 or negative = start from beginning)
+ */
 void Interpreter::chainProgram(const std::string &filename, int startLine) {
   try {
     std::string content = readTextFile(filename);
@@ -3671,6 +3702,38 @@ void Interpreter::dashRun(const std::string &filename) {
   }
 }
 
+/**
+ * @brief Open file for reading with optional positioning (READ implementation)
+ * 
+ * Opens a file for reading, optionally positioning to a specific record and
+ * byte offset. This implements the READ file command from ProDOS Applesoft
+ * BASIC (different from READ for DATA statements).
+ * 
+ * Positioning (currently stub):
+ * - record: 512-byte record number
+ * - byte: Byte offset within record
+ * - position = record * 512 + byte
+ * - Full positioning not yet implemented
+ * 
+ * Current behavior:
+ * - Opens file for reading via FileManager
+ * - Acknowledges the open operation
+ * - TODO: Implement actual file positioning
+ * 
+ * Error conditions:
+ * - Empty filename: "SYNTAX ERROR"
+ * - File not found: Propagated from FileManager
+ * - I/O error: Propagated from FileManager
+ * 
+ * Usage context:
+ * - ProDOS file I/O commands
+ * - Sequential or random access file reading
+ * - Use with subsequent READ operations
+ * 
+ * @param filename Path to file to open for reading
+ * @param record Record number for positioning (512-byte blocks)
+ * @param byte Byte offset within record
+ */
 void Interpreter::readFile(const std::string &filename, int record, int byte) {
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
@@ -3695,6 +3758,36 @@ void Interpreter::readFile(const std::string &filename, int record, int byte) {
   }
 }
 
+/**
+ * @brief Open file for writing with optional positioning (WRITE implementation)
+ * 
+ * Opens a file for writing, optionally positioning to a specific record
+ * number. This implements the WRITE file command from ProDOS Applesoft
+ * BASIC (different from WRITE for OUTPUT operations).
+ * 
+ * Positioning (currently stub):
+ * - record: 512-byte record number
+ * - Full positioning not yet implemented
+ * - Currently opens file for writing at beginning
+ * 
+ * Current behavior:
+ * - Opens file for writing via FileManager
+ * - Acknowledges the open operation
+ * - TODO: Implement actual record positioning
+ * 
+ * Error conditions:
+ * - Empty filename: "SYNTAX ERROR"
+ * - Cannot create file: Propagated from FileManager
+ * - I/O error: Propagated from FileManager
+ * 
+ * Usage context:
+ * - ProDOS file I/O commands
+ * - Sequential or random access file writing
+ * - Use with subsequent WRITE operations
+ * 
+ * @param filename Path to file to open for writing
+ * @param record Record number for positioning (512-byte blocks)
+ */
 void Interpreter::writeFile(const std::string &filename, int record) {
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
