@@ -51,10 +51,24 @@ constexpr uint32_t MAX_RECORD_SIZE = 1024 * 1024;
 
 TapeManager::TapeManager() : readMode_(false), position_(0) {}
 
+/**
+ * @brief Destructor - closes tape file if open
+ */
 TapeManager::~TapeManager() {
     close();
 }
 
+/**
+ * @brief Set the current tape file
+ * 
+ * Changes the tape file path and resets position to start. Closes any
+ * currently open tape file.
+ * 
+ * Usage in BASIC:
+ *   TAPE "MYDATA.TAP"  (sets current tape file)
+ * 
+ * @param filename Path to tape file
+ */
 void TapeManager::setTapeFile(const std::string& filename) {
     if (isOpen()) {
         close();
@@ -63,6 +77,18 @@ void TapeManager::setTapeFile(const std::string& filename) {
     position_ = 0;
 }
 
+/**
+ * @brief Open tape file for reading
+ * 
+ * Opens the current tape file in read mode for RECALL and SHLOAD operations.
+ * If already open in read mode, keeps current position. If open in write mode,
+ * closes and reopens in read mode.
+ * 
+ * Position tracking allows sequential reads across multiple RECALL commands
+ * without rewinding.
+ * 
+ * @throws std::runtime_error if no tape loaded or file cannot be opened
+ */
 void TapeManager::openForRead() {
     if (currentTape_.empty()) {
         throw std::runtime_error("NO TAPE LOADED");
@@ -89,6 +115,18 @@ void TapeManager::openForRead() {
     }
 }
 
+/**
+ * @brief Open tape file for writing
+ * 
+ * Opens the current tape file in write mode for STORE operations. If already
+ * open in write mode, keeps current position. If open in read mode, closes
+ * and reopens in write mode.
+ * 
+ * Write operations append at the current position, allowing sequential writes
+ * across multiple STORE commands.
+ * 
+ * @throws std::runtime_error if no tape loaded or file cannot be opened
+ */
 void TapeManager::openForWrite() {
     if (currentTape_.empty()) {
         throw std::runtime_error("NO TAPE LOADED");
@@ -119,6 +157,12 @@ void TapeManager::openForWrite() {
     }
 }
 
+/**
+ * @brief Close the tape file
+ * 
+ * Closes the current tape file and resets position to 0. Safe to call
+ * even if no file is open.
+ */
 void TapeManager::close() {
     if (file_.is_open()) {
         file_.close();
@@ -126,6 +170,12 @@ void TapeManager::close() {
     position_ = 0;
 }
 
+/**
+ * @brief Rewind tape to beginning
+ * 
+ * Resets file position to the start of the tape. Used when starting over
+ * with a sequence of reads or writes. No-op if tape is not open.
+ */
 void TapeManager::rewind() {
     if (!isOpen()) {
         return;
@@ -194,6 +244,14 @@ std::vector<uint8_t> TapeManager::readRecord() {
     return data;
 }
 
+/**
+ * @brief Check if end of tape has been reached
+ * 
+ * Returns true if tape is open for reading and EOF has been reached.
+ * Returns false if not in read mode or tape not open.
+ * 
+ * @return true if at end of tape, false otherwise
+ */
 bool TapeManager::isEndOfTape() const {
     if (!isOpen() || !readMode_) {
         return false;
@@ -201,6 +259,13 @@ bool TapeManager::isEndOfTape() const {
     return file_.eof();
 }
 
+/**
+ * @brief Update cached position from file handle
+ * 
+ * Reads the current file position (tellg for read mode, tellp for write mode)
+ * and caches it in position_ member. Called after read/write operations to
+ * maintain accurate position tracking.
+ */
 void TapeManager::updatePosition() {
     if (readMode_) {
         position_ = file_.tellg();
