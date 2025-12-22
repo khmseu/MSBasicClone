@@ -1,3 +1,26 @@
+/**
+ * @file float40.cpp
+ * @brief Implementation of 40-bit floating-point emulation
+ * 
+ * This file implements the Float40 class which emulates Applesoft BASIC's
+ * Microsoft Binary Format (MBF) 40-bit floating-point arithmetic.
+ * 
+ * Features:
+ * - Limited precision matching Applesoft behavior
+ * - String formatting matching Applesoft output conventions
+ * - Arithmetic operations with precision rounding
+ * - Random number generation (RND function)
+ * 
+ * The implementation uses C++ double internally but rounds results to
+ * match Applesoft's 40-bit precision (approximately 9 decimal digits).
+ * 
+ * String formatting rules:
+ * - Scientific notation for |value| >= 1e9 or |value| < 0.01 (except 0)
+ * - Fixed notation otherwise
+ * - Trailing zeros removed
+ * - Leading space for positive numbers (matching Applesoft)
+ */
+
 #include "float40.h"
 #include <cmath>
 #include <iomanip>

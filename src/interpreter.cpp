@@ -1,3 +1,35 @@
+/**
+ * @file interpreter.cpp
+ * @brief Implementation of the Applesoft BASIC runtime interpreter
+ * 
+ * This file implements the Interpreter class which executes parsed BASIC
+ * programs. It manages program state, control flow, variable storage, I/O,
+ * graphics, and all runtime behavior.
+ * 
+ * Key components:
+ * - Program execution (RUN, CONT, immediate mode)
+ * - Control flow (GOTO, GOSUB/RETURN, FOR/NEXT, IF/THEN/ELSE)
+ * - Variable and array management via Variables class
+ * - I/O operations (PRINT, INPUT, GET)
+ * - DATA/READ/RESTORE sequence handling
+ * - Error handling (ONERR, RESUME)
+ * - Graphics integration (GR, HGR, HPLOT, etc.)
+ * - File operations (LOAD, SAVE, CATALOG)
+ * - Tape operations (STORE, RECALL, SHLOAD)
+ * - Memory operations (PEEK, POKE, WAIT)
+ * 
+ * The interpreter maintains several runtime stacks:
+ * - GOSUB stack: Return addresses for subroutines
+ * - FOR stack: Loop state (variable, limit, step, return line)
+ * - Error handler: ONERR target line and error state
+ * 
+ * Special features:
+ * - TRACE/NOTRACE execution tracing
+ * - SPEED command for statement delays (debugging)
+ * - Virtual terminal support (Windows and POSIX)
+ * - ProDOS-compatible error codes in memory location 222
+ */
+
 #include "interpreter.h"
 #include "filesystem.h"
 #include "float40.h"
@@ -60,6 +92,16 @@ Interpreter::Interpreter(const GraphicsConfig& config)
   pokeMemory(0x0025, outputRow_);
 }
 
+/**
+ * @brief Parse a line to separate line number from code
+ * 
+ * Separates input into line number (if present) and code. Lines without
+ * leading numbers are immediate commands (lineNum = -1).
+ * 
+ * @param line Input line from user
+ * @param lineNum Output line number (-1 for immediate)
+ * @param code Output code string
+ */
 void Interpreter::parseLine(const std::string &line, LineNumber &lineNum,
                             std::string &code) {
   // Check if line starts with a number
@@ -85,6 +127,11 @@ void Interpreter::parseLine(const std::string &line, LineNumber &lineNum,
   }
 }
 
+/**
+ * @brief Check if a string is a valid line number
+ * @param text String to check
+ * @return true if text contains only digits, false otherwise
+ */
 bool Interpreter::isLineNumber(const std::string &text) const {
   if (text.empty())
     return false;
@@ -95,6 +142,16 @@ bool Interpreter::isLineNumber(const std::string &text) const {
   return true;
 }
 
+/**
+ * @brief Add or update a program line
+ * 
+ * If text is empty, deletes the line. Otherwise, tokenizes and parses
+ * the line, then stores it in the program map. Lines are kept sorted
+ * by line number via std::map.
+ * 
+ * @param lineNum Line number (0-32767)
+ * @param text BASIC code for this line
+ */
 void Interpreter::addLine(LineNumber lineNum, const std::string &text) {
   if (text.empty()) {
     // Empty line deletes the line
@@ -116,6 +173,12 @@ void Interpreter::addLine(LineNumber lineNum, const std::string &text) {
 
 void Interpreter::deleteLine(LineNumber lineNum) { program_.erase(lineNum); }
 
+/**
+ * @brief Clear program and all state (NEW command)
+ * 
+ * Clears program lines, variables, DATA values, and resets output position.
+ * This is equivalent to the NEW command in Applesoft BASIC.
+ */
 void Interpreter::newProgram() {
   program_.clear();
   variables_.clear();
@@ -125,6 +188,13 @@ void Interpreter::newProgram() {
   resetOutputPosition();
 }
 
+/**
+ * @brief Clear variables and control stacks (CLR command)
+ * 
+ * Clears variables, FOR/NEXT and GOSUB stacks, DATA state, and error
+ * handlers. Preserves program lines. This is equivalent to the CLR
+ * command in Applesoft BASIC.
+ */
 void Interpreter::clearState() {
   variables_.clear();
   forStack_.clear();
@@ -140,6 +210,15 @@ void Interpreter::clearState() {
   resetOutputPosition();
 }
 
+/**
+ * @brief List program lines to stdout (LIST command)
+ * 
+ * Displays program lines with line numbers. If startLine or endLine are
+ * negative, lists all lines. Otherwise, lists lines in the specified range.
+ * 
+ * @param startLine First line to list (-1 for beginning)
+ * @param endLine Last line to list (-1 for end)
+ */
 void Interpreter::listProgram(int startLine, int endLine) {
   for (const auto &pair : program_) {
     if ((startLine < 0 || pair.first >= startLine) &&

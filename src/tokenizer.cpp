@@ -1,10 +1,46 @@
+/**
+ * @file tokenizer.cpp
+ * @brief Lexical analyzer implementation for Applesoft BASIC
+ * 
+ * This file implements the Tokenizer class which performs lexical analysis
+ * on BASIC source code, converting raw text into a stream of typed tokens.
+ * 
+ * The tokenizer recognizes:
+ * - Keywords (PRINT, IF, FOR, etc.)
+ * - Operators (arithmetic, logical, relational)
+ * - Literals (numbers, strings)
+ * - Identifiers (variable names, function names)
+ * - Delimiters (parentheses, commas, colons, semicolons)
+ * 
+ * Special features:
+ * - Case-insensitive keyword matching
+ * - Support for ? as PRINT shorthand
+ * - String literals with quote delimiters
+ * - Multi-character operators (<=, >=, <>)
+ * - Line continuation handling
+ */
+
 #include "tokenizer.h"
 #include <algorithm>
 #include <cctype>
 #include <map>
 
+/**
+ * @brief Construct a new Tokenizer
+ * 
+ * Initializes tokenizer state with position at start of input.
+ */
 Tokenizer::Tokenizer() : pos_(0), line_(1), column_(1) {}
 
+/**
+ * @brief Tokenize a line of BASIC code
+ * 
+ * Converts the input string into a vector of tokens. Handles whitespace
+ * skipping and ensures no duplicate NEWLINE tokens are emitted.
+ * 
+ * @param line Input BASIC source code line
+ * @return Vector of Token objects representing the tokenized input
+ */
 std::vector<Token> Tokenizer::tokenize(const std::string &line) {
   input_ = line;
   pos_ = 0;
@@ -27,6 +63,16 @@ std::vector<Token> Tokenizer::tokenize(const std::string &line) {
   return tokens;
 }
 
+/**
+ * @brief Check if a word is a BASIC keyword
+ * 
+ * Performs case-insensitive lookup in the keyword table. This static map
+ * contains all Applesoft BASIC keywords including commands, statements,
+ * functions, and special symbols (like ? for PRINT).
+ * 
+ * @param word Word to check (case-insensitive)
+ * @return true if word is a keyword, false otherwise
+ */
 bool Tokenizer::isKeyword(const std::string &word) const {
   static const std::map<std::string, TokenType> keywords = {
       {"PRINT", TokenType::PRINT},

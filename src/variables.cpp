@@ -1,3 +1,20 @@
+/**
+ * @file variables.cpp
+ * @brief Implementation of variable, array, and function storage
+ * 
+ * This file implements the Variables class which manages all runtime storage
+ * for BASIC programs. It enforces Applesoft BASIC variable naming conventions
+ * (first 2 characters significant), handles type coercion (especially for
+ * integer variables), and provides sparse array storage.
+ * 
+ * Key implementation details:
+ * - Variable names normalized to uppercase, 2-char significance
+ * - FN functions preserve FN prefix + 2 chars (4 chars total)
+ * - Integer variables (%) clamped to 16-bit signed range (-32768 to 32767)
+ * - Arrays auto-dimension to size 10 per dimension if not explicitly DIM'd
+ * - Sparse array storage using std::map keyed by dimension indices
+ */
+
 #include "variables.h"
 #include <algorithm>
 #include <cmath>
@@ -9,8 +26,29 @@ constexpr size_t VARIABLE_NAME_LENGTH = 2;
 constexpr size_t FN_FUNCTION_NAME_LENGTH = 4; // FN prefix + 2 chars
 } // namespace
 
+/**
+ * @brief Construct a new Variables storage system
+ */
 Variables::Variables() {}
 
+/**
+ * @brief Normalize a variable name according to Applesoft conventions
+ * 
+ * Implements Applesoft BASIC's variable name significance rules:
+ * - Convert to uppercase
+ * - For FN functions: preserve "FN" prefix + 2 chars (e.g., FNxy)
+ * - For other variables: use first 2 chars (unless string/integer suffix)
+ * - Suffixes $ and % are preserved
+ * 
+ * Examples:
+ *   "hello" -> "HE"
+ *   "HELLO$" -> "HELLO$"
+ *   "counter%" -> "CO%"
+ *   "FNabc" -> "FNAB"
+ * 
+ * @param name Variable name to normalize
+ * @return Normalized name
+ */
 std::string Variables::normalizeName(const std::string &name) const {
   // In Applesoft BASIC, only first 2 characters are significant
   std::string normalized = name;
@@ -32,6 +70,16 @@ std::string Variables::normalizeName(const std::string &name) const {
 }
 
 namespace {
+/**
+ * @brief Coerce a value to integer range
+ * 
+ * Integer variables in Applesoft BASIC are 16-bit signed, ranging from
+ * -32768 to 32767. This function rounds the numeric value and clamps it
+ * to that range.
+ * 
+ * @param value Value to coerce
+ * @return Clamped integer value
+ */
 Value coerceInteger(const Value &value) {
   double n = value.getNumber();
   // Applesoft integer variables are 16-bit signed; clamp to range.

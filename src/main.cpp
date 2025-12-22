@@ -1,3 +1,25 @@
+/**
+ * @file main.cpp
+ * @brief Main entry point for the MSBasic interpreter
+ * 
+ * This file implements the main() function that handles command-line argument
+ * parsing and dispatches execution to either interactive mode (REPL) or script
+ * mode (run a BASIC program from a file).
+ * 
+ * Command-line options:
+ * - --graphics: Enable graphics rendering (default)
+ * - --no-graphics: Disable graphics (terminal-only mode)
+ * - --scale N: Set window scale factor (1-10, default 2)
+ * - --tape FILE: Set default tape file for STORE/RECALL/SHLOAD
+ * - --tape-hotkey KEY: Set tape change hotkey (default: ESC-T)
+ * - --version: Display version information
+ * - --help: Display usage information
+ * 
+ * If a filename is provided, the interpreter runs in script mode, loading and
+ * executing the specified BASIC program. Otherwise, it enters interactive mode
+ * with the classic Applesoft "]" prompt.
+ */
+
 #include "interpreter.h"
 #include "interactive.h"
 #include "graphics_config.h"
@@ -7,6 +29,10 @@
 #include <string>
 #include <cstring>
 
+/**
+ * @brief Display command-line usage information
+ * @param progName Program name from argv[0]
+ */
 void printUsage(const char* progName) {
     std::cerr << "Usage: " << progName << " [options] [program.bas]\n"
               << "Options:\n"
@@ -19,6 +45,17 @@ void printUsage(const char* progName) {
               << "  --help           Show this help message\n";
 }
 
+/**
+ * @brief Main entry point for MSBasic interpreter
+ * 
+ * Parses command-line arguments, configures the graphics subsystem, and
+ * either runs a BASIC program file (script mode) or enters interactive
+ * mode (REPL). Returns 0 on success, 1 on error.
+ * 
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Exit code (0 for success, 1 for error)
+ */
 int main(int argc, char* argv[]) {
     GraphicsConfig config;
     config.mode = RenderMode::Graphics;  // Default to graphics enabled

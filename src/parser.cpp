@@ -1,3 +1,35 @@
+/**
+ * @file parser.cpp
+ * @brief Implementation of recursive descent parser for Applesoft BASIC
+ * 
+ * This file implements the Parser class which converts tokens into an
+ * Abstract Syntax Tree (AST) of Expression and Statement nodes.
+ * 
+ * Parser structure:
+ * - parse(): Entry point, parses multiple statements separated by colons
+ * - parseStatement(): Dispatches to specific statement parsers
+ * - parseExpression(): Expression parser with operator precedence
+ * - parsePrimary(): Literals, variables, function calls, parentheses
+ * 
+ * Operator precedence (lowest to highest):
+ * 1. OR (logical or)
+ * 2. AND (logical and)
+ * 3. NOT (logical not)
+ * 4. Relational (=, <>, <, >, <=, >=)
+ * 5. Additive (+, -)
+ * 6. Multiplicative (*, /, MOD)
+ * 7. Unary (+, -)
+ * 8. Power (^)
+ * 9. Primary (literals, identifiers, function calls)
+ * 
+ * Statement implementations:
+ * - Simple statements implemented as inline classes (StopStmt, PlotStmt, etc.)
+ * - Complex statements have dedicated classes in statements.cpp
+ * 
+ * The parser uses a Pratt parser approach for expression parsing with
+ * explicit precedence levels for each operator type.
+ */
+
 #include "parser.h"
 #include "float40.h"
 #include "functions.h"
