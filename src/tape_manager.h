@@ -188,5 +188,3 @@ private:
      */
     void updatePosition();
 };
-    void updatePosition();
-};
