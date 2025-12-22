@@ -44,6 +44,14 @@
 #include <utility>
 
 namespace {
+/**
+ * @brief Convert string to uppercase
+ * 
+ * Helper function for case-insensitive keyword matching.
+ * 
+ * @param s Input string
+ * @return Uppercase version of input string
+ */
 std::string toUpper(const std::string &s) {
   std::string out = s;
   std::transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {

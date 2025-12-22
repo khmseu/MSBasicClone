@@ -171,6 +171,17 @@ void Interpreter::addLine(LineNumber lineNum, const std::string &text) {
   }
 }
 
+/**
+ * @brief Delete a program line
+ * 
+ * Removes a program line from memory. If the line number doesn't exist,
+ * this operation silently succeeds (no error is raised).
+ * 
+ * Usage in BASIC:
+ *   Type just a line number (e.g., "10") to delete line 10
+ * 
+ * @param lineNum Line number to delete
+ */
 void Interpreter::deleteLine(LineNumber lineNum) { program_.erase(lineNum); }
 
 /**
@@ -1384,7 +1395,21 @@ namespace {
 // being large enough for any practical use case
 constexpr size_t kMaxArrayDimensions = 255;
 
-// Helper function to sanitize array name for use as filename
+/**
+ * @brief Sanitize array name for use as filename
+ * 
+ * Converts an array name to a safe filename by removing characters that
+ * are problematic on various filesystems (/, \, :, *, ?, ", <, >, |, $, %).
+ * Adds ".arr" extension to create a valid array file name.
+ * 
+ * Examples:
+ *   "DATA$" → "DATA.arr"
+ *   "VALUES%" → "VALUES.arr"
+ *   "MY:ARRAY" → "MYARRAY.arr"
+ * 
+ * @param arrayName Array name from BASIC program
+ * @return Sanitized filename with .arr extension
+ */
 std::string sanitizeArrayName(const std::string &arrayName) {
   std::string filename = arrayName;
   // Remove problematic characters for filenames

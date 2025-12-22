@@ -346,12 +346,29 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
   return it != keywords.end() ? it->second : TokenType::IDENTIFIER;
 }
 
+/**
+ * @brief Skip whitespace characters
+ * 
+ * Advances the tokenizer position past spaces and tabs, but stops at newlines.
+ * This preserves newline tokens which are significant in BASIC syntax.
+ */
 void Tokenizer::skipWhitespace() {
   while (!isAtEnd() && std::isspace(peek()) && peek() != '\n') {
     advance();
   }
 }
 
+/**
+ * @brief Read next token from input
+ * 
+ * Dispatches to specific token readers based on the first character:
+ * - Digits or decimal point: readNumber()
+ * - Double quote: readString()
+ * - Letter: readIdentifier() (keywords or variable names)
+ * - Other: readOperator() (operators, delimiters, special characters)
+ * 
+ * @return Next token from input stream
+ */
 Token Tokenizer::nextToken() {
   char ch = peek();
 
@@ -375,6 +392,21 @@ Token Tokenizer::nextToken() {
   return readOperator();
 }
 
+/**
+ * @brief Read a numeric literal token
+ * 
+ * Parses numeric literals including:
+ * - Integers: 123, 42
+ * - Decimals: 3.14, .5
+ * - Scientific notation: 1.23E5, 6.022e-23
+ * 
+ * The parser handles:
+ * - Optional decimal point (at most one)
+ * - Optional exponent (E or e) with optional sign
+ * - No leading spaces (caller has already positioned at first digit)
+ * 
+ * @return NUMBER token with parsed value
+ */
 Token Tokenizer::readNumber() {
   Token token;
   token.type = TokenType::NUMBER;
@@ -409,6 +441,21 @@ Token Tokenizer::readNumber() {
   return token;
 }
 
+/**
+ * @brief Read a string literal token
+ * 
+ * Parses string literals enclosed in double quotes.
+ * String literals can contain any characters except:
+ * - Closing double quote (ends the string)
+ * - Newline (strings cannot span lines in Applesoft BASIC)
+ * 
+ * Examples:
+ *   "HELLO"
+ *   "Hello, World!"
+ *   ""  (empty string)
+ * 
+ * @return STRING token with the string content (quotes not included)
+ */
 Token Tokenizer::readString() {
   Token token;
   token.type = TokenType::STRING;
@@ -431,6 +478,30 @@ Token Tokenizer::readString() {
   return token;
 }
 
+/**
+ * @brief Read an identifier or keyword token
+ * 
+ * Parses identifiers (variable names, function names) and keywords.
+ * Identifiers can contain:
+ * - Letters (A-Z, case insensitive)
+ * - Digits (but not as first character)
+ * - $ suffix for string variables
+ * - % suffix for integer variables
+ * 
+ * Special handling:
+ * - Keywords are case-insensitive and converted to uppercase
+ * - Built-in string functions (CHR$, LEFT$, etc.) are recognized as keywords
+ * - FN prefix indicates user-defined function call
+ * 
+ * Examples:
+ *   PRINT → PRINT keyword
+ *   X → variable identifier
+ *   NAME$ → string variable identifier
+ *   COUNT% → integer variable identifier
+ *   FNXY → user function call
+ * 
+ * @return Keyword token or IDENTIFIER token
+ */
 Token Tokenizer::readIdentifier() {
   Token token;
   token.line = line_;
@@ -467,6 +538,26 @@ Token Tokenizer::readIdentifier() {
   return token;
 }
 
+/**
+ * @brief Read an operator or delimiter token
+ * 
+ * Parses operators, delimiters, and special characters including:
+ * - Arithmetic: +, -, *, /, ^, MOD
+ * - Relational: =, <>, <, >, <=, >=
+ * - Logical: AND, OR, NOT
+ * - Delimiters: (, ), ,, ;, :
+ * - Special: ? (shorthand for PRINT)
+ * 
+ * Multi-character operators:
+ * - <= (less than or equal)
+ * - >= (greater than or equal)
+ * - <> (not equal)
+ * 
+ * The tokenizer looks ahead one character to identify multi-character
+ * operators before falling back to single-character tokens.
+ * 
+ * @return Operator or delimiter token
+ */
 Token Tokenizer::readOperator() {
   Token token;
   token.line = line_;
@@ -595,12 +686,29 @@ Token Tokenizer::readOperator() {
   return token;
 }
 
+/**
+ * @brief Peek at current character without advancing
+ * 
+ * Returns the character at the current position without consuming it.
+ * Used for lookahead in tokenization.
+ * 
+ * @return Current character, or '\0' if at end of input
+ */
 char Tokenizer::peek() const {
   if (isAtEnd())
     return '\0';
   return input_[pos_];
 }
 
+/**
+ * @brief Consume and return current character
+ * 
+ * Advances the position and column counters, returning the character
+ * that was consumed. This is the primary method for consuming input
+ * during tokenization.
+ * 
+ * @return Character at current position, or '\0' if at end
+ */
 char Tokenizer::advance() {
   if (isAtEnd())
     return '\0';
