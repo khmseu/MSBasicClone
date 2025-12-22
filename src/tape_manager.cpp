@@ -1,3 +1,35 @@
+/**
+ * @file tape_manager.cpp
+ * @brief Implementation of cassette tape emulation for data persistence
+ * 
+ * This file implements the TapeManager class which provides tape-like
+ * sequential storage for BASIC arrays and shape tables, matching
+ * Applesoft BASIC's cassette tape operations.
+ * 
+ * Tape format:
+ * - Sequential records with SIZE|DATA structure
+ * - 4-byte size header (uint32_t) followed by data
+ * - Position maintained across operations
+ * - Rewind only on explicit tape change
+ * 
+ * Supported operations:
+ * - STORE: Save array to tape (appends at current position)
+ * - RECALL: Load array from tape (reads from current position)
+ * - SHLOAD: Load shape table from tape
+ * - TAPE "filename": Set/change tape file (rewinds)
+ * - TAPE: Display current tape file
+ * 
+ * Platform-specific file selectors:
+ * - Windows: Native file dialog via COM API
+ * - macOS: osascript with AppleScript
+ * - Linux: zenity or kdialog (GTK/KDE)
+ * 
+ * Safety features:
+ * - Maximum record size limit (1 MB) prevents corruption issues
+ * - Automatic close on write-to-read mode transition
+ * - Position tracking for sequential access
+ */
+
 #include "tape_manager.h"
 #include <stdexcept>
 #include <cstring>
