@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 
+# Export compilation database for clangd/IDE tooling.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(DEFAULT_VERSION "1.0.0")
 set(MSBASIC_VERSION_STRING "${DEFAULT_VERSION}")
 
