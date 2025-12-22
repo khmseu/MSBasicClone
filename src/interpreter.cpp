@@ -2550,6 +2550,36 @@ void Interpreter::resetOutputPosition() {
   setNormal();
 }
 
+/**
+ * @brief Push a new FOR loop onto the loop stack (FOR statement)
+ * 
+ * Creates and pushes a FOR loop control structure when a FOR statement
+ * is executed. The loop stack maintains nested loop state for proper
+ * NEXT processing.
+ * 
+ * Implementation details:
+ * - Stores loop variable name, end value, step value, and return line
+ * - Multiple nested FOR loops are supported through the stack
+ * - Each FOR creates a new stack entry even if variable name reused
+ * - NEXT processes loops from most recent (top of stack) backwards
+ * 
+ * BASIC Usage:
+ *   FOR I = 1 TO 10 STEP 2
+ *   FOR J = 1 TO 5
+ *     ...
+ *   NEXT J
+ *   NEXT I
+ * 
+ * Stack behavior:
+ * - Nested loops push multiple entries
+ * - NEXT pops completed loops
+ * - Jumping out of loops leaves entries (cleaned by CLR or END)
+ * 
+ * @param varName Loop control variable name
+ * @param endValue Final value for loop (TO value)
+ * @param stepValue Increment per iteration (STEP value, default 1)
+ * @param returnLine Line number where FOR appears (for loop restart)
+ */
 void Interpreter::pushForLoop(const std::string &varName, double endValue,
                               double stepValue, LineNumber returnLine) {
   ForLoopInfo info;
@@ -2560,6 +2590,16 @@ void Interpreter::pushForLoop(const std::string &varName, double endValue,
   forStack_.push_back(info);
 }
 
+/**
+ * @brief Check if a variable is currently a FOR loop control variable
+ * 
+ * Searches the FOR loop stack to determine if the specified variable
+ * is currently controlling an active FOR loop. Used to prevent certain
+ * operations that would corrupt loop state.
+ * 
+ * @param varName Variable name to check
+ * @return true if variable is a FOR loop control variable, false otherwise
+ */
 bool Interpreter::isInForLoop(const std::string &varName) {
   for (const auto &loop : forStack_) {
     if (loop.varName == varName)
@@ -2568,6 +2608,41 @@ bool Interpreter::isInForLoop(const std::string &varName) {
   return false;
 }
 
+/**
+ * @brief Process NEXT statement for loop iteration
+ * 
+ * Handles the NEXT statement which increments the loop variable and either
+ * continues the loop (jumping back to statement after FOR) or terminates it
+ * (popping from stack and continuing forward).
+ * 
+ * Algorithm:
+ * 1. Find matching FOR loop (search backwards through stack)
+ * 2. Increment loop variable by STEP value
+ * 3. Check termination condition:
+ *    - Positive STEP: continue if var <= end
+ *    - Negative STEP: continue if var >= end
+ * 4. If continuing: jump to line after FOR statement
+ * 5. If done: pop loop from stack and continue forward
+ * 
+ * BASIC Usage:
+ *   FOR I = 1 TO 10 STEP 2
+ *     PRINT I
+ *   NEXT I
+ *   
+ *   FOR I = 10 TO 1 STEP -1  (counting down)
+ *     PRINT I
+ *   NEXT I
+ *   
+ *   NEXT  (NEXT without variable matches most recent FOR)
+ * 
+ * Error handling:
+ * - If no matching FOR found: "NEXT WITHOUT FOR ERROR"
+ * - Variable name matching uses normalized names (2-char significance)
+ * - Empty varName matches most recent loop (allows bare NEXT)
+ * 
+ * @param varName Loop variable name (empty string matches most recent loop)
+ * @throws std::runtime_error if no matching FOR loop found
+ */
 void Interpreter::nextForLoop(const std::string &varName) {
   // Find matching FOR loop
   for (auto it = forStack_.rbegin(); it != forStack_.rend(); ++it) {
@@ -2604,20 +2679,93 @@ void Interpreter::nextForLoop(const std::string &varName) {
   throw std::runtime_error("NEXT WITHOUT FOR ERROR");
 }
 
+/**
+ * @brief Set error handler line (ONERR GOTO implementation)
+ * 
+ * Enables error handling by setting the target line number for the ONERR
+ * handler. When an error occurs during program execution, control will
+ * jump to this line instead of terminating the program.
+ * 
+ * BASIC Usage:
+ *   ONERR GOTO 9000  (enable error handler at line 9000)
+ * 
+ * Error handler behavior:
+ * - When error occurs, errorLine_ is set to the line where error happened
+ * - lastError_ contains the error message text
+ * - Memory location 218-219 contains error line number
+ * - Memory location 222 contains ProDOS error code
+ * - RESUME statement returns to the error line
+ * 
+ * @param lineNum Target line number for error handler
+ */
 void Interpreter::setErrorHandler(LineNumber lineNum) {
   errorHandlerLine_ = lineNum;
 }
 
+/**
+ * @brief Throw a runtime error
+ * 
+ * Simple error throwing mechanism. Throws std::runtime_error with the
+ * provided message. If an ONERR handler is active, the main execution
+ * loop will catch this and transfer control to the handler.
+ * 
+ * @param message Error message text (e.g., "SYNTAX ERROR", "OUT OF DATA ERROR")
+ * @throws std::runtime_error always
+ */
 void Interpreter::handleError(const std::string &message) {
   throw std::runtime_error(message);
 }
 
+/**
+ * @brief Throw a runtime error with ProDOS error code
+ * 
+ * Extended error throwing that includes a ProDOS-compatible error code.
+ * The error code is stored in memory location 222 ($DE) for compatibility
+ * with Applesoft BASIC programs that check error codes via PEEK.
+ * 
+ * Common ProDOS error codes:
+ * - 4: PATH NOT FOUND
+ * - 5: VOLUME NOT FOUND
+ * - 7: DUPLICATE FILENAME
+ * - 45: FILE LOCKED
+ * - 46: VOLUME LOCKED
+ * - 52: NOT A PRODOS DISK
+ * - 56: BAD BUFFER ADDRESS
+ * 
+ * @param message Error message text
+ * @param errorCode ProDOS error code to store in memory location 222
+ * @throws std::runtime_error always
+ */
 void Interpreter::handleError(const std::string &message, int errorCode) {
   // Store error code in memory location 222 for ProDOS compatibility
   pokeMemory(0x00DE, errorCode);
   throw std::runtime_error(message);
 }
 
+/**
+ * @brief Resume execution after error (RESUME implementation)
+ * 
+ * Returns execution to the line where an error occurred. Used in ONERR
+ * error handlers to retry the failed operation or continue from the
+ * error point.
+ * 
+ * BASIC Usage:
+ *   1000 ONERR GOTO 9000
+ *   ...
+ *   9000 REM ERROR HANDLER
+ *   9010 PRINT "ERROR: ";PEEK(218)+PEEK(219)*256
+ *   9020 RESUME
+ * 
+ * Behavior:
+ * - Jumps to the line number stored in errorLine_
+ * - Clears errorLine_ to prevent multiple RESUMEs
+ * - If no error active: "RESUME WITHOUT ERROR"
+ * 
+ * Note: Unlike some BASIC dialects, this implementation does not support
+ * RESUME NEXT (continue after error line). Only RESUME (retry error line).
+ * 
+ * @throws std::runtime_error if no active error to resume from
+ */
 void Interpreter::resume() {
   if (errorLine_ < 0) {
     throw std::runtime_error("RESUME WITHOUT ERROR");
@@ -2626,12 +2774,49 @@ void Interpreter::resume() {
   errorLine_ = -1;
 }
 
+/**
+ * @brief Initialize random number generator (implicit RND behavior)
+ * 
+ * Seeds the random number generator used by RND() function. Uses Float40
+ * for consistency with Applesoft BASIC's floating-point arithmetic.
+ * 
+ * Applesoft BASIC behavior:
+ * - RND(1) or RND(n > 0): next random number (doesn't reseed)
+ * - RND(0): repeat last random number
+ * - RND(n < 0): reseed with |n| and return first number
+ * 
+ * This function is called when negative argument to RND is used.
+ * 
+ * @param seed Random seed value (typically negative when explicitly seeding)
+ */
 void Interpreter::randomize(double seed) {
   // Initialize random number generator using Float40 for consistency
   Float40 f(seed);
   Float40::setSeed(f);
 }
 
+/**
+ * @brief Set statement execution delay (SPEED implementation)
+ * 
+ * Sets a delay in milliseconds that is applied after each statement
+ * execution. This implements the SPEED command from Applesoft BASIC,
+ * useful for debugging or creating animated effects.
+ * 
+ * BASIC Usage:
+ *   SPEED=255  (maximum delay, very slow)
+ *   SPEED=50   (moderate delay)
+ *   SPEED=0    (no delay, full speed - default)
+ * 
+ * Delay range:
+ * - Minimum: 0 ms (no delay)
+ * - Maximum: 255 ms
+ * - Values outside range are clamped
+ * 
+ * The delay is applied via applySpeedDelay() called after each statement
+ * in the main execution loop.
+ * 
+ * @param delayMs Delay in milliseconds (0-255)
+ */
 void Interpreter::setSpeedDelay(int delayMs) {
   if (delayMs < 0)
     delayMs = 0;
@@ -2668,6 +2853,16 @@ void Interpreter::setInputDevice(int slot) {
   inputDevice_ = slot;
 }
 
+/**
+ * @brief Apply SPEED delay between statements (internal helper)
+ * 
+ * Sleeps for the configured speed delay time if delay is active.
+ * Called by the main execution loop after each statement to implement
+ * the SPEED command's slow-motion execution feature.
+ * 
+ * Only delays if speedDelayMs_ > 0. This is an internal helper called
+ * automatically during program execution.
+ */
 void Interpreter::applySpeedDelay() {
   if (speedDelayMs_ <= 0)
     return;
