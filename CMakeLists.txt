@@ -199,11 +199,23 @@ endif()
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
     message(STATUS "Doxygen found - documentation target available")
+
+    option(DOCS_CLEAN_OUTPUT "Remove docs/api before generating docs" ON)
+    option(DOCS_ENABLE_DOT "Enable Graphviz/DOT diagrams in Doxygen" ON)
+    option(DOCS_BUILD_PDF "Build the Doxygen-generated PDF (requires TeX)" ON)
+    set(DOCS_LATEX_ENGINE "xelatex" CACHE STRING "LaTeX engine for Doxygen PDF build (xelatex|lualatex|pdflatex)")
+
     add_custom_target(docs
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
-        COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR}/docs/api/latex make
+        COMMAND ${CMAKE_COMMAND}
+            -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+            -DDOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
+            -DDOCS_CLEAN_OUTPUT=${DOCS_CLEAN_OUTPUT}
+            -DDOCS_ENABLE_DOT=${DOCS_ENABLE_DOT}
+            -DDOCS_BUILD_PDF=${DOCS_BUILD_PDF}
+            -DDOCS_LATEX_ENGINE=${DOCS_LATEX_ENGINE}
+            -P ${CMAKE_SOURCE_DIR}/cmake/BuildDocs.cmake
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Generating API documentation with Doxygen and building PDF"
+            COMMENT "Generating API documentation (clean + Doxygen)"
         VERBATIM
     )
 else()
