@@ -1,11 +1,11 @@
 /**
  * @file interpreter.cpp
  * @brief Implementation of the Applesoft BASIC runtime interpreter
- * 
+ *
  * This file implements the Interpreter class which executes parsed BASIC
  * programs. It manages program state, control flow, variable storage, I/O,
  * graphics, and all runtime behavior.
- * 
+ *
  * Key components:
  * - Program execution (RUN, CONT, immediate mode)
  * - Control flow (GOTO, GOSUB/RETURN, FOR/NEXT, IF/THEN/ELSE)
@@ -17,12 +17,12 @@
  * - File operations (LOAD, SAVE, CATALOG)
  * - Tape operations (STORE, RECALL, SHLOAD)
  * - Memory operations (PEEK, POKE, WAIT)
- * 
+ *
  * The interpreter maintains several runtime stacks:
  * - GOSUB stack: Return addresses for subroutines
  * - FOR stack: Loop state (variable, limit, step, return line)
  * - Error handler: ONERR target line and error state
- * 
+ *
  * Special features:
  * - TRACE/NOTRACE execution tracing
  * - SPEED command for statement delays (debugging)
@@ -48,9 +48,10 @@
 #include <windows.h>
 #endif
 
-Interpreter::Interpreter(const GraphicsConfig& config)
+Interpreter::Interpreter(const GraphicsConfig &config)
     : currentLine_(0), running_(false), immediate_(false), jumped_(false),
-      dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1), graphicsConfig_(config) {
+      dataPointer_(0), errorHandlerLine_(-1), errorLine_(-1),
+      graphicsConfig_(config) {
 #ifdef _WIN32
   auto enableVirtualTerminal = []() -> bool {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -94,10 +95,10 @@ Interpreter::Interpreter(const GraphicsConfig& config)
 
 /**
  * @brief Parse a line to separate line number from code
- * 
+ *
  * Separates input into line number (if present) and code. Lines without
  * leading numbers are immediate commands (lineNum = -1).
- * 
+ *
  * @param line Input line from user
  * @param lineNum Output line number (-1 for immediate)
  * @param code Output code string
@@ -144,11 +145,11 @@ bool Interpreter::isLineNumber(const std::string &text) const {
 
 /**
  * @brief Add or update a program line
- * 
+ *
  * If text is empty, deletes the line. Otherwise, tokenizes and parses
  * the line, then stores it in the program map. Lines are kept sorted
  * by line number via std::map.
- * 
+ *
  * @param lineNum Line number (0-32767)
  * @param text BASIC code for this line
  */
@@ -173,20 +174,20 @@ void Interpreter::addLine(LineNumber lineNum, const std::string &text) {
 
 /**
  * @brief Delete a program line
- * 
+ *
  * Removes a program line from memory. If the line number doesn't exist,
  * this operation silently succeeds (no error is raised).
- * 
+ *
  * Usage in BASIC:
  *   Type just a line number (e.g., "10") to delete line 10
- * 
+ *
  * @param lineNum Line number to delete
  */
 void Interpreter::deleteLine(LineNumber lineNum) { program_.erase(lineNum); }
 
 /**
  * @brief Clear program and all state (NEW command)
- * 
+ *
  * Clears program lines, variables, DATA values, and resets output position.
  * This is equivalent to the NEW command in Applesoft BASIC.
  */
@@ -201,7 +202,7 @@ void Interpreter::newProgram() {
 
 /**
  * @brief Clear variables and control stacks (CLR command)
- * 
+ *
  * Clears variables, FOR/NEXT and GOSUB stacks, DATA state, and error
  * handlers. Preserves program lines. This is equivalent to the CLR
  * command in Applesoft BASIC.
@@ -223,10 +224,10 @@ void Interpreter::clearState() {
 
 /**
  * @brief List program lines to stdout (LIST command)
- * 
+ *
  * Displays program lines with line numbers. If startLine or endLine are
  * negative, lists all lines. Otherwise, lists lines in the specified range.
- * 
+ *
  * @param startLine First line to list (-1 for beginning)
  * @param endLine Last line to list (-1 for end)
  */
@@ -241,7 +242,7 @@ void Interpreter::listProgram(int startLine, int endLine) {
 
 /**
  * @brief Execute program (RUN command implementation)
- * 
+ *
  * Starts program execution from the first line.
  * This is a convenience wrapper for runFrom(-1).
  */
@@ -249,11 +250,11 @@ void Interpreter::run() { runFrom(-1); }
 
 /**
  * @brief Execute program starting from specified line
- * 
+ *
  * This is the main program execution loop implementing the Applesoft BASIC
  * RUN and GOTO behaviors. It handles program flow, DATA caching, error
  * trapping, and tracing.
- * 
+ *
  * Execution process:
  * 1. Initialize execution state (running_ flag, immediate_ mode)
  * 2. Build DATA cache by scanning all program lines
@@ -265,7 +266,7 @@ void Interpreter::run() { runFrom(-1); }
  *    - GOTO/GOSUB sets jumped_ flag
  *    - Error occurs
  *    - Program counter reaches end
- * 
+ *
  * Error Handling:
  * - If ONERR handler is active (errorHandlerLine_ >= 0):
  *   * Records error line and message
@@ -274,12 +275,12 @@ void Interpreter::run() { runFrom(-1); }
  * - If no ONERR handler:
  *   * Prints error message and line number
  *   * Stops execution
- * 
+ *
  * Special Features:
  * - TRACE mode: Prints [lineNumber] before executing each line
  * - SPEED delay: Optional delay after each statement for debugging
  * - Control flow: jumped_ flag coordinates with GOTO/GOSUB/RETURN
- * 
+ *
  * @param lineNum Starting line number, or -1 to start from first line
  */
 void Interpreter::runFrom(LineNumber lineNum) {
@@ -348,24 +349,24 @@ void Interpreter::runFrom(LineNumber lineNum) {
           // ONERR handler is active - prepare error state
           errorLine_ = currentLine_;
           lastError_ = e.what();
-          
+
           // Store error information in memory locations for PEEK access
           // These locations match Applesoft BASIC conventions:
           // Location 218-219 (0xDA-0xDB): error line number (little-endian)
           // Location 222 (0xDE): error code
           pokeMemory(0x00DA, errorLine_ & 0xFF);
           pokeMemory(0x00DB, (errorLine_ >> 8) & 0xFF);
-          
+
           // Only set generic error code if no specific error code was set
           // by handleError() or other error-generating code
           int currentErrorCode = peekMemory(0x00DE);
           if (currentErrorCode == 0) {
-            pokeMemory(0x00DE, 16);  // Generic error code
+            pokeMemory(0x00DE, 16); // Generic error code
           }
-          
+
           // Jump to error handler line
           gotoLine(errorHandlerLine_);
-          continue;  // Continue executing from error handler
+          continue; // Continue executing from error handler
         } else {
           // No error handler - print error and stop
           std::cout << "?" << e.what() << " IN LINE " << currentLine_ << "\n";
@@ -394,29 +395,29 @@ void Interpreter::runFrom(LineNumber lineNum) {
 
 /**
  * @brief Execute an immediate command or add a program line
- * 
+ *
  * This is the main entry point for processing user input in interactive mode.
  * It handles two types of input:
- * 
+ *
  * 1. Numbered lines (e.g., "10 PRINT "HELLO""):
  *    - Adds or updates a program line
  *    - If code is empty, deletes the line
- * 
+ *
  * 2. Immediate commands (no line number):
  *    - Special commands handled directly (RUN, LIST, NEW, etc.)
  *    - Other statements executed immediately in immediate mode
- * 
+ *
  * Special Command Processing:
  * - RUN [line]: Start execution from beginning or specified line
  * - LIST [start[,end]]: Display program lines
  * - NEW: Clear program and variables
  * - LOAD, SAVE, CATALOG, DEL: File/program management
  * - CONT: Continue after STOP
- * 
+ *
  * The function uses case-insensitive command matching and trims whitespace
  * from arguments. Syntax errors in special commands print an error message
  * but don't stop the interpreter.
- * 
+ *
  * @param line Input line from user (may have line number or be immediate)
  */
 void Interpreter::executeImmediate(const std::string &line) {
@@ -431,7 +432,7 @@ void Interpreter::executeImmediate(const std::string &line) {
     addLine(lineNum, code);
   } else {
     // Immediate command - execute directly
-    
+
     // Helper lambda to trim whitespace from strings
     auto trim = [](std::string s) {
       auto isSpace = [](unsigned char ch) { return std::isspace(ch) != 0; };
@@ -461,7 +462,7 @@ void Interpreter::executeImmediate(const std::string &line) {
     // Handle special immediate-mode commands
     if (command == "RUN") {
       if (args.empty()) {
-        run();  // RUN with no argument - start from beginning
+        run(); // RUN with no argument - start from beginning
       } else {
         // RUN with line number - start from that line
         try {
@@ -473,7 +474,7 @@ void Interpreter::executeImmediate(const std::string &line) {
       }
     } else if (command == "LIST") {
       if (args.empty()) {
-        listProgram();  // LIST all lines
+        listProgram(); // LIST all lines
       } else {
         // LIST with range: LIST start[,end]
         int start = -1;
@@ -639,18 +640,20 @@ void Interpreter::executeImmediate(const std::string &line) {
         handleError("SYNTAX ERROR");
       }
     } else if (command.rfind("BLOAD", 0) == 0) {
-      std::string rest = trim(code.substr(5));  // Skip "BLOAD"
+      std::string rest = trim(code.substr(5)); // Skip "BLOAD"
       if (!rest.empty()) {
         // Parse BLOAD filename[,A#]
         size_t commaPos = rest.find(',');
-        std::string filename = (commaPos != std::string::npos) ? 
-          trim(rest.substr(0, commaPos)) : trim(rest);
-        
+        std::string filename = (commaPos != std::string::npos)
+                                   ? trim(rest.substr(0, commaPos))
+                                   : trim(rest);
+
         // Remove quotes if present
-        if (!filename.empty() && filename.front() == '"' && filename.back() == '"') {
+        if (!filename.empty() && filename.front() == '"' &&
+            filename.back() == '"') {
           filename = filename.substr(1, filename.length() - 2);
         }
-        
+
         int address = -1;
         if (commaPos != std::string::npos) {
           std::string addrStr = trim(rest.substr(commaPos + 1));
@@ -666,26 +669,27 @@ void Interpreter::executeImmediate(const std::string &line) {
         handleError("SYNTAX ERROR");
       }
     } else if (command.rfind("BSAVE", 0) == 0) {
-      std::string rest = trim(code.substr(5));  // Skip "BSAVE"
+      std::string rest = trim(code.substr(5)); // Skip "BSAVE"
       if (!rest.empty()) {
         // Parse BSAVE filename,A#,L#
         size_t firstComma = rest.find(',');
         if (firstComma != std::string::npos) {
           std::string filename = trim(rest.substr(0, firstComma));
           // Remove quotes if present
-          if (!filename.empty() && filename.front() == '"' && filename.back() == '"') {
+          if (!filename.empty() && filename.front() == '"' &&
+              filename.back() == '"') {
             filename = filename.substr(1, filename.length() - 2);
           }
-          
+
           std::string remaining = rest.substr(firstComma + 1);
           int address = 0, length = 0;
-          
+
           // Parse A# parameter
           size_t secondComma = remaining.find(',');
           if (secondComma != std::string::npos) {
             std::string addrStr = trim(remaining.substr(0, secondComma));
             std::string lenStr = trim(remaining.substr(secondComma + 1));
-            
+
             // Parse A value
             size_t aPos = addrStr.find('A');
             if (aPos != std::string::npos) {
@@ -693,7 +697,7 @@ void Interpreter::executeImmediate(const std::string &line) {
             } else {
               address = std::stoi(addrStr);
             }
-            
+
             // Parse L value
             size_t lPos = lenStr.find('L');
             if (lPos != std::string::npos) {
@@ -702,7 +706,7 @@ void Interpreter::executeImmediate(const std::string &line) {
               length = std::stoi(lenStr);
             }
           }
-          
+
           if (length > 0) {
             bsaveFile(filename, address, length);
           } else {
@@ -715,18 +719,20 @@ void Interpreter::executeImmediate(const std::string &line) {
         handleError("SYNTAX ERROR");
       }
     } else if (command.rfind("BRUN", 0) == 0) {
-      std::string rest = trim(code.substr(4));  // Skip "BRUN"
+      std::string rest = trim(code.substr(4)); // Skip "BRUN"
       if (!rest.empty()) {
         // Parse BRUN filename[,A#]
         size_t commaPos = rest.find(',');
-        std::string filename = (commaPos != std::string::npos) ? 
-          trim(rest.substr(0, commaPos)) : trim(rest);
-        
+        std::string filename = (commaPos != std::string::npos)
+                                   ? trim(rest.substr(0, commaPos))
+                                   : trim(rest);
+
         // Remove quotes if present
-        if (!filename.empty() && filename.front() == '"' && filename.back() == '"') {
+        if (!filename.empty() && filename.front() == '"' &&
+            filename.back() == '"') {
           filename = filename.substr(1, filename.length() - 2);
         }
-        
+
         int address = -1;
         if (commaPos != std::string::npos) {
           std::string addrStr = trim(rest.substr(commaPos + 1));
@@ -770,42 +776,42 @@ void Interpreter::executeImmediate(const std::string &line) {
 
 /**
  * @brief Jump to a program line (GOTO implementation)
- * 
+ *
  * Changes the program counter to execute from the specified line number.
  * This is the core implementation of GOTO and is also used by GOSUB,
  * error handlers (ONERR), and ON...GOTO statements.
- * 
+ *
  * The function validates that the target line exists in the program and
  * throws "UNDEF'D STATEMENT ERROR" if not found. The jumped_ flag is set
  * to prevent automatic advancement to the next line.
- * 
+ *
  * Implementation notes:
  * - Does not affect the GOSUB stack (unlike gosub())
  * - Sets jumped_ flag to override normal sequential execution
  * - Used by: GOTO, error handlers, ON...GOTO, RESTORE (for DATA)
- * 
+ *
  * @param lineNum Target line number to jump to
  * @throws std::runtime_error if line number not found in program
  */
 /**
  * @brief Jump to a specific line (GOTO implementation)
- * 
+ *
  * Changes program execution to the specified line number. This is the
  * core control flow primitive used by GOTO, IF...THEN, and ON...GOTO.
- * 
+ *
  * Implementation:
  * - Searches program_ map for target line
  * - Updates programCounter_ to point to that line
  * - Sets jumped_ flag to prevent automatic advancement
- * 
+ *
  * The jumped_ flag tells the main execution loop not to advance to the
  * next line automatically, since we've explicitly changed position.
- * 
+ *
  * BASIC Usage:
  *   GOTO 100
  *   IF X > 10 THEN GOTO 200
  *   ON N GOTO 100,200,300
- * 
+ *
  * @param lineNum Target line number to jump to
  * @throws std::runtime_error if line number not found
  */
@@ -820,29 +826,29 @@ void Interpreter::gotoLine(LineNumber lineNum) {
 
 /**
  * @brief Call a subroutine (GOSUB implementation)
- * 
+ *
  * Saves the current line number on the return stack and jumps to the
  * specified subroutine line. The RETURN statement will pop the stack
  * and continue execution after the GOSUB.
- * 
+ *
  * Stack structure:
  * - Each GOSUB pushes the current line number (not program counter)
  * - RETURN pops the line and continues from the NEXT line
  * - Nested GOSUBs work through standard stack behavior
  * - Stack is cleared by CLR or program termination
- * 
+ *
  * Error conditions:
  * - Target line not found: "UNDEF'D STATEMENT ERROR"
  * - Stack overflow: Limited only by system memory
  * - Unmatched RETURN: "RETURN WITHOUT GOSUB ERROR" (checked in returnFromGosub)
- * 
+ *
  * Example:
  *   10 GOSUB 100  ' Push line 10, jump to 100
  *   20 PRINT "BACK"
  *   ...
  *   100 PRINT "SUB"
  *   110 RETURN     ' Pop line 10, continue at line 20
- * 
+ *
  * @param lineNum Target subroutine line number
  * @throws std::runtime_error if line number not found
  */
@@ -858,23 +864,23 @@ void Interpreter::gosub(LineNumber lineNum) {
 
 /**
  * @brief Return from subroutine (RETURN implementation)
- * 
+ *
  * Pops a line number from the GOSUB stack and continues execution at the
  * line immediately following that line. This completes a GOSUB/RETURN pair.
- * 
+ *
  * Implementation details:
  * - Pops the return line from the stack
  * - Finds that line in the program
  * - Advances to the NEXT line (incrementing the iterator)
  * - Sets jumped_ flag to prevent further advancement
- * 
+ *
  * Special case: If the return line no longer exists (deleted after GOSUB),
  * execution continues from the next available line.
- * 
+ *
  * Error handling:
  * - Empty stack: "RETURN WITHOUT GOSUB ERROR"
  * - Missing return line: Advances to next line if available
- * 
+ *
  * @throws std::runtime_error if GOSUB stack is empty
  */
 void Interpreter::returnFromGosub() {
@@ -888,7 +894,7 @@ void Interpreter::returnFromGosub() {
   // Find the line we returned from and advance to the next one
   auto it = program_.find(returnLine);
   if (it != program_.end()) {
-    ++it;  // Move to next line
+    ++it; // Move to next line
     programCounter_ = it;
     jumped_ = true;
   }
@@ -896,14 +902,14 @@ void Interpreter::returnFromGosub() {
 
 /**
  * @brief Stop program execution permanently (END implementation)
- * 
+ *
  * Terminates program execution by clearing the running_ flag. Unlike STOP,
  * END does not support continuation with CONT.
- * 
+ *
  * Typical usage:
  * - END statement at end of main program
  * - Prevents "fall-through" into subroutines at end of program
- * 
+ *
  * Example:
  *   100 PRINT "DONE"
  *   110 END
@@ -913,21 +919,21 @@ void Interpreter::endProgram() { running_ = false; }
 
 /**
  * @brief Pause program execution (STOP implementation)
- * 
+ *
  * Suspends program execution but maintains state for continuation with CONT.
  * Unlike END, STOP allows resuming execution from the next line.
- * 
+ *
  * State preservation:
  * - Sets paused_ flag to indicate continuation is possible
  * - Saves current line in continueAfterLine_
  * - Clears running_ flag to exit execution loop
  * - Preserves all variables, stacks, and program state
- * 
+ *
  * Used for:
  * - Interactive debugging (insert STOP to examine variables)
  * - Controlled program pauses
  * - Breakpoint simulation
- * 
+ *
  * Example:
  *   10 FOR I = 1 TO 10
  *   20 PRINT I
@@ -944,26 +950,26 @@ void Interpreter::stop() {
 
 /**
  * @brief Continue execution after STOP (CONT implementation)
- * 
+ *
  * Resumes program execution from the point where it was stopped by a STOP
  * statement. This allows interactive debugging and controlled program flow.
- * 
+ *
  * Continuation process:
  * 1. Validate that program is in paused state
  * 2. Find the line where STOP occurred
  * 3. Advance to the NEXT line (don't re-execute STOP line)
  * 4. Resume normal execution loop
- * 
+ *
  * State validation:
  * - Must have paused_ flag set (STOP was executed)
  * - Must have valid continueAfterLine_
  * - Program and continue line must still exist
- * 
+ *
  * Error conditions:
  * - Not paused: "CANT CONTINUE"
  * - Program cleared: "CANT CONTINUE"
  * - Continue line deleted: "CANT CONTINUE"
- * 
+ *
  * Example session:
  *   ] 10 PRINT "START"
  *   ] 20 STOP
@@ -973,7 +979,7 @@ void Interpreter::stop() {
  *   (program stops at line 20)
  *   ] CONT
  *   END
- * 
+ *
  * @throws std::runtime_error if continuation is not possible
  */
 void Interpreter::cont() {
@@ -1027,23 +1033,23 @@ void Interpreter::cont() {
 
 /**
  * @brief Load a BASIC program from disk (LOAD command implementation)
- * 
+ *
  * Loads a BASIC program from a text file, replacing the current program.
  * The file should contain BASIC source code with line numbers.
- * 
+ *
  * BASIC Usage:
  *   LOAD "MYPROG.BAS"
- * 
+ *
  * File Format:
  *   10 PRINT "HELLO"
  *   20 GOTO 10
- * 
+ *
  * Behavior:
  * - Clears current program and variables (like NEW)
  * - Parses each line and adds to program
  * - Silently ignores lines without valid line numbers
  * - On error, prints error message and continues
- * 
+ *
  * @param filename Path to BASIC program file
  */
 void Interpreter::loadProgram(const std::string &filename) {
@@ -1070,21 +1076,21 @@ void Interpreter::loadProgram(const std::string &filename) {
 
 /**
  * @brief Save current program to disk (SAVE command implementation)
- * 
+ *
  * Saves the current BASIC program to a text file. The file will contain
  * line numbers followed by the BASIC code for each line.
- * 
+ *
  * BASIC Usage:
  *   SAVE "MYPROG.BAS"
- * 
+ *
  * File Format:
  *   Each line: <line_number><space><code>
- * 
+ *
  * Behavior:
  * - Overwrites existing file without warning
  * - Saves lines in sorted order by line number
  * - On error, prints error message but doesn't stop interpreter
- * 
+ *
  * @param filename Path where program will be saved
  */
 void Interpreter::saveProgram(const std::string &filename) {
@@ -1101,31 +1107,31 @@ void Interpreter::saveProgram(const std::string &filename) {
 
 /**
  * @brief Chain to another program (CHAIN command implementation)
- * 
+ *
  * Loads and runs a new BASIC program while preserving variable values.
  * This allows breaking large programs into multiple files that share data.
- * 
+ *
  * BASIC Usage:
  *   CHAIN "PART2.BAS"
- * 
+ *
  * Behavior:
  * - Clears current program
  * - Keeps all variable values intact
  * - Loads new program from file
  * - Begins execution at first line of new program
  * - Common variables automatically transfer between programs
- * 
+ *
  * Use Cases:
  * - Multi-part adventures/games
  * - Menu systems that load different modules
  * - Programs that exceed memory by splitting into parts
- * 
+ *
  * @param filename Path to next program to chain to
  */
 void Interpreter::chainProgram(const std::string &filename) {
   try {
     std::string content = readTextFile(filename);
-    
+
     // Clear program but keep variables
     program_.clear();
     dataValues_.clear();
@@ -1145,7 +1151,7 @@ void Interpreter::chainProgram(const std::string &filename) {
         }
       }
     }
-    
+
     // Run the program
     run();
   } catch (const std::exception &e) {
@@ -1154,33 +1160,27 @@ void Interpreter::chainProgram(const std::string &filename) {
 }
 
 /**
- * @brief Load and run program without clearing variables (- command implementation)
- * 
- * Implements the "-" (dash) command from Applesoft BASIC which loads a
- * program and runs it immediately while preserving all current variables.
- * This is useful for chaining programs that share data.
- * 
- * Behavior:
- * - Clears the current program listing
- * - Loads new program from file
- * - Preserves all variables and arrays
- * - Automatically runs the loaded program
- * - Clears DATA/READ state (dataValues_, dataOffsets_)
- * 
+ * @brief DASH program load+run without clearing variables ("-" command)
+ *
+ * Loads a BASIC program from disk and runs it immediately while preserving
+ * the interpreter's current variable state. This matches the ProDOS
+ * BASIC.SYSTEM behavior for the dash command: it clears the current program
+ * listing, loads the new program, clears DATA/READ state (dataValues_,
+ * dataOffsets_), and starts execution from the first line.
+ *
  * Difference from CHAIN:
- * - CHAIN can specify a starting line and pass values
- * - Dash always starts from first line
- * - Dash is simpler and matches original Apple II behavior
- * 
- * BASIC Usage:
- *   -PROG2  (load and run PROG2 keeping all variables)
- * 
- * @param filename Path to BASIC program file to load and run
+ * - CHAIN may specify a starting line and pass values; DASH always starts
+ *   from the first line and is a simpler load+run operation.
+ *
+ * Usage in BASIC:
+ *   - "NEXT.BAS"   (load and run NEXT.BAS, keep variables)
+ *
+ * @param filename Path to BASIC program file
  */
 void Interpreter::dashProgram(const std::string &filename) {
   try {
     std::string content = readTextFile(filename);
-    
+
     // Clear program but keep variables
     program_.clear();
     dataValues_.clear();
@@ -1200,7 +1200,7 @@ void Interpreter::dashProgram(const std::string &filename) {
         }
       }
     }
-    
+
     // Run the program
     run();
   } catch (const std::exception &e) {
@@ -1209,25 +1209,13 @@ void Interpreter::dashProgram(const std::string &filename) {
 }
 
 /**
- * @brief List files in current directory (CATALOG implementation)
- * 
- * Displays a list of all non-hidden files in the current working directory.
- * This implements the CATALOG command from Applesoft BASIC which shows
- * available programs and data files.
- * 
- * Output format:
- * - Header: "CATALOG"
- * - One filename per line with leading space
- * - Hidden files (starting with '.') are not shown
- * - Directories are not shown (files only)
- * 
- * BASIC Usage:
- *   CATALOG  (list all files in current directory)
- * 
- * ProDOS compatibility:
- * - This is a simplified version
- * - Full ProDOS shows file types, sizes, dates
- * - Use PREFIX to change directory before CATALOG
+ * @brief List files in the current directory (CATALOG immediate command)
+ *
+ * Prints a simple file listing for the current working directory. The
+ * implementation is intentionally lightweight and omits full ProDOS-style
+ * metadata (file types, sizes, dates). Use `PREFIX` to change directories
+ * before calling CATALOG to list other locations.
+ */
  */
 void Interpreter::catalog() {
   auto files = listFiles(".");
@@ -1242,33 +1230,33 @@ void Interpreter::catalog() {
 }
 
 /**
- * @brief Execute file as immediate commands (EXEC implementation)
- * 
- * Loads a text file and executes each line as an immediate command, as if
- * typed at the BASIC prompt. This implements the EXEC command from
- * Applesoft BASIC, useful for batch operations and setup scripts.
- * 
+ * @brief Execute commands from a text file (EXEC implementation)
+ *
+ * Reads a sequential text file and executes each line as if typed at the
+ * keyboard. Lines beginning with REM are skipped. Each non-empty, non-REM
+ * line is executed via executeImmediate(). Errors are caught and reported
+ * but do not stop execution of the remaining lines.
+ *
  * Processing:
  * - Reads file line by line
  * - Skips empty lines and REM comments
  * - Executes each line via executeImmediate()
- * - Lines can be commands (LIST, RUN, etc.) or program lines with numbers
- * - Errors are caught and displayed but don't stop execution
- * 
+ * - Lines can be immediate commands or numbered program lines
+ *
  * Common uses:
  * - Automated testing (EXEC TEST.COMMANDS)
- * - Configuration (EXEC SETUP.BAS)
+ * - Configuration (EXEC STARTUP scripts)
  * - Batch program loading
- * 
- * BASIC Usage:
- *   EXEC COMMANDS.TXT  (execute each line as typed command)
- * 
- * @param filename Path to text file containing commands
+ *
+ * Usage in BASIC:
+ *   EXEC "STARTUP"
+ *
+ * @param filename Path to EXEC text file
  */
 void Interpreter::execFile(const std::string &filename) {
   try {
     std::string content = readTextFile(filename);
-    
+
     // Execute each line as an immediate command
     std::istringstream iss(content);
     std::string line;
@@ -1277,9 +1265,10 @@ void Interpreter::execFile(const std::string &filename) {
         // Skip comments and empty lines
         auto trimmed = line;
         auto isSpace = [](unsigned char ch) { return std::isspace(ch) != 0; };
-        trimmed.erase(trimmed.begin(), std::find_if(trimmed.begin(), trimmed.end(),
-                                      [&](char c) { return !isSpace(c); }));
-        
+        trimmed.erase(trimmed.begin(),
+                      std::find_if(trimmed.begin(), trimmed.end(),
+                                   [&](char c) { return !isSpace(c); }));
+
         if (!trimmed.empty() && trimmed.substr(0, 3) != "REM") {
           executeImmediate(line);
         }
@@ -1292,27 +1281,27 @@ void Interpreter::execFile(const std::string &filename) {
 
 /**
  * @brief Delete a file (DELETE implementation)
- * 
- * Deletes the specified file from disk. This implements the DELETE command
- * from ProDOS Applesoft BASIC.
- * 
+ *
+ * Deletes the specified file from disk. Implements the DELETE command from
+ * ProDOS Applesoft BASIC. On failure, a ProDOS-style error is raised (e.g.,
+ * "PATH NOT FOUND ERROR" for missing files).
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - File not found: "PATH NOT FOUND ERROR"
  * - Permission denied: Handled by filesystem layer
- * 
+ *
  * BASIC Usage:
- *   DELETE OLD.DATA
- *   DELETE "TEMP.TXT"
- * 
- * @param filename Name of file to delete
+ *   DELETE "FILE"
+ *
+ * @param filename Path to file to delete
  */
 void Interpreter::deleteFile(const std::string &filename) {
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   if (!::deleteFile(filename)) {
     handleError("PATH NOT FOUND ERROR");
   }
@@ -1320,45 +1309,43 @@ void Interpreter::deleteFile(const std::string &filename) {
 
 /**
  * @brief Rename a file (RENAME implementation)
- * 
+ *
  * Renames a file from oldName to newName. This implements the RENAME command
  * from ProDOS Applesoft BASIC.
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - Source not found: "I/O ERROR"
  * - Destination exists: "I/O ERROR"
  * - Cross-device rename: Handled by filesystem layer
- * 
- * BASIC Usage:
- *   RENAME OLD.BAS, NEW.BAS
- *   RENAME "DATA1", "DATA2"
- * 
- * @param oldName Current filename
- * @param newName New filename
+ *
+ * Usage in BASIC:
+ *   RENAME "OLD","NEW"  (or RENAME OLD.BAS, NEW.BAS)
+ *
+ * @param oldName Existing filename/path
+ * @param newName New filename/path
  */
-void Interpreter::renameFile(const std::string &oldName, const std::string &newName) {
+void Interpreter::renameFile(const std::string &oldName,
+                             const std::string &newName) {
   if (oldName.empty() || newName.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   if (!::renameFile(oldName, newName)) {
     handleError("I/O ERROR");
   }
 }
 
 /**
- * @brief Display current directory prefix (PREFIX implementation without arguments)
- * 
+ * @brief Print the current prefix (PREFIX with no argument)
+ *
  * Shows the current working directory (prefix in ProDOS terms). This
  * implements the PREFIX command without arguments from ProDOS Applesoft BASIC.
- * 
+ *
  * Output format:
- * - Absolute path to current directory
- * - Unix-style path on Unix systems
- * - Drive letter paths on Windows
- * 
+ * - Absolute path to current directory (Unix-style by default, drive letters on Windows)
+ *
  * BASIC Usage:
  *   PREFIX  (show current directory)
  */
@@ -1368,27 +1355,25 @@ void Interpreter::showPrefix() {
 }
 
 /**
- * @brief Change directory prefix (PREFIX implementation with argument)
- * 
- * Changes the current working directory (prefix in ProDOS terms). All
- * subsequent file operations use this directory as the base. This implements
- * the PREFIX command with argument from ProDOS Applesoft BASIC.
- * 
+ * @brief Change directory prefix (PREFIX implementation)
+ *
+ * Changes the current working directory (the interpreter's ProDOS prefix).
+ * Subsequent file operations use this directory as the base for partial
+ * pathnames.
+ *
  * Path handling:
  * - Absolute paths start from root
- * - Relative paths are relative to current prefix
+ * - Relative paths are resolved relative to the current prefix
  * - Parent directory: ".." (Unix-style)
- * 
+ *
  * Error conditions:
  * - Empty path: "SYNTAX ERROR"
- * - Path not found: "PATH NOT FOUND ERROR"
- * - Not a directory: "PATH NOT FOUND ERROR"
- * 
- * BASIC Usage:
- *   PREFIX /DATA
- *   PREFIX GAMES
- *   PREFIX ..
- * 
+ * - Path not found or not a directory: "PATH NOT FOUND ERROR"
+ *
+ * Usage in BASIC:
+ *   PREFIX "/VOLUME/DIR"
+ *   PREFIX          (no argument shows current prefix)
+ *
  * @param path New directory path (absolute or relative)
  */
 void Interpreter::changePrefix(const std::string &path) {
@@ -1396,54 +1381,57 @@ void Interpreter::changePrefix(const std::string &path) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   if (!::setPrefix(path)) {
     handleError("PATH NOT FOUND ERROR");
   }
 }
 
 /**
- * @brief Open a file for I/O operations (OPEN implementation)
- * 
- * Opens a file with specified access mode for reading or writing. This
- * implements ProDOS-style file operations from Applesoft BASIC.
- * 
+ * @brief Open a file (OPEN implementation)
+ *
+ * Opens a file with the specified access mode for reading or writing.
+ * This implements ProDOS-style OPEN semantics used by Applesoft BASIC.
+ * The interpreter maps OPEN to the FileManager helper which returns an
+ * integer handle for subsequent operations.
+ *
  * Access modes:
  * - READ (default): Open for reading
  * - WRITE (W): Open for writing (truncates existing file)
  * - APPEND (A): Open for appending (writes at end)
- * 
+ *
  * File management:
  * - Files are tracked by the FileManager singleton
  * - Multiple files can be open simultaneously
  * - Use CLOSE to release file handles
  * - File position maintained across READ/WRITE operations
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - File not found (READ mode): Varies by implementation
  * - Permission denied: Propagated from filesystem
- * 
+ *
  * BASIC Usage:
  *   OPEN "DATA.TXT", READ
  *   OPEN "OUTPUT.TXT", WRITE
  *   OPEN "LOG.TXT", APPEND
- * 
- * @param filename Name of file to open
+ *
+ * @param filename Path to file
  * @param options Mode string (READ, WRITE, APPEND, W, A)
  */
-void Interpreter::openFile(const std::string &filename, const std::string &options) {
-  if (filename.empty()) {
+void Interpreter::openFile(const std::string &filename, const std::string &options) {  if (filename.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
     FileAccessMode mode = FileAccessMode::READ;
     // Parse options for mode
-    if (options.find("W") != std::string::npos || options.find("WRITE") != std::string::npos) {
+    if (options.find("W") != std::string::npos ||
+        options.find("WRITE") != std::string::npos) {
       mode = FileAccessMode::WRITE;
-    } else if (options.find("A") != std::string::npos || options.find("APPEND") != std::string::npos) {
+    } else if (options.find("A") != std::string::npos ||
+               options.find("APPEND") != std::string::npos) {
       mode = FileAccessMode::APPEND;
     }
     FileManager::getInstance().openFile(filename, mode);
@@ -1464,12 +1452,14 @@ void Interpreter::openFile(const std::string &filename, const std::string &optio
  * - Releases file handle for reuse
  * - Safe to call on already-closed files (no-op)
  * - File can be reopened after closing
- * 
+ *
  * BASIC Usage:
  *   CLOSE "DATA.TXT"
  *   CLOSE  (closes all files)
- * 
+ *
  * @param filename Name of file to close
+ *
+ * @brief Close an open file (CLOSE implementation)
  */
 void Interpreter::closeFile(const std::string &filename) {
   try {
@@ -1481,10 +1471,10 @@ void Interpreter::closeFile(const std::string &filename) {
 
 /**
  * @brief Close all open files
- * 
- * Closes all files that are currently open, flushing any buffered data.
- * This is called by CLOSE without arguments or during program cleanup.
- * 
+ *
+ * Closes all files that are currently open and flushes any buffered data.
+ * This is called by CLOSE with no arguments or during program cleanup.
+ *
  * BASIC Usage:
  *   CLOSE  (no filename closes all files)
  */
@@ -1494,17 +1484,17 @@ void Interpreter::closeAllFiles() {
 
 /**
  * @brief Open file in append mode (APPEND implementation)
- * 
+ *
  * Opens a file for appending data at the end. This is a convenience wrapper
  * that calls openFile() with APPEND mode.
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - I/O errors: Propagated from openFile()
- * 
+ *
  * BASIC Usage:
  *   APPEND "LOG.TXT"
- * 
+ *
  * @param filename Name of file to open for appending
  */
 void Interpreter::appendFile(const std::string &filename) {
@@ -1512,7 +1502,7 @@ void Interpreter::appendFile(const std::string &filename) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
     FileManager::getInstance().openFile(filename, FileAccessMode::APPEND);
   } catch (const std::exception &e) {
@@ -1534,7 +1524,7 @@ void Interpreter::appendFile(const std::string &filename) {
  * 
  * BASIC Usage:
  *   FLUSH "DATA.TXT"
- * 
+ *
  * @param filename Name of file to flush
  */
 void Interpreter::flushFile(const std::string &filename) {
@@ -1542,7 +1532,7 @@ void Interpreter::flushFile(const std::string &filename) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
     FileManager::getInstance().flushFile(filename);
   } catch (const std::exception &e) {
@@ -1551,37 +1541,45 @@ void Interpreter::flushFile(const std::string &filename) {
 }
 
 /**
- * @brief Set file position for random access (POSITION implementation - stub)
- * 
+ * @brief Position a file pointer (POSITION pn[,Rrecord][,Bbyte])
+ *
  * Sets the file pointer to a specific byte offset for random access I/O.
- * This is a stub implementation - full ProDOS random access is not yet
- * supported. Use sequential I/O instead.
- * 
- * ProDOS Position:
- * - record: Record number (512 bytes per record)
- * - byte: Byte offset within record
+ * This is a stub implementation: full ProDOS random-access positioning is
+ * not yet implemented; use sequential I/O where possible.
+ *
+ * ProDOS Position semantics:
+ * - record: 512-byte record number
+ * - byte: byte offset within record
  * - position = record * 512 + byte
- * 
+ *
  * Current status:
- * - Not fully implemented
- * - Returns error message
- * - Sequential I/O works correctly
- * 
+ * - Positioning is a stub and reports that random-access positioning is not
+ *   fully implemented
+ * - Sequential I/O remains supported
+ *
  * BASIC Usage:
- *   POSITION filename, record, byte
- * 
- * @param filename Name of open file
+ *   POSITION filename, Rrecord, Bbyte
+ *
+ * @param filename Path of open file
  * @param record Record number (512-byte blocks)
  * @param byte Byte offset within record
+ */ * fully implemented and recommends sequential I/O.
+ *
+ * @param filename Path to file
+ * @param record Record number (ProDOS semantics; currently unused)
+ * @param byte Byte offset within record (currently unused)
  */
-void Interpreter::positionFile(const std::string &filename, int record, int byte) {
+void Interpreter::positionFile(const std::string &filename, int record,
+                               int byte) {
+>>>>>>> a74b0a5 (chore: format and document runtime/IO/graphics sources)
   // For now, position is interpreted as byte offset
   // Record numbers are not yet implemented in full ProDOS style
   try {
-    auto& fm = FileManager::getInstance();
+    auto &fm = FileManager::getInstance();
     // Get handle by filename (this is a simplification)
     // In real ProDOS, you'd use the handle directly
-    size_t position = static_cast<size_t>(record * 512 + byte);  // Assume 512-byte records
+    size_t position =
+        static_cast<size_t>(record * 512 + byte); // Assume 512-byte records
     handleError("POSITION not fully implemented - use sequential I/O");
   } catch (const std::exception &e) {
     handleError(e.what());
@@ -1589,64 +1587,56 @@ void Interpreter::positionFile(const std::string &filename, int record, int byte
 }
 
 /**
- * @brief Lock a file to prevent deletion (LOCK implementation)
- * 
- * Marks a file as locked, preventing accidental deletion. This implements
- * the LOCK command from ProDOS Applesoft BASIC.
- * 
- * Platform behavior:
- * - Unix/Linux: Sets read-only permissions
- * - Windows: Sets FILE_ATTRIBUTE_READONLY
- * - macOS: Sets immutable flag where supported
- * 
+ * @brief Lock a file (LOCK implementation)
+ *
+ * Marks a file as locked to prevent deletion or modification. This implements
+ * the LOCK command from ProDOS Applesoft BASIC. Platform-specific behavior
+ * varies and the current implementation provides a graceful stub.
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - File not found: "I/O ERROR"
  * - Permission denied: "I/O ERROR"
- * 
+ *
  * BASIC Usage:
  *   LOCK "IMPORTANT.DAT"
- * 
- * @param filename Name of file to lock
+ *
+ * @param filename Path to file
  */
 void Interpreter::lockFile(const std::string &filename) {
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   if (!FileManager::getInstance().lockFile(filename)) {
     handleError("I/O ERROR");
   }
 }
 
 /**
- * @brief Unlock a file to allow modification (UNLOCK implementation)
- * 
+ * @brief Unlock a file (UNLOCK implementation)
+ *
  * Removes the lock on a file, allowing it to be modified or deleted. This
- * implements the UNLOCK command from ProDOS Applesoft BASIC.
- * 
- * Platform behavior:
- * - Unix/Linux: Restores write permissions
- * - Windows: Clears FILE_ATTRIBUTE_READONLY
- * - macOS: Clears immutable flag
- * 
+ * implements the UNLOCK command from ProDOS Applesoft BASIC. Platform
+ * behavior varies by OS; this implementation provides a graceful stub.
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - File not found: "I/O ERROR"
  * - Permission denied: "I/O ERROR"
- * 
+ *
  * BASIC Usage:
  *   UNLOCK "IMPORTANT.DAT"
- * 
- * @param filename Name of file to unlock
+ *
+ * @param filename Path to file to unlock
  */
 void Interpreter::unlockFile(const std::string &filename) {
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   if (!FileManager::getInstance().unlockFile(filename)) {
     handleError("I/O ERROR");
   }
@@ -1678,12 +1668,23 @@ void Interpreter::unlockFile(const std::string &filename) {
  * @param filename Name of file to create
  * @param options File type and options (currently ignored)
  */
+ * @brief Create a new file or directory (CREATE implementation)
+ *
+ * Creates a new empty file with the specified name. If the file already
+ * exists, behavior depends on the filesystem implementation. This implements
+ * the CREATE command from ProDOS Applesoft BASIC. Options (type/subtype)
+ * are currently ignored.
+ *
+ * @param filename Path to create
+ * @param options File type and options (currently ignored)
+ */
 void Interpreter::createFile(const std::string &filename, const std::string &options) {
+
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   if (!FileManager::getInstance().createFile(filename)) {
     handleError("I/O ERROR");
   }
@@ -1691,30 +1692,30 @@ void Interpreter::createFile(const std::string &filename, const std::string &opt
 
 /**
  * @brief Load binary file into memory (BLOAD implementation)
- * 
+ *
  * Loads a binary file from disk, optionally at a specific memory address.
  * This implements the BLOAD command from Applesoft BASIC, used for loading
  * machine language programs and data files.
- * 
+ *
  * BASIC Usage:
  *   BLOAD "PROGRAM.BIN"        (load at default/stored address)
  *   BLOAD "PROGRAM.BIN",A8192  (load at address 8192/$2000)
  *   BLOAD "DATA.BIN",A$4000    (load at hex address $4000)
- * 
+ *
  * Address handling:
  * - If address = -1: Uses address stored in file header (if any)
  * - If address >= 0: Loads at specified address, ignoring file header
  * - Negative addresses use Apple II 16-bit wraparound convention
- * 
+ *
  * File format compatibility:
  * - ProDOS binary format: 4-byte header (address, length)
  * - Raw binary files: No header, requires explicit address
- * 
+ *
  * Current implementation:
  * - Loads file data but doesn't populate emulated memory yet
  * - Full Apple II emulation would copy bytes to memory array
  * - Useful for loading shape tables, fonts, or ML routines
- * 
+ *
  * @param filename Path to binary file to load
  * @param address Target memory address, or -1 for file's stored address
  * @throws std::runtime_error on I/O errors or invalid file format
@@ -1724,11 +1725,13 @@ void Interpreter::bloadFile(const std::string &filename, int address) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
-    std::vector<uint8_t> data = FileManager::getInstance().loadBinaryFile(filename, address);
+    std::vector<uint8_t> data =
+        FileManager::getInstance().loadBinaryFile(filename, address);
     // Binary data is loaded but not used for anything specific yet
-    // In a full Apple II emulator, this would load into memory at the specified address
+    // In a full Apple II emulator, this would load into memory at the specified
+    // address
     std::cout << "BINARY FILE LOADED: " << data.size() << " BYTES\n";
   } catch (const std::exception &e) {
     handleError(e.what());
@@ -1737,48 +1740,50 @@ void Interpreter::bloadFile(const std::string &filename, int address) {
 
 /**
  * @brief Save memory region to binary file (BSAVE implementation)
- * 
+ *
  * Saves a region of memory to a binary file with ProDOS-compatible format.
  * This implements the BSAVE command from Applesoft BASIC, used for saving
  * machine language programs, screen images, and data arrays.
- * 
+ *
  * BASIC Usage:
  *   BSAVE "SCREEN.BIN",A8192,L8192   (save hi-res page 1)
  *   BSAVE "PROG.BIN",A$300,L$100     (save page 3 ML routine)
  *   BSAVE "DATA.BIN",A16384,L4096    (save 4K data block)
- * 
+ *
  * Parameters:
  * - filename: Output file path
  * - address: Starting memory address to save from
  * - length: Number of bytes to save
- * 
+ *
  * File format:
  * - 4-byte header: 2-byte address (little-endian), 2-byte length
  * - Followed by raw memory contents
  * - Compatible with ProDOS BLOAD command
- * 
+ *
  * Common uses in Applesoft:
  * - Save hi-res graphics: BSAVE "PIC",A8192,L8192 (page 1)
  * - Save shape tables: After creating with DRAW/XDRAW
  * - Save ML routines: After POKEing machine code
- * 
+ *
  * Current implementation:
  * - Creates dummy data (zeros) instead of reading from memory
  * - Full implementation would copy bytes from emulated memory array
- * 
+ *
  * @param filename Path to output binary file
  * @param address Starting memory address
  * @param length Number of bytes to save
  * @throws std::runtime_error on I/O errors or invalid parameters
  */
-void Interpreter::bsaveFile(const std::string &filename, int address, int length) {
+void Interpreter::bsaveFile(const std::string &filename, int address,
+                            int length) {
   if (filename.empty() || length <= 0) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
-    // Create dummy data for now (in full implementation, would read from memory)
+    // Create dummy data for now (in full implementation, would read from
+    // memory)
     std::vector<uint8_t> data(length, 0);
     FileManager::getInstance().saveBinaryFile(filename, data, address, length);
     std::cout << "BINARY FILE SAVED: " << length << " BYTES\n";
@@ -1789,30 +1794,30 @@ void Interpreter::bsaveFile(const std::string &filename, int address, int length
 
 /**
  * @brief Load and execute binary file (BRUN implementation)
- * 
+ *
  * Loads a binary file into memory and executes it as machine language code.
  * This implements the BRUN command from Applesoft BASIC. BRUN is equivalent
  * to BLOAD followed by CALL.
- * 
+ *
  * BASIC Usage:
  *   BRUN HELLO              (standard DOS 3.3 boot)
  *   BRUN PROGRAM.BIN,A$300  (load and execute at page 3)
- * 
+ *
  * Execution sequence:
  * 1. Load binary file via bloadFile()
  * 2. If address specified, call machine code at that address
  * 3. If no address, use file's stored start address
- * 
+ *
  * Common uses:
  * - Boot programs: BRUN HELLO
  * - Launch ML utilities: BRUN TOOLKIT
  * - Run assembly programs: BRUN GAME.BIN
- * 
+ *
  * Current implementation:
  * - Loads file but doesn't execute actual machine code
  * - Calls callAddress() which handles special Apple II ROM addresses
  * - Full implementation would require CPU emulation
- * 
+ *
  * @param filename Path to binary file to load and execute
  * @param address Execution address, or -1 to use file's stored address
  */
@@ -1827,50 +1832,50 @@ void Interpreter::brunFile(const std::string &filename, int address) {
 
 /**
  * @brief Execute machine language at address (CALL implementation)
- * 
+ *
  * Simulates calling machine language routines at specific memory addresses.
  * This implements the CALL command from Applesoft BASIC. Since we don't have
  * a full 6502 emulator, we handle known Apple II ROM addresses specially.
- * 
+ *
  * BASIC Usage:
  *   CALL -936         (HOME - clear screen, same as $FC58)
  *   CALL 768          (page 3 user ML routine, same as $0300)
  *   CALL -3288        (clean up stack, same as $F308)
- * 
+ *
  * Address handling:
  * - Negative addresses use Apple II 16-bit wraparound convention:
  *   CALL -936 becomes $10000 + (-936) = $FC58 (65,368)
  * - This matches Applesoft BASIC address notation
- * 
+ *
  * Known ROM addresses (special handling):
- * 
+ *
  * Text/Screen Control:
  * - $FC58 (-936): HOME - Clear screen and home cursor
  * - $FC66 (-922): Line feed
  * - $FC70 (-912): Scroll text window up
  * - $FC9C (-868): CLREOL - Clear to end of line
  * - $FC42 (-958): Clear from cursor to bottom-right
- * 
+ *
  * Graphics Control:
  * - $F3D2 (-3086): Clear hi-res page to black
  * - $F3D6 (-3082): Clear hi-res to last HPLOT color
  * - $F832 (-1998): BKGND - Set background color
- * 
+ *
  * System Control:
  * - $F308 (-3288): Stack cleanup routine
  * - $FF69 (-151): Enter Monitor (not implemented)
  * - $03EA: Restore ProDOS connection
- * 
+ *
  * User ML Area:
  * - $0300 (768): Common location for user ML routines (page 3)
- * 
+ *
  * Implementation notes:
  * - Known ROM addresses output stub messages or perform equivalent actions
  * - Unknown addresses print "NOT IMPLEMENTED" message
  * - Full implementation would require 6502 CPU emulation
  * - HOME ($FC58) is fully implemented with ANSI clear screen
  * - CLREOL ($FC9C) is fully implemented with ANSI clear to EOL
- * 
+ *
  * @param address Memory address to call (may be negative)
  */
 void Interpreter::callAddress(int address) {
@@ -1878,67 +1883,68 @@ void Interpreter::callAddress(int address) {
   if (address < 0) {
     address = 0x10000 + address;
   }
-  
+
   // Handle special Apple II CALL addresses
   switch (address) {
-    case 0xF308: // -3288: Stack cleanup routine
-      // No-op in our implementation
-      break;
-      
-    case 0xF3D2: // -3086: Clear hi-res page to black
-      // Would clear graphics buffer in full implementation
-      std::cout << "CALL $F3D2: CLEAR HI-RES TO BLACK (STUB)\n";
-      break;
-      
-    case 0xF3D6: // -3082: Clear hi-res to last HPLOT color
-      std::cout << "CALL $F3D6: CLEAR HI-RES TO COLOR (STUB)\n";
-      break;
-      
-    case 0xF832: // -1998: BKGND (background color)
-      std::cout << "CALL $F832: SET BACKGROUND (STUB)\n";
-      break;
-      
-    case 0xFC42: // -958: Clear from cursor to bottom-right
-      std::cout << "CALL $FC42: CLEAR TO BOTTOM (STUB)\n";
-      break;
-      
-    case 0xFC58: // -936: HOME (clear screen, home cursor)
-      std::cout << "\033[2J\033[H";  // ANSI clear screen
-      outputRow_ = 0;
-      pokeMemory(0x0025, outputRow_);
-      break;
-      
-    case 0xFC66: // -922: Line feed
-      std::cout << "\n";
-      outputRow_++;
-      if (outputRow_ >= 24) outputRow_ = 23;
-      pokeMemory(0x0025, outputRow_);
-      break;
-      
-    case 0xFC70: // -912: Scroll text window up
-      std::cout << "CALL $FC70: SCROLL UP (STUB)\n";
-      break;
-      
-    case 0xFC9C: // -868: CLREOL (clear to end of line)
-      std::cout << "\033[K";  // ANSI clear to end of line
-      break;
-      
-    case 0xFF69: // -151: Enter Monitor
-      std::cout << "CALL $FF69: MONITOR (NOT IMPLEMENTED)\n";
-      break;
-      
-    case 0x0300: // Common user ML routine location (page 3)
-      std::cout << "CALL $0300: USER ROUTINE (STUB)\n";
-      break;
-      
-    case 0x03EA: // Restore ProDOS connection
-      std::cout << "CALL $03EA: RESTORE PRODOS (STUB)\n";
-      break;
-      
-    default:
-      // Generic machine language call - no-op
-      std::cout << "CALL " << formatHexAddress(address) << " (NOT IMPLEMENTED)\n";
-      break;
+  case 0xF308: // -3288: Stack cleanup routine
+    // No-op in our implementation
+    break;
+
+  case 0xF3D2: // -3086: Clear hi-res page to black
+    // Would clear graphics buffer in full implementation
+    std::cout << "CALL $F3D2: CLEAR HI-RES TO BLACK (STUB)\n";
+    break;
+
+  case 0xF3D6: // -3082: Clear hi-res to last HPLOT color
+    std::cout << "CALL $F3D6: CLEAR HI-RES TO COLOR (STUB)\n";
+    break;
+
+  case 0xF832: // -1998: BKGND (background color)
+    std::cout << "CALL $F832: SET BACKGROUND (STUB)\n";
+    break;
+
+  case 0xFC42: // -958: Clear from cursor to bottom-right
+    std::cout << "CALL $FC42: CLEAR TO BOTTOM (STUB)\n";
+    break;
+
+  case 0xFC58:                    // -936: HOME (clear screen, home cursor)
+    std::cout << "\033[2J\033[H"; // ANSI clear screen
+    outputRow_ = 0;
+    pokeMemory(0x0025, outputRow_);
+    break;
+
+  case 0xFC66: // -922: Line feed
+    std::cout << "\n";
+    outputRow_++;
+    if (outputRow_ >= 24)
+      outputRow_ = 23;
+    pokeMemory(0x0025, outputRow_);
+    break;
+
+  case 0xFC70: // -912: Scroll text window up
+    std::cout << "CALL $FC70: SCROLL UP (STUB)\n";
+    break;
+
+  case 0xFC9C:             // -868: CLREOL (clear to end of line)
+    std::cout << "\033[K"; // ANSI clear to end of line
+    break;
+
+  case 0xFF69: // -151: Enter Monitor
+    std::cout << "CALL $FF69: MONITOR (NOT IMPLEMENTED)\n";
+    break;
+
+  case 0x0300: // Common user ML routine location (page 3)
+    std::cout << "CALL $0300: USER ROUTINE (STUB)\n";
+    break;
+
+  case 0x03EA: // Restore ProDOS connection
+    std::cout << "CALL $03EA: RESTORE PRODOS (STUB)\n";
+    break;
+
+  default:
+    // Generic machine language call - no-op
+    std::cout << "CALL " << formatHexAddress(address) << " (NOT IMPLEMENTED)\n";
+    break;
   }
 }
 
@@ -1950,30 +1956,30 @@ constexpr size_t kMaxArrayDimensions = 255;
 
 /**
  * @brief Sanitize array name for use as filename
- * 
+ *
  * Converts an array name to a safe filename by removing characters that
  * are problematic on various filesystems (/, \, :, *, ?, ", <, >, |, $, %).
  * Adds ".arr" extension to create a valid array file name.
- * 
+ *
  * Examples:
  *   "DATA$" → "DATA.arr"
  *   "VALUES%" → "VALUES.arr"
  *   "MY:ARRAY" → "MYARRAY.arr"
- * 
+ *
  * @param arrayName Array name from BASIC program
  * @return Sanitized filename with .arr extension
  */
 std::string sanitizeArrayName(const std::string &arrayName) {
   std::string filename = arrayName;
   // Remove problematic characters for filenames
-  filename.erase(
-      std::remove_if(filename.begin(), filename.end(),
-                    [](char c) {
-                      return c == '$' || c == '%' || c == '/' || c == '\\' ||
-                             c == ':' || c == '*' || c == '?' || c == '"' ||
-                             c == '<' || c == '>' || c == '|';
-                    }),
-      filename.end());
+  filename.erase(std::remove_if(filename.begin(), filename.end(),
+                                [](char c) {
+                                  return c == '$' || c == '%' || c == '/' ||
+                                         c == '\\' || c == ':' || c == '*' ||
+                                         c == '?' || c == '"' || c == '<' ||
+                                         c == '>' || c == '|';
+                                }),
+                 filename.end());
   return filename + ".arr";
 }
 } // namespace
@@ -2022,20 +2028,20 @@ void Interpreter::storeArray(const std::string &arrayName) {
   if (tapeManager_.hasTape()) {
     // Open tape for writing
     tapeManager_.openForWrite();
-    
+
     const auto &dimensions = variables_.getArrayDimensions(arrayName);
     const auto &data = variables_.getArrayData(arrayName);
-    
+
     // Build record data
     std::vector<uint8_t> record;
-    
+
     // Write array name
     uint8_t nameLen = static_cast<uint8_t>(arrayName.length());
     record.push_back(nameLen);
     for (char c : arrayName) {
       record.push_back(static_cast<uint8_t>(c));
     }
-    
+
     // Write dimensions
     uint8_t numDims = static_cast<uint8_t>(dimensions.size());
     record.push_back(numDims);
@@ -2046,23 +2052,23 @@ void Interpreter::storeArray(const std::string &arrayName) {
       record.push_back((dimVal >> 16) & 0xFF);
       record.push_back((dimVal >> 24) & 0xFF);
     }
-    
+
     // Write data count
     uint32_t dataCount = static_cast<uint32_t>(data.size());
     record.push_back(dataCount & 0xFF);
     record.push_back((dataCount >> 8) & 0xFF);
     record.push_back((dataCount >> 16) & 0xFF);
     record.push_back((dataCount >> 24) & 0xFF);
-    
+
     // Write data entries
     for (const auto &entry : data) {
       const auto &indices = entry.first;
       const auto &value = entry.second;
-      
+
       // Write number of indices
       uint8_t numIndices = static_cast<uint8_t>(indices.size());
       record.push_back(numIndices);
-      
+
       // Write indices
       for (int idx : indices) {
         uint32_t idxVal = static_cast<uint32_t>(idx);
@@ -2071,7 +2077,7 @@ void Interpreter::storeArray(const std::string &arrayName) {
         record.push_back((idxVal >> 16) & 0xFF);
         record.push_back((idxVal >> 24) & 0xFF);
       }
-      
+
       // Write value
       if (value.isString()) {
         record.push_back('S');
@@ -2087,19 +2093,20 @@ void Interpreter::storeArray(const std::string &arrayName) {
       } else {
         record.push_back('N');
         // Serialize double in native byte order
-        // Note: For cross-platform tape compatibility, consider using a portable format
+        // Note: For cross-platform tape compatibility, consider using a
+        // portable format
         double num = value.getNumber();
-        uint8_t* numBytes = reinterpret_cast<uint8_t*>(&num);
+        uint8_t *numBytes = reinterpret_cast<uint8_t *>(&num);
         for (size_t i = 0; i < sizeof(double); ++i) {
           record.push_back(numBytes[i]);
         }
       }
     }
-    
+
     // Write record to tape
     tapeManager_.writeRecord(record);
     // Keep tape open to maintain position
-    
+
   } else {
     // Fall back to file-based storage
     std::string filename = sanitizeArrayName(arrayName);
@@ -2124,14 +2131,15 @@ void Interpreter::storeArray(const std::string &arrayName) {
     for (const auto &entry : data) {
       const auto &indices = entry.first;
       const auto &value = entry.second;
-      
+
       // Write indices
       for (size_t i = 0; i < indices.size(); ++i) {
-        if (i > 0) file << ",";
+        if (i > 0)
+          file << ",";
         file << indices[i];
       }
       file << " ";
-      
+
       // Write value
       if (value.isString()) {
         file << "S " << value.getString() << "\n";
@@ -2183,58 +2191,58 @@ void Interpreter::recallArray(const std::string &arrayName) {
   if (tapeManager_.hasTape()) {
     // Open tape for reading
     tapeManager_.openForRead();
-    
+
     try {
       // Read record from tape
       std::vector<uint8_t> record = tapeManager_.readRecord();
       size_t pos = 0;
-      
+
       // Read array name
       if (pos >= record.size()) {
         throw std::runtime_error("INVALID TAPE FORMAT");
       }
       uint8_t nameLen = record[pos++];
-      
+
       if (pos + nameLen > record.size()) {
         throw std::runtime_error("INVALID TAPE FORMAT");
       }
-      std::string recordName(reinterpret_cast<char*>(&record[pos]), nameLen);
+      std::string recordName(reinterpret_cast<char *>(&record[pos]), nameLen);
       pos += nameLen;
-      
+
       // For tape format, we use the array name stored in the record
       // rather than requiring it to match the requested name
       // This allows sequential reading of different arrays from tape
       (void)arrayName; // Suppress unused parameter warning
-      
+
       // Read dimensions
       if (pos >= record.size()) {
         throw std::runtime_error("INVALID TAPE FORMAT");
       }
       uint8_t numDims = record[pos++];
-      
+
       if (numDims == 0 || numDims > kMaxArrayDimensions) {
         throw std::runtime_error("INVALID TAPE FORMAT");
       }
-      
+
       std::vector<int> dimensions(numDims);
       for (size_t i = 0; i < numDims; ++i) {
         if (pos + 4 > record.size()) {
           throw std::runtime_error("INVALID TAPE FORMAT");
         }
-        uint32_t dimVal = record[pos] | (record[pos+1] << 8) | 
-                         (record[pos+2] << 16) | (record[pos+3] << 24);
+        uint32_t dimVal = record[pos] | (record[pos + 1] << 8) |
+                          (record[pos + 2] << 16) | (record[pos + 3] << 24);
         dimensions[i] = static_cast<int>(dimVal);
         pos += 4;
       }
-      
+
       // Read data count
       if (pos + 4 > record.size()) {
         throw std::runtime_error("INVALID TAPE FORMAT");
       }
-      uint32_t dataCount = record[pos] | (record[pos+1] << 8) | 
-                          (record[pos+2] << 16) | (record[pos+3] << 24);
+      uint32_t dataCount = record[pos] | (record[pos + 1] << 8) |
+                           (record[pos + 2] << 16) | (record[pos + 3] << 24);
       pos += 4;
-      
+
       // Read data entries
       std::map<std::vector<int>, Value> data;
       for (size_t i = 0; i < dataCount; ++i) {
@@ -2243,43 +2251,44 @@ void Interpreter::recallArray(const std::string &arrayName) {
           throw std::runtime_error("INVALID TAPE FORMAT");
         }
         uint8_t numIndices = record[pos++];
-        
+
         std::vector<int> indices(numIndices);
         for (size_t j = 0; j < numIndices; ++j) {
           if (pos + 4 > record.size()) {
             throw std::runtime_error("INVALID TAPE FORMAT");
           }
-          uint32_t idxVal = record[pos] | (record[pos+1] << 8) | 
-                           (record[pos+2] << 16) | (record[pos+3] << 24);
+          uint32_t idxVal = record[pos] | (record[pos + 1] << 8) |
+                            (record[pos + 2] << 16) | (record[pos + 3] << 24);
           indices[j] = static_cast<int>(idxVal);
           pos += 4;
         }
-        
+
         // Read value type
         if (pos >= record.size()) {
           throw std::runtime_error("INVALID TAPE FORMAT");
         }
         char type = static_cast<char>(record[pos++]);
-        
+
         Value value;
         if (type == 'S') {
           // Read string length
           if (pos + 4 > record.size()) {
             throw std::runtime_error("INVALID TAPE FORMAT");
           }
-          uint32_t strLen = record[pos] | (record[pos+1] << 8) | 
-                           (record[pos+2] << 16) | (record[pos+3] << 24);
+          uint32_t strLen = record[pos] | (record[pos + 1] << 8) |
+                            (record[pos + 2] << 16) | (record[pos + 3] << 24);
           pos += 4;
-          
+
           if (pos + strLen > record.size()) {
             throw std::runtime_error("INVALID TAPE FORMAT");
           }
-          std::string str(reinterpret_cast<char*>(&record[pos]), strLen);
+          std::string str(reinterpret_cast<char *>(&record[pos]), strLen);
           value = Value(str);
           pos += strLen;
         } else if (type == 'N') {
           // Read double in native byte order
-          // Note: Tape files should be used on the same architecture for portability
+          // Note: Tape files should be used on the same architecture for
+          // portability
           if (pos + sizeof(double) > record.size()) {
             throw std::runtime_error("INVALID TAPE FORMAT");
           }
@@ -2290,20 +2299,20 @@ void Interpreter::recallArray(const std::string &arrayName) {
         } else {
           throw std::runtime_error("INVALID TAPE FORMAT");
         }
-        
+
         data[indices] = value;
       }
-      
+
       // Set the array
       variables_.setArrayData(arrayName, dimensions, data);
-      
+
       // Keep tape open to maintain position
-      
+
     } catch (const std::exception &e) {
       // Don't close tape on error - let user handle it
       throw;
     }
-    
+
   } else {
     // Fall back to file-based storage
     std::string filename = sanitizeArrayName(arrayName);
@@ -2320,7 +2329,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
       if (!file || numDims == 0 || numDims > kMaxArrayDimensions) {
         throw std::runtime_error("INVALID ARRAY FILE FORMAT");
       }
-      
+
       std::vector<int> dimensions(numDims);
       for (size_t i = 0; i < numDims; ++i) {
         file >> dimensions[i];
@@ -2344,7 +2353,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
         if (!file || line.empty()) {
           throw std::runtime_error("INVALID ARRAY FILE FORMAT");
         }
-        
+
         // Parse indices
         size_t spacePos = line.find(' ');
         if (spacePos == std::string::npos) {
@@ -2352,7 +2361,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
         }
         std::string indicesStr = line.substr(0, spacePos);
         std::string valueStr = line.substr(spacePos + 1);
-        
+
         std::vector<int> indices;
         size_t start = 0;
         while (start < indicesStr.length()) {
@@ -2361,11 +2370,12 @@ void Interpreter::recallArray(const std::string &arrayName) {
             indices.push_back(std::stoi(indicesStr.substr(start)));
             break;
           } else {
-            indices.push_back(std::stoi(indicesStr.substr(start, commaPos - start)));
+            indices.push_back(
+                std::stoi(indicesStr.substr(start, commaPos - start)));
             start = commaPos + 1;
           }
         }
-        
+
         // Parse value
         if (valueStr.length() < 2) {
           throw std::runtime_error("INVALID ARRAY FILE FORMAT");
@@ -2380,7 +2390,7 @@ void Interpreter::recallArray(const std::string &arrayName) {
         } else {
           throw std::runtime_error("INVALID ARRAY FILE FORMAT");
         }
-        
+
         data[indices] = value;
       }
 
@@ -2511,7 +2521,7 @@ void Interpreter::restoreVariables(const std::string &filename) {
     size_t numCount;
     file >> numCount;
     file.ignore(); // Skip newline
-    
+
     for (size_t i = 0; i < numCount; ++i) {
       std::string varName;
       double value;
@@ -2527,30 +2537,30 @@ void Interpreter::restoreVariables(const std::string &filename) {
     size_t strCount;
     file >> strCount;
     file.ignore(); // Skip newline
-    
+
     for (size_t i = 0; i < strCount; ++i) {
       std::string line;
       std::getline(file, line);
       if (!file || line.empty()) {
         throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
       }
-      
+
       // Parse variable name and value
       size_t spacePos = line.find(' ');
       if (spacePos == std::string::npos) {
         throw std::runtime_error("INVALID VARIABLE FILE FORMAT");
       }
-      
+
       std::string varName = line.substr(0, spacePos);
       std::string value = line.substr(spacePos + 1);
-      
+
       // Unescape newlines
       size_t pos = 0;
       while ((pos = value.find("\\n", pos)) != std::string::npos) {
         value.replace(pos, 2, "\n");
         pos += 1;
       }
-      
+
       variables_.setVariable(varName, Value(value));
     }
   } catch (const std::invalid_argument &) {
@@ -2599,34 +2609,34 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
   if (filename.empty() && tapeManager_.hasTape()) {
     // Load shape table from tape
     tapeManager_.openForRead();
-    
+
     try {
       // Read record from tape
       std::vector<uint8_t> record = tapeManager_.readRecord();
-      
+
       if (record.empty()) {
         throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
       }
-      
+
       // First byte should be number of shapes
       uint8_t numShapes = record[0];
       if (numShapes == 0 || record.size() < 1 + numShapes * 2) {
         throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
       }
-      
+
       // Store shape table pointer (using a simplified approach)
-      pokeMemory(0x00E8, 0);  // Low byte of shape table pointer
-      pokeMemory(0x00E9, 0);  // High byte of shape table pointer
-      
+      pokeMemory(0x00E8, 0); // Low byte of shape table pointer
+      pokeMemory(0x00E9, 0); // High byte of shape table pointer
+
       // Keep tape open to maintain position
       return;
-      
+
     } catch (const std::exception &e) {
       // Don't close tape on error
       throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
     }
   }
-  
+
   // Load shape table from binary file in Apple II format
   std::ifstream file(filename, std::ios::binary);
   if (!file) {
@@ -2636,7 +2646,7 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
   try {
     // Read number of shapes (first byte)
     uint8_t numShapes;
-    file.read(reinterpret_cast<char*>(&numShapes), 1);
+    file.read(reinterpret_cast<char *>(&numShapes), 1);
     if (!file || numShapes == 0) {
       throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
     }
@@ -2645,8 +2655,8 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
     std::vector<uint16_t> shapeOffsets(numShapes);
     for (size_t i = 0; i < numShapes; ++i) {
       uint8_t lowByte, highByte;
-      file.read(reinterpret_cast<char*>(&lowByte), 1);
-      file.read(reinterpret_cast<char*>(&highByte), 1);
+      file.read(reinterpret_cast<char *>(&lowByte), 1);
+      file.read(reinterpret_cast<char *>(&highByte), 1);
       if (!file) {
         throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
       }
@@ -2662,19 +2672,20 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
 
     // For now, we'll store the shape table pointer in memory locations 232-233
     // This is a simplified implementation that just validates the file format
-    // Full implementation would parse the shape vectors and load them into graphics
-    
+    // Full implementation would parse the shape vectors and load them into
+    // graphics
+
     // Store shape table pointer (using a simplified approach)
     // In real Apple II, this would be the memory address of the shape table
     // For our implementation, we just acknowledge the file was loaded
-    pokeMemory(0x00E8, 0);  // Low byte of shape table pointer
-    pokeMemory(0x00E9, 0);  // High byte of shape table pointer
-    
+    pokeMemory(0x00E8, 0); // Low byte of shape table pointer
+    pokeMemory(0x00E9, 0); // High byte of shape table pointer
+
     // Note: Full shape table parsing and rendering would require decoding
     // the vector plotting commands in each shape definition. This is a
     // stub implementation that validates file format but doesn't fully
     // parse the shapes.
-    
+
   } catch (const std::exception &e) {
     throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
   }
@@ -2682,10 +2693,10 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
 
 /**
  * @brief Add a data value to the DATA cache
- * 
+ *
  * Called during program initialization to build the data cache. This is used
  * internally by the DATA statement collection process.
- * 
+ *
  * @param value Value to add to data cache
  */
 void Interpreter::addDataValue(const Value &value) {
@@ -2694,21 +2705,21 @@ void Interpreter::addDataValue(const Value &value) {
 
 /**
  * @brief Read next value from DATA statements (READ implementation)
- * 
+ *
  * Returns the next value from the DATA cache and advances the data pointer.
  * The DATA cache is built before program execution by scanning all DATA
  * statements, regardless of where they appear in program flow.
- * 
+ *
  * BASIC Usage:
  *   READ A, B$, C
- * 
+ *
  * Behavior:
  * - Returns next unread DATA value
  * - Advances data pointer
  * - Throws "OUT OF DATA ERROR" if no more data available
  * - Works across multiple DATA statements
  * - Not affected by program control flow (GOTO, IF, etc.)
- * 
+ *
  * @return Next value from DATA statements
  * @throws std::runtime_error if no more data available
  */
@@ -2721,24 +2732,24 @@ Value Interpreter::readData() {
 
 /**
  * @brief Reset DATA pointer (RESTORE implementation)
- * 
+ *
  * Resets the data pointer to the beginning of DATA statements or to a
  * specific line number. This allows re-reading data values.
- * 
+ *
  * BASIC Usage:
  *   RESTORE         (reset to beginning)
  *   RESTORE 1000    (reset to DATA on line 1000 or after)
- * 
+ *
  * Behavior:
  * - RESTORE with no argument: reset to first DATA value
  * - RESTORE line: reset to first DATA value at or after specified line
  * - If line has no DATA, pointer set to end (OUT OF DATA on next READ)
- * 
+ *
  * Algorithm:
  * - Uses dataOffsets_ map that links line numbers to positions in dataValues_
  * - Searches for first line >= target line that has DATA
  * - Sets dataPointer_ to corresponding position in dataValues_ array
- * 
+ *
  * @param line Line number to restore to, or -1 for beginning
  */
 void Interpreter::restoreData(int line) {
@@ -2758,20 +2769,20 @@ void Interpreter::restoreData(int line) {
 
 /**
  * @brief Move cursor to horizontal column (HTAB implementation)
- * 
+ *
  * Moves the cursor to the specified column by printing spaces. This implements
  * the HTAB (horizontal tab) command from Applesoft BASIC.
- * 
+ *
  * Behavior:
  * - Column numbers are 1-based (HTAB 1 = leftmost column)
  * - If target column is left of or at current position, does nothing
  * - If target column is right of current position, prints spaces to reach it
  * - Does not wrap to next line if target exceeds line width
- * 
+ *
  * BASIC Usage:
  *   HTAB 10: PRINT "TEXT"  (print starting at column 10)
  *   HTAB 1                 (return to left margin)
- * 
+ *
  * @param col1 Target column (1-based, 1 = leftmost)
  */
 void Interpreter::htab(int col1) {
@@ -2786,24 +2797,24 @@ void Interpreter::htab(int col1) {
 
 /**
  * @brief Move cursor to vertical row (VTAB implementation)
- * 
+ *
  * Moves the cursor to the specified row by printing newlines. This implements
  * the VTAB (vertical tab) command from Applesoft BASIC.
- * 
+ *
  * Behavior:
  * - Row numbers are 1-based (VTAB 1 = top row)
  * - If target row is above current position, does nothing
  * - If target row is below current position, prints newlines to reach it
  * - Updates memory location 0x0025 (37) with current cursor row
- * 
+ *
  * BASIC Usage:
  *   VTAB 10: PRINT "TEXT"  (print starting at row 10)
  *   VTAB 1                 (return to top of screen)
  *   HTAB 1: VTAB 1         (home cursor to top-left)
- * 
+ *
  * Memory Update:
  * - Location 37 ($25): Cursor vertical position (0-based internally)
- * 
+ *
  * @param row1 Target row (1-based, 1 = top)
  */
 void Interpreter::vtab(int row1) {
@@ -2817,19 +2828,19 @@ void Interpreter::vtab(int row1) {
 
 /**
  * @brief Enable inverse video mode (INVERSE implementation)
- * 
+ *
  * Enables inverse (reverse) video text output where foreground and background
  * colors are swapped. This implements the INVERSE command from Applesoft BASIC.
- * 
+ *
  * Platform support:
  * - Uses ANSI escape sequence \x1b[7m for inverse video
  * - Windows: Requires virtual terminal support (enabled in constructor)
  * - Unix/Linux: Works on any terminal supporting ANSI codes
- * 
+ *
  * BASIC Usage:
  *   INVERSE: PRINT "HIGHLIGHTED"
  *   NORMAL: PRINT "REGULAR"
- * 
+ *
  * @param on true to enable inverse video, false to disable
  */
 void Interpreter::setInverse(bool on) {
@@ -2839,20 +2850,20 @@ void Interpreter::setInverse(bool on) {
 
 /**
  * @brief Enable flashing text mode (FLASH implementation)
- * 
+ *
  * Enables blinking/flashing text output. This implements the FLASH command
  * from Applesoft BASIC.
- * 
+ *
  * Platform support:
  * - Uses ANSI escape sequence \x1b[5m for blinking text
  * - Windows: Requires virtual terminal support (enabled in constructor)
  * - Unix/Linux: Works on terminals supporting ANSI codes
  * - Note: Not all terminal emulators support blinking text
- * 
+ *
  * BASIC Usage:
  *   FLASH: PRINT "BLINKING"
  *   NORMAL: PRINT "STEADY"
- * 
+ *
  * @param on true to enable flashing, false to disable
  */
 void Interpreter::setFlash(bool on) {
@@ -2862,15 +2873,15 @@ void Interpreter::setFlash(bool on) {
 
 /**
  * @brief Reset text to normal mode (NORMAL implementation)
- * 
+ *
  * Disables both inverse and flash text modes, returning to normal text output.
  * This implements the NORMAL command from Applesoft BASIC.
- * 
+ *
  * Behavior:
  * - Clears inverse_ flag
  * - Clears flash_ flag
  * - Sends ANSI reset sequence \x1b[0m to terminal
- * 
+ *
  * BASIC Usage:
  *   INVERSE: PRINT "REVERSE"
  *   NORMAL: PRINT "REGULAR"
@@ -2883,17 +2894,17 @@ void Interpreter::setNormal() {
 
 /**
  * @brief Update terminal text attributes (internal helper)
- * 
+ *
  * Sends ANSI escape sequences to the terminal to apply current text
  * attributes (inverse and/or flash). This is called internally after
  * attribute state changes.
- * 
+ *
  * ANSI sequences used:
  * - \x1b[0m: Reset all attributes
  * - \x1b[7m: Inverse (reverse video)
  * - \x1b[5m: Blink (flash)
  * - \x1b[7;5m: Both inverse and blink
- * 
+ *
  * Platform considerations:
  * - Windows: Checks vtEnabled_ flag, falls back silently if unavailable
  * - Unix/Linux: Always attempts to send sequences
@@ -2928,20 +2939,21 @@ void Interpreter::updateTextAttributes() {
 
 /**
  * @brief Print text to output (internal helper)
- * 
+ *
  * Outputs text character by character, tracking cursor position for HTAB/VTAB.
- * This is the low-level output primitive used by PRINT and other output commands.
- * 
+ * This is the low-level output primitive used by PRINT and other output
+ * commands.
+ *
  * Character handling:
  * - Bell character (\a): Flushes output immediately for audible feedback
  * - Newline (\n): Resets column to 0, increments row
  * - Other characters: Increments column position
- * 
+ *
  * Position tracking:
  * - outputColumn_: Current horizontal position (0-based)
  * - outputRow_: Current vertical position (0-based)
  * - These are used by HTAB, VTAB, and POS() function
- * 
+ *
  * @param text Text string to output
  */
 void Interpreter::printText(const std::string &text) {
@@ -2961,16 +2973,16 @@ void Interpreter::printText(const std::string &text) {
 
 /**
  * @brief Print newline and update cursor tracking
- * 
+ *
  * Outputs a newline character and updates cursor position tracking. Also
  * updates memory location 0x0025 (37) with the new cursor row for
  * compatibility with Applesoft BASIC PEEK operations.
- * 
+ *
  * Cursor updates:
  * - outputColumn_ set to 0 (start of new line)
  * - outputRow_ incremented
  * - Memory location 37: Updated with new row value
- * 
+ *
  * Used by:
  * - PRINT with no trailing semicolon/comma
  * - VTAB to advance to target row
@@ -2986,11 +2998,11 @@ void Interpreter::printNewline() {
 
 /**
  * @brief Advance to next print zone (comma separator handling)
- * 
+ *
  * Implements the comma separator behavior in PRINT statements. Advances the
  * cursor to the next 14-column zone boundary. This matches Applesoft BASIC's
  * columnar output formatting.
- * 
+ *
  * Zone layout:
  * - Zones are 14 characters wide
  * - Zone 1: columns 0-13
@@ -2998,16 +3010,16 @@ void Interpreter::printNewline() {
  * - Zone 3: columns 28-41
  * - Zone 4: columns 42-55
  * - Zone 5: columns 56-69
- * 
+ *
  * Behavior:
  * - Calculates next zone boundary from current position
  * - Prints spaces to reach that boundary
  * - If already at boundary, advances to next zone
- * 
+ *
  * BASIC Usage:
  *   PRINT "NAME", "AGE", "CITY"
  *   PRINT A, B, C  (values in columns)
- * 
+ *
  * @note Zone width of 14 matches Applesoft BASIC convention
  */
 void Interpreter::printToNextZone() {
@@ -3021,16 +3033,16 @@ void Interpreter::printToNextZone() {
 
 /**
  * @brief Reset output cursor position to home
- * 
+ *
  * Resets the output cursor tracking to the top-left position (0,0) and
  * clears all text attributes (inverse, flash). Called at the start of
  * program execution and by screen-clearing operations.
- * 
+ *
  * Resets:
  * - outputColumn_ = 0 (leftmost column)
  * - outputRow_ = 0 (top row)
  * - Text attributes to NORMAL (no inverse, no flash)
- * 
+ *
  * Used by:
  * - Program startup (RUN command)
  * - Screen clear operations
@@ -3044,29 +3056,29 @@ void Interpreter::resetOutputPosition() {
 
 /**
  * @brief Push a new FOR loop onto the loop stack (FOR statement)
- * 
+ *
  * Creates and pushes a FOR loop control structure when a FOR statement
  * is executed. The loop stack maintains nested loop state for proper
  * NEXT processing.
- * 
+ *
  * Implementation details:
  * - Stores loop variable name, end value, step value, and return line
  * - Multiple nested FOR loops are supported through the stack
  * - Each FOR creates a new stack entry even if variable name reused
  * - NEXT processes loops from most recent (top of stack) backwards
- * 
+ *
  * BASIC Usage:
  *   FOR I = 1 TO 10 STEP 2
  *   FOR J = 1 TO 5
  *     ...
  *   NEXT J
  *   NEXT I
- * 
+ *
  * Stack behavior:
  * - Nested loops push multiple entries
  * - NEXT pops completed loops
  * - Jumping out of loops leaves entries (cleaned by CLR or END)
- * 
+ *
  * @param varName Loop control variable name
  * @param endValue Final value for loop (TO value)
  * @param stepValue Increment per iteration (STEP value, default 1)
@@ -3084,11 +3096,11 @@ void Interpreter::pushForLoop(const std::string &varName, double endValue,
 
 /**
  * @brief Check if a variable is currently a FOR loop control variable
- * 
+ *
  * Searches the FOR loop stack to determine if the specified variable
  * is currently controlling an active FOR loop. Used to prevent certain
  * operations that would corrupt loop state.
- * 
+ *
  * @param varName Variable name to check
  * @return true if variable is a FOR loop control variable, false otherwise
  */
@@ -3102,11 +3114,11 @@ bool Interpreter::isInForLoop(const std::string &varName) {
 
 /**
  * @brief Process NEXT statement for loop iteration
- * 
+ *
  * Handles the NEXT statement which increments the loop variable and either
  * continues the loop (jumping back to statement after FOR) or terminates it
  * (popping from stack and continuing forward).
- * 
+ *
  * Algorithm:
  * 1. Find matching FOR loop (search backwards through stack)
  * 2. Increment loop variable by STEP value
@@ -3115,23 +3127,23 @@ bool Interpreter::isInForLoop(const std::string &varName) {
  *    - Negative STEP: continue if var >= end
  * 4. If continuing: jump to line after FOR statement
  * 5. If done: pop loop from stack and continue forward
- * 
+ *
  * BASIC Usage:
  *   FOR I = 1 TO 10 STEP 2
  *     PRINT I
  *   NEXT I
- *   
+ *
  *   FOR I = 10 TO 1 STEP -1  (counting down)
  *     PRINT I
  *   NEXT I
- *   
+ *
  *   NEXT  (NEXT without variable matches most recent FOR)
- * 
+ *
  * Error handling:
  * - If no matching FOR found: "NEXT WITHOUT FOR ERROR"
  * - Variable name matching uses normalized names (2-char significance)
  * - Empty varName matches most recent loop (allows bare NEXT)
- * 
+ *
  * @param varName Loop variable name (empty string matches most recent loop)
  * @throws std::runtime_error if no matching FOR loop found
  */
@@ -3173,21 +3185,21 @@ void Interpreter::nextForLoop(const std::string &varName) {
 
 /**
  * @brief Set error handler line (ONERR GOTO implementation)
- * 
+ *
  * Enables error handling by setting the target line number for the ONERR
  * handler. When an error occurs during program execution, control will
  * jump to this line instead of terminating the program.
- * 
+ *
  * BASIC Usage:
  *   ONERR GOTO 9000  (enable error handler at line 9000)
- * 
+ *
  * Error handler behavior:
  * - When error occurs, errorLine_ is set to the line where error happened
  * - lastError_ contains the error message text
  * - Memory location 218-219 contains error line number
  * - Memory location 222 contains ProDOS error code
  * - RESUME statement returns to the error line
- * 
+ *
  * @param lineNum Target line number for error handler
  */
 void Interpreter::setErrorHandler(LineNumber lineNum) {
@@ -3196,11 +3208,11 @@ void Interpreter::setErrorHandler(LineNumber lineNum) {
 
 /**
  * @brief Throw a runtime error
- * 
+ *
  * Simple error throwing mechanism. Throws std::runtime_error with the
  * provided message. If an ONERR handler is active, the main execution
  * loop will catch this and transfer control to the handler.
- * 
+ *
  * @param message Error message text (e.g., "SYNTAX ERROR", "OUT OF DATA ERROR")
  * @throws std::runtime_error always
  */
@@ -3210,11 +3222,11 @@ void Interpreter::handleError(const std::string &message) {
 
 /**
  * @brief Throw a runtime error with ProDOS error code
- * 
+ *
  * Extended error throwing that includes a ProDOS-compatible error code.
  * The error code is stored in memory location 222 ($DE) for compatibility
  * with Applesoft BASIC programs that check error codes via PEEK.
- * 
+ *
  * Common ProDOS error codes:
  * - 4: PATH NOT FOUND
  * - 5: VOLUME NOT FOUND
@@ -3223,7 +3235,7 @@ void Interpreter::handleError(const std::string &message) {
  * - 46: VOLUME LOCKED
  * - 52: NOT A PRODOS DISK
  * - 56: BAD BUFFER ADDRESS
- * 
+ *
  * @param message Error message text
  * @param errorCode ProDOS error code to store in memory location 222
  * @throws std::runtime_error always
@@ -3236,26 +3248,26 @@ void Interpreter::handleError(const std::string &message, int errorCode) {
 
 /**
  * @brief Resume execution after error (RESUME implementation)
- * 
+ *
  * Returns execution to the line where an error occurred. Used in ONERR
  * error handlers to retry the failed operation or continue from the
  * error point.
- * 
+ *
  * BASIC Usage:
  *   1000 ONERR GOTO 9000
  *   ...
  *   9000 REM ERROR HANDLER
  *   9010 PRINT "ERROR: ";PEEK(218)+PEEK(219)*256
  *   9020 RESUME
- * 
+ *
  * Behavior:
  * - Jumps to the line number stored in errorLine_
  * - Clears errorLine_ to prevent multiple RESUMEs
  * - If no error active: "RESUME WITHOUT ERROR"
- * 
+ *
  * Note: Unlike some BASIC dialects, this implementation does not support
  * RESUME NEXT (continue after error line). Only RESUME (retry error line).
- * 
+ *
  * @throws std::runtime_error if no active error to resume from
  */
 void Interpreter::resume() {
@@ -3268,17 +3280,17 @@ void Interpreter::resume() {
 
 /**
  * @brief Initialize random number generator (implicit RND behavior)
- * 
+ *
  * Seeds the random number generator used by RND() function. Uses Float40
  * for consistency with Applesoft BASIC's floating-point arithmetic.
- * 
+ *
  * Applesoft BASIC behavior:
  * - RND(1) or RND(n > 0): next random number (doesn't reseed)
  * - RND(0): repeat last random number
  * - RND(n < 0): reseed with |n| and return first number
- * 
+ *
  * This function is called when negative argument to RND is used.
- * 
+ *
  * @param seed Random seed value (typically negative when explicitly seeding)
  */
 void Interpreter::randomize(double seed) {
@@ -3289,24 +3301,24 @@ void Interpreter::randomize(double seed) {
 
 /**
  * @brief Set statement execution delay (SPEED implementation)
- * 
+ *
  * Sets a delay in milliseconds that is applied after each statement
  * execution. This implements the SPEED command from Applesoft BASIC,
  * useful for debugging or creating animated effects.
- * 
+ *
  * BASIC Usage:
  *   SPEED=255  (maximum delay, very slow)
  *   SPEED=50   (moderate delay)
  *   SPEED=0    (no delay, full speed - default)
- * 
+ *
  * Delay range:
  * - Minimum: 0 ms (no delay)
  * - Maximum: 255 ms
  * - Values outside range are clamped
- * 
+ *
  * The delay is applied via applySpeedDelay() called after each statement
  * in the main execution loop.
- * 
+ *
  * @param delayMs Delay in milliseconds (0-255)
  */
 void Interpreter::setSpeedDelay(int delayMs) {
@@ -3346,7 +3358,7 @@ void Interpreter::setOutputDevice(int slot) {
   if (slot < 0)
     slot = 0;
   outputDevice_ = slot;
-  
+
   // Handle special device slots for text mode switching
   if (slot == 0) {
     // PR#0 - switch back to 40-column mode
@@ -3417,11 +3429,11 @@ void Interpreter::setInputDevice(int slot) {
 
 /**
  * @brief Apply SPEED delay between statements (internal helper)
- * 
+ *
  * Sleeps for the configured speed delay time if delay is active.
  * Called by the main execution loop after each statement to implement
  * the SPEED command's slow-motion execution feature.
- * 
+ *
  * Only delays if speedDelayMs_ > 0. This is an internal helper called
  * automatically during program execution.
  */
@@ -3563,7 +3575,8 @@ void Interpreter::popGosub() {
 void Interpreter::requireGraphicsMode() const {
   if (!graphicsConfig_.isGraphicsEnabled()) {
     // Use error code 255 (general error) for graphics not enabled
-    const_cast<Interpreter*>(this)->handleError("GRAPHICS NOT ENABLED ERROR", 255);
+    const_cast<Interpreter *>(this)->handleError("GRAPHICS NOT ENABLED ERROR",
+                                                 255);
   }
 }
 
@@ -3652,7 +3665,7 @@ void Interpreter::catalogFiles(const std::string &path) {
 void Interpreter::chainProgram(const std::string &filename, int startLine) {
   try {
     std::string content = readTextFile(filename);
-    
+
     // Clear program but keep variables
     program_.clear();
     dataValues_.clear();
@@ -3672,7 +3685,7 @@ void Interpreter::chainProgram(const std::string &filename, int startLine) {
         }
       }
     }
-    
+
     // Run the program from the specified starting line
     if (startLine > 0) {
       runFrom(startLine);
@@ -3739,11 +3752,11 @@ void Interpreter::readFile(const std::string &filename, int record, int byte) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
     // Open file for reading
     FileManager::getInstance().openFile(filename, FileAccessMode::READ);
-    
+
     // Position if record/byte specified
     if (record > 0 || byte > 0) {
       size_t position = static_cast<size_t>(record * 512 + byte);
@@ -3751,7 +3764,7 @@ void Interpreter::readFile(const std::string &filename, int record, int byte) {
       // For now, just open at beginning
       (void)position; // Suppress unused variable warning
     }
-    
+
     std::cout << "FILE OPENED FOR READING: " << filename << "\n";
   } catch (const std::exception &e) {
     handleError(e.what());
@@ -3793,18 +3806,18 @@ void Interpreter::writeFile(const std::string &filename, int record) {
     handleError("SYNTAX ERROR");
     return;
   }
-  
+
   try {
     // Open file for writing
     FileManager::getInstance().openFile(filename, FileAccessMode::WRITE);
-    
+
     // Position if record specified
     if (record > 0) {
       size_t position = static_cast<size_t>(record * 512);
       // TODO: Implement actual file positioning via FileManager handle
       (void)position; // Suppress unused variable warning
     }
-    
+
     std::cout << "FILE OPENED FOR WRITING: " << filename << "\n";
   } catch (const std::exception &e) {
     handleError(e.what());

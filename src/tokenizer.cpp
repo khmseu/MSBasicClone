@@ -1,17 +1,17 @@
 /**
  * @file tokenizer.cpp
  * @brief Lexical analyzer implementation for Applesoft BASIC
- * 
+ *
  * This file implements the Tokenizer class which performs lexical analysis
  * on BASIC source code, converting raw text into a stream of typed tokens.
- * 
+ *
  * The tokenizer recognizes:
  * - Keywords (PRINT, IF, FOR, etc.)
  * - Operators (arithmetic, logical, relational)
  * - Literals (numbers, strings)
  * - Identifiers (variable names, function names)
  * - Delimiters (parentheses, commas, colons, semicolons)
- * 
+ *
  * Special features:
  * - Case-insensitive keyword matching
  * - Support for ? as PRINT shorthand
@@ -27,17 +27,17 @@
 
 /**
  * @brief Construct a new Tokenizer
- * 
+ *
  * Initializes tokenizer state with position at start of input.
  */
 Tokenizer::Tokenizer() : pos_(0), line_(1), column_(1) {}
 
 /**
  * @brief Tokenize a line of BASIC code
- * 
+ *
  * Converts the input string into a vector of tokens. Handles whitespace
  * skipping and ensures no duplicate NEWLINE tokens are emitted.
- * 
+ *
  * @param line Input BASIC source code line
  * @return Vector of Token objects representing the tokenized input
  */
@@ -65,11 +65,11 @@ std::vector<Token> Tokenizer::tokenize(const std::string &line) {
 
 /**
  * @brief Check if a word is a BASIC keyword
- * 
+ *
  * Performs case-insensitive lookup in the keyword table. This static map
  * contains all Applesoft BASIC keywords including commands, statements,
  * functions, and special symbols (like ? for PRINT).
- * 
+ *
  * @param word Word to check (case-insensitive)
  * @return true if word is a keyword, false otherwise
  */
@@ -210,28 +210,25 @@ bool Tokenizer::isKeyword(const std::string &word) const {
 }
 
 /**
- * @brief Get TokenType for a keyword string (tokenizer helper)
- * 
- * Maps a keyword string to its corresponding TokenType enum value. This
- * function contains the complete keyword-to-token mapping used during
- * tokenization.
- * 
- * The keyword map includes:
- * - Commands: PRINT, INPUT, LIST, RUN, NEW, etc.
- * - Control flow: IF, THEN, ELSE, FOR, NEXT, GOTO, GOSUB, etc.
- * - Data: DATA, READ, RESTORE, DIM
- * - Functions: FN, DEF
- * - Graphics: GR, HGR, HPLOT, DRAW, XDRAW, etc.
- * - ProDOS: OPEN, CLOSE, READ, WRITE, etc.
- * - Special: ? as alias for PRINT
- * 
- * Case handling:
- * - Keywords are matched case-insensitively
- * - Input is converted to uppercase before lookup
- * 
- * @param word Keyword string to look up (case-insensitive)
- * @return TokenType corresponding to the keyword
- * @throws May return undefined behavior if word is not a keyword (caller should check isKeyword first)
+ * @brief Resolve a keyword string to its TokenType
+ *
+ * Performs case-insensitive lookup in the tokenizer's keyword table and
+ * returns the corresponding TokenType.
+ *
+ * Details:
+ * - The keyword map includes commands (PRINT, INPUT, LIST, RUN, NEW),
+ *   control flow (IF, THEN, ELSE, FOR, NEXT, GOTO, GOSUB), data keywords
+ *   (DATA, READ, RESTORE, DIM), functions (FN, DEF), graphics (GR, HGR,
+ *   HPLOT, DRAW, XDRAW), and ProDOS commands (OPEN, CLOSE, READ, WRITE).
+ * - Special tokens like "?" (alias for PRINT) and multi-character tokens
+ *   such as "COLOR=" and "HCOLOR=" are included.
+ * - Keywords are matched case-insensitively; input is converted to uppercase.
+ *
+ * Notes:
+ * - If the word is not recognized as a keyword, returns TokenType::IDENTIFIER.
+ *
+ * @param word Input word to classify (case-insensitive)
+ * @return TokenType for the keyword, or TokenType::IDENTIFIER if not found
  */
 TokenType Tokenizer::getKeywordType(const std::string &word) const {
   static const std::map<std::string, TokenType> keywords = {
@@ -372,7 +369,7 @@ TokenType Tokenizer::getKeywordType(const std::string &word) const {
 
 /**
  * @brief Skip whitespace characters
- * 
+ *
  * Advances the tokenizer position past spaces and tabs, but stops at newlines.
  * This preserves newline tokens which are significant in BASIC syntax.
  */
@@ -384,13 +381,13 @@ void Tokenizer::skipWhitespace() {
 
 /**
  * @brief Read next token from input
- * 
+ *
  * Dispatches to specific token readers based on the first character:
  * - Digits or decimal point: readNumber()
  * - Double quote: readString()
  * - Letter: readIdentifier() (keywords or variable names)
  * - Other: readOperator() (operators, delimiters, special characters)
- * 
+ *
  * @return Next token from input stream
  */
 Token Tokenizer::nextToken() {
@@ -418,17 +415,17 @@ Token Tokenizer::nextToken() {
 
 /**
  * @brief Read a numeric literal token
- * 
+ *
  * Parses numeric literals including:
  * - Integers: 123, 42
  * - Decimals: 3.14, .5
  * - Scientific notation: 1.23E5, 6.022e-23
- * 
+ *
  * The parser handles:
  * - Optional decimal point (at most one)
  * - Optional exponent (E or e) with optional sign
  * - No leading spaces (caller has already positioned at first digit)
- * 
+ *
  * @return NUMBER token with parsed value
  */
 Token Tokenizer::readNumber() {
@@ -467,17 +464,17 @@ Token Tokenizer::readNumber() {
 
 /**
  * @brief Read a string literal token
- * 
+ *
  * Parses string literals enclosed in double quotes.
  * String literals can contain any characters except:
  * - Closing double quote (ends the string)
  * - Newline (strings cannot span lines in Applesoft BASIC)
- * 
+ *
  * Examples:
  *   "HELLO"
  *   "Hello, World!"
  *   ""  (empty string)
- * 
+ *
  * @return STRING token with the string content (quotes not included)
  */
 Token Tokenizer::readString() {
@@ -504,26 +501,26 @@ Token Tokenizer::readString() {
 
 /**
  * @brief Read an identifier or keyword token
- * 
+ *
  * Parses identifiers (variable names, function names) and keywords.
  * Identifiers can contain:
  * - Letters (A-Z, case insensitive)
  * - Digits (but not as first character)
  * - $ suffix for string variables
  * - % suffix for integer variables
- * 
+ *
  * Special handling:
  * - Keywords are case-insensitive and converted to uppercase
  * - Built-in string functions (CHR$, LEFT$, etc.) are recognized as keywords
  * - FN prefix indicates user-defined function call
- * 
+ *
  * Examples:
  *   PRINT → PRINT keyword
  *   X → variable identifier
  *   NAME$ → string variable identifier
  *   COUNT% → integer variable identifier
  *   FNXY → user function call
- * 
+ *
  * @return Keyword token or IDENTIFIER token
  */
 Token Tokenizer::readIdentifier() {
@@ -564,22 +561,22 @@ Token Tokenizer::readIdentifier() {
 
 /**
  * @brief Read an operator or delimiter token
- * 
+ *
  * Parses operators, delimiters, and special characters including:
  * - Arithmetic: +, -, *, /, ^, MOD
  * - Relational: =, <>, <, >, <=, >=
  * - Logical: AND, OR, NOT
  * - Delimiters: (, ), ,, ;, :
  * - Special: ? (shorthand for PRINT)
- * 
+ *
  * Multi-character operators:
  * - <= (less than or equal)
  * - >= (greater than or equal)
  * - <> (not equal)
- * 
+ *
  * The tokenizer looks ahead one character to identify multi-character
  * operators before falling back to single-character tokens.
- * 
+ *
  * @return Operator or delimiter token
  */
 Token Tokenizer::readOperator() {
@@ -712,10 +709,10 @@ Token Tokenizer::readOperator() {
 
 /**
  * @brief Peek at current character without advancing
- * 
+ *
  * Returns the character at the current position without consuming it.
  * Used for lookahead in tokenization.
- * 
+ *
  * @return Current character, or '\0' if at end of input
  */
 char Tokenizer::peek() const {
@@ -726,11 +723,11 @@ char Tokenizer::peek() const {
 
 /**
  * @brief Consume and return current character
- * 
+ *
  * Advances the position and column counters, returning the character
  * that was consumed. This is the primary method for consuming input
  * during tokenization.
- * 
+ *
  * @return Character at current position, or '\0' if at end
  */
 char Tokenizer::advance() {

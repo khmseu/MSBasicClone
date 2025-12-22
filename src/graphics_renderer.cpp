@@ -1,33 +1,32 @@
 /**
  * @file graphics_renderer.cpp
  * @brief Platform-specific graphics rendering implementation using Raylib
- * 
+ *
  * This file implements the GraphicsRenderer class which provides actual
  * window creation and pixel rendering for MSBasic graphics commands.
  * It uses the Raylib library when available for cross-platform graphics.
- * 
+ *
  * Key features:
  * - Window creation with configurable scale factor
  * - Pixel-perfect Apple II graphics rendering (280×192 base resolution)
  * - Apple II font loading and rendering for text in graphics mode
  * - Graceful fallback when display not available (headless mode)
  * - Double-buffering via BeginDrawing/EndDrawing
- * 
+ *
  * The renderer is separate from Graphics logic to allow:
  * 1. Testing graphics logic without display
  * 2. Supporting multiple rendering backends
  * 3. Running in headless environments (CI/CD, servers)
- * 
+ *
  * Conditional compilation:
  * - HAVE_RAYLIB: Enables Raylib-based rendering
  * - Without Raylib: Stubs return false, graphics commands work off-screen only
  */
-
 #include "graphics_renderer.h"
-#include <stdexcept>
-#include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <stdexcept>
 #include <vector>
 
 #ifdef _WIN32
@@ -44,106 +43,109 @@
  * @brief Construct a GraphicsRenderer
  * @param config Graphics configuration (scale, mode, etc.)
  */
-GraphicsRenderer::GraphicsRenderer(const GraphicsConfig& config)
+GraphicsRenderer::GraphicsRenderer(const GraphicsConfig &config)
     : config_(config), initialized_(false), windowWidth_(0), windowHeight_(0)
 #ifdef HAVE_RAYLIB
-    , font_(), fontLoaded_(false)
+      ,
+      font_(), fontLoaded_(false)
 #endif
 {
 }
 
 /**
  * @brief Destructor - ensures proper cleanup
+ *
+ * Calls shutdown() so any renderer resources (window/font) are released even
+ * if the owning subsystem exits early.
  */
-GraphicsRenderer::~GraphicsRenderer() {
-    shutdown();
-}
+GraphicsRenderer::~GraphicsRenderer() { shutdown(); }
 
 /**
  * @brief Initialize the graphics window and renderer
- * 
+ *
  * Creates a Raylib window scaled to the configured factor (default 2x).
  * Base resolution is 280×192 matching Apple II high-res mode.
- * 
+ *
  * Performs checks:
  * - Verifies DISPLAY environment variable (Unix/Linux)
  * - Tests window creation success
  * - Loads Apple II font if available
- * 
+ *
  * Returns false if initialization fails, allowing off-screen operation.
- * 
+ *
  * @return true if window created successfully, false otherwise
  */
 bool GraphicsRenderer::initialize() {
-    if (initialized_) {
-        return true;
-    }
+  if (initialized_) {
+    return true;
+  }
 
 #ifdef HAVE_RAYLIB
-    if (config_.isGraphicsEnabled()) {
-        // Check if we have a display available before trying to initialize
-        const char* display = getenv("DISPLAY");
-        if (!display || strlen(display) == 0) {
-            std::cerr << "Warning: No DISPLAY environment variable set.\n";
-            std::cerr << "Graphics mode is enabled but rendering will be off-screen only.\n";
-            initialized_ = false;
-            return false;
-        }
-        
-        // Apple II hires resolution is 280x192
-        int baseWidth = 280;
-        int baseHeight = 192;
-        
-        windowWidth_ = baseWidth * config_.scaleFactor;
-        windowHeight_ = baseHeight * config_.scaleFactor;
-        
-        // Try to initialize window
-        InitWindow(windowWidth_, windowHeight_, "MSBasic - Apple II Graphics");
-        
-        // Check if window was successfully created
-        if (!IsWindowReady()) {
-            std::cerr << "Warning: Could not initialize graphics window.\n";
-            std::cerr << "Graphics mode is enabled but rendering will be off-screen only.\n";
-            CloseWindow();
-            initialized_ = false;
-            return false;
-        }
-        
-        SetTargetFPS(60);
-        
-        // Load the Apple II font
-        loadApple2Font();
-        
-        initialized_ = true;
-        std::cout << "Graphics window initialized: " << windowWidth_ 
-                  << "x" << windowHeight_ << " (scale " 
-                  << config_.scaleFactor << ")\n";
-        return true;
+  if (config_.isGraphicsEnabled()) {
+    // Check if we have a display available before trying to initialize
+    const char *display = getenv("DISPLAY");
+    if (!display || strlen(display) == 0) {
+      std::cerr << "Warning: No DISPLAY environment variable set.\n";
+      std::cerr << "Graphics mode is enabled but rendering will be off-screen "
+                   "only.\n";
+      initialized_ = false;
+      return false;
     }
+
+    // Apple II hires resolution is 280x192
+    int baseWidth = 280;
+    int baseHeight = 192;
+
+    windowWidth_ = baseWidth * config_.scaleFactor;
+    windowHeight_ = baseHeight * config_.scaleFactor;
+
+    // Try to initialize window
+    InitWindow(windowWidth_, windowHeight_, "MSBasic - Apple II Graphics");
+
+    // Check if window was successfully created
+    if (!IsWindowReady()) {
+      std::cerr << "Warning: Could not initialize graphics window.\n";
+      std::cerr << "Graphics mode is enabled but rendering will be off-screen "
+                   "only.\n";
+      CloseWindow();
+      initialized_ = false;
+      return false;
+    }
+
+    SetTargetFPS(60);
+
+    // Load the Apple II font
+    loadApple2Font();
+
+    initialized_ = true;
+    std::cout << "Graphics window initialized: " << windowWidth_ << "x"
+              << windowHeight_ << " (scale " << config_.scaleFactor << ")\n";
+    return true;
+  }
 #endif
-    
-    // No-graphics mode or Raylib not available
-    initialized_ = false;
-    return false;
+
+  // No-graphics mode or Raylib not available
+  initialized_ = false;
+  return false;
 }
 
 /**
  * @brief Shutdown and cleanup the renderer
- * 
+ *
  * Unloads fonts, closes the window, and marks renderer as uninitialized.
  * Safe to call multiple times.
  */
 void GraphicsRenderer::shutdown() {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        // Unload font if it was loaded
-        if (fontLoaded_) {
-            UnloadFont(font_);
-            fontLoaded_ = false;
-        }
-        CloseWindow();
-        initialized_ = false;
+  if (initialized_) {
+    // Unload font if it was loaded
+    if (fontLoaded_) {
+      UnloadFont(font_);
+      fontLoaded_ = false;
     }
+    CloseWindow();
+    initialized_ = false;
+  }
 #endif
 }
 
@@ -153,355 +155,325 @@ void GraphicsRenderer::shutdown() {
  */
 bool GraphicsRenderer::shouldClose() const {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        return WindowShouldClose();
-    }
+  if (initialized_) {
+    return WindowShouldClose();
+  }
 #endif
-    return false;
+  return false;
 }
 
 /**
- * @brief Begin a new frame for rendering (Raylib wrapper)
- * 
- * Starts Raylib's drawing mode for the current frame. Must be called before
- * any drawing operations. Paired with endFrame().
- * 
- * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ * @brief Begin a new render frame
+ *
+ * Starts a new rendering frame. When compiled with Raylib support and the
+ * renderer is initialized, this wraps Raylib's BeginDrawing() and prepares
+ * the frame for drawing operations. When rendering is unavailable (Raylib
+ * not compiled in, graphics disabled, or initialization failed) this
+ * function is a no-op.
+ *
+ * Typical usage pattern:
+ *   beginFrame();
+ *   clear();
+ *   drawPixel()/drawText()/drawChar();
+ *   endFrame();
  */
 void GraphicsRenderer::beginFrame() {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        BeginDrawing();
-    }
+  if (initialized_) {
+    BeginDrawing();
+  }
 #endif
 }
 
 /**
- * @brief End the current frame and present it (Raylib wrapper)
- * 
- * Ends Raylib's drawing mode and presents the frame to the window. Must be
- * called after all drawing operations. Paired with beginFrame().
- * 
- * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ * @brief End the current render frame
+ *
+ * Ends and presents the current rendering frame. When compiled with Raylib
+ * support and the renderer is initialized, this wraps Raylib's EndDrawing()
+ * to finalize and display the frame. When rendering is unavailable this
+ * function is a no-op.
  */
 void GraphicsRenderer::endFrame() {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        EndDrawing();
-    }
+  if (initialized_) {
+    EndDrawing();
+  }
 #endif
 }
 
 /**
- * @brief Clear the screen to black (Raylib wrapper)
- * 
- * Clears the entire screen to black, matching the Apple II default
- * background color. Called at the start of each frame or when screen
- * clear is requested.
- * 
- * Only active when HAVE_RAYLIB is defined and renderer is initialized.
+ * @brief Clear the frame buffer to the Apple II background color
+ *
+ * Clears the drawing surface to black, matching the Apple II's default
+ * graphics background. When compiled with Raylib support and initialized,
+ * this calls ClearBackground(BLACK); otherwise it is a no-op.
  */
 void GraphicsRenderer::clear() {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        // Apple II background is typically black
-        ClearBackground(BLACK);
-    }
+  if (initialized_) {
+    // Apple II background is typically black
+    ClearBackground(BLACK);
+  }
 #endif
 }
 
 /**
- * @brief Draw a single pixel at scaled resolution (Raylib wrapper)
- * 
- * Draws a pixel at the specified (x,y) coordinates with the given color.
- * The pixel is automatically scaled according to config_.scaleFactor to
- * maintain aspect ratio on modern displays.
- * 
- * Color format:
- * - 24-bit RGB: 0xRRGGBB
- * - Converted to Raylib Color struct
- * - Alpha always set to 255 (opaque)
- * 
- * Scaling:
- * - Each "pixel" is drawn as a rectangle of size scaleFactor × scaleFactor
- * - Coordinates are multiplied by scaleFactor
- * 
- * Only active when HAVE_RAYLIB is defined and renderer is initialized.
- * 
- * @param x X coordinate in Apple II screen space
- * @param y Y coordinate in Apple II screen space
- * @param color RGB color value (0xRRGGBB format)
+ * @brief Draw a single Apple II pixel at logical coordinates
+ *
+ * Draws a pixel at the given logical coordinates using a filled rectangle
+ * sized by config_.scaleFactor to achieve pixel-perfect scaling on modern
+ * displays. Color is provided as a packed 0xRRGGBB value and rendered as an
+ * opaque color.
+ *
+ * @param x Logical X coordinate in Apple II space
+ * @param y Logical Y coordinate in Apple II space
+ * @param color Packed 0xRRGGBB color
  */
 void GraphicsRenderer::drawPixel(int x, int y, int color) {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        // Scale coordinates
-        int scaledX = x * config_.scaleFactor;
-        int scaledY = y * config_.scaleFactor;
-        
-        // Draw a rectangle to represent the pixel at the scaled size
-        Color c = {
-            static_cast<unsigned char>((color >> 16) & 0xFF),
-            static_cast<unsigned char>((color >> 8) & 0xFF),
-            static_cast<unsigned char>(color & 0xFF),
-            255
-        };
-        
-        DrawRectangle(scaledX, scaledY, config_.scaleFactor, config_.scaleFactor, c);
-    }
-#endif
-}
+  if (initialized_) {
+    // Scale coordinates
+    int scaledX = x * config_.scaleFactor;
+    int scaledY = y * config_.scaleFactor;
 
-void GraphicsRenderer::drawText(const std::string& text, int x, int y, int color) {
-#ifdef HAVE_RAYLIB
-    if (initialized_) {
-        Color c = {
-            static_cast<unsigned char>((color >> 16) & 0xFF),
-            static_cast<unsigned char>((color >> 8) & 0xFF),
-            static_cast<unsigned char>(color & 0xFF),
-            255
-        };
-        
-        if (fontLoaded_) {
-            // Use loaded Apple II font
-            // Apple II character cell is 7×8 pixels
-            float fontSize = 8.0f * config_.scaleFactor;
-            float spacing = 1.0f * config_.scaleFactor;
-            
-            // Apply horizontal scaling for 80-column mode (0.5x)
-            float horizontalScale = 1.0f;
-            if (config_.textMode == TextMode::Text80) {
-                horizontalScale = 0.5f;
-            }
-            
-            Vector2 position = {
-                static_cast<float>(x * config_.scaleFactor * horizontalScale),
-                static_cast<float>(y * config_.scaleFactor)
-            };
-            
-            // If we're in 80-column mode, we need to scale the text horizontally
-            if (horizontalScale != 1.0f) {
-                // Pre-allocate character buffer for efficiency
-                char charBuffer[2] = {'\0', '\0'};
-                // Draw each character with adjusted spacing for horizontal compression
-                float currentX = position.x;
-                for (const char& ch : text) {
-                    charBuffer[0] = ch;
-                    DrawTextEx(font_, charBuffer, (Vector2){currentX, position.y}, fontSize, 0, c);
-                    // In 80-column mode, characters are compressed horizontally
-                    currentX += (7.0f * config_.scaleFactor * horizontalScale);
-                }
-            } else {
-                // Normal 40-column mode rendering
-                DrawTextEx(font_, text.c_str(), position, fontSize, spacing, c);
-            }
-        } else {
-            // Fallback to built-in font
-            DrawText(text.c_str(), x * config_.scaleFactor, y * config_.scaleFactor, 
-                     10 * config_.scaleFactor, c);
-        }
-    }
+    // Draw a rectangle to represent the pixel at the scaled size
+    Color c = {static_cast<unsigned char>((color >> 16) & 0xFF),
+               static_cast<unsigned char>((color >> 8) & 0xFF),
+               static_cast<unsigned char>(color & 0xFF), 255};
+
+    DrawRectangle(scaledX, scaledY, config_.scaleFactor, config_.scaleFactor,
+                  c);
+  }
 #endif
 }
 
 /**
- * @brief Draw a single character with Apple II font (Raylib wrapper)
- * 
- * Draws a single character at the specified position using the Apple II
- * font (if loaded) or a fallback font. This is used for text rendering
- * in graphics modes.
- * 
- * Font handling:
- * - If Apple II font loaded: Uses DrawTextEx with custom font
- * - Otherwise: Falls back to built-in Raylib font
- * - Character is scaled according to config_.scaleFactor
- * 
- * Color format:
- * - 24-bit RGB: 0xRRGGBB
- * - Converted to Raylib Color struct
- * 
- * Only active when HAVE_RAYLIB is defined and renderer is initialized.
- * 
+ * @brief Draw a text string in graphics coordinates
+ *
+ * Renders text using the loaded Apple II font when available. In 80-column
+ * mode, text is horizontally compressed (0.5x) to emulate 80-column rendering.
+ * Falls back to Raylib's built-in font if the custom font is not available.
+ *
+ * @param text UTF-8 text string to render
+ * @param x Logical X coordinate in pixels
+ * @param y Logical Y coordinate in pixels
+ * @param color Packed 0xRRGGBB color
+ */
+void GraphicsRenderer::drawText(const std::string &text, int x, int y,
+                                int color) {
+#ifdef HAVE_RAYLIB
+  if (initialized_) {
+    Color c = {static_cast<unsigned char>((color >> 16) & 0xFF),
+               static_cast<unsigned char>((color >> 8) & 0xFF),
+               static_cast<unsigned char>(color & 0xFF), 255};
+
+    if (fontLoaded_) {
+      // Use loaded Apple II font
+      // Apple II character cell is 7×8 pixels
+      float fontSize = 8.0f * config_.scaleFactor;
+      float spacing = 1.0f * config_.scaleFactor;
+
+      // Apply horizontal scaling for 80-column mode (0.5x)
+      float horizontalScale = 1.0f;
+      if (config_.textMode == TextMode::Text80) {
+        horizontalScale = 0.5f;
+      }
+
+      Vector2 position = {
+          static_cast<float>(x * config_.scaleFactor * horizontalScale),
+          static_cast<float>(y * config_.scaleFactor)};
+
+      // If we're in 80-column mode, we need to scale the text horizontally
+      if (horizontalScale != 1.0f) {
+        // Pre-allocate character buffer for efficiency
+        char charBuffer[2] = {'\0', '\0'};
+        // Draw each character with adjusted spacing for horizontal compression
+        float currentX = position.x;
+        for (const char &ch : text) {
+          charBuffer[0] = ch;
+          DrawTextEx(font_, charBuffer, (Vector2){currentX, position.y},
+                     fontSize, 0, c);
+          // In 80-column mode, characters are compressed horizontally
+          currentX += (7.0f * config_.scaleFactor * horizontalScale);
+        }
+      } else {
+        // Normal 40-column mode rendering
+        DrawTextEx(font_, text.c_str(), position, fontSize, spacing, c);
+      }
+    } else {
+      // Fallback to built-in font
+      DrawText(text.c_str(), x * config_.scaleFactor, y * config_.scaleFactor,
+               10 * config_.scaleFactor, c);
+    }
+  }
+#endif
+}
+
+/**
+ * @brief Draw a single character in graphics coordinates
+ *
+ * Draws a single glyph at the specified logical coordinates. When the
+ * Apple II font is loaded, this renders the character using DrawTextEx to
+ * preserve authentic appearance; otherwise it falls back to drawText().
+ * The renderer applies scaling according to config_.scaleFactor and
+ * supports horizontal 0.5× compression when in 80-column mode.
+ *
+ * Color is provided as a packed 0xRRGGBB value and converted to a Raylib
+ * Color with full opacity.
+ *
  * @param ch Character to draw
- * @param x X coordinate in Apple II screen space
- * @param y Y coordinate in Apple II screen space
- * @param color RGB color value (0xRRGGBB format)
+ * @param x Logical X coordinate in pixels
+ * @param y Logical Y coordinate in pixels
+ * @param color Packed 0xRRGGBB color
  */
 void GraphicsRenderer::drawChar(char ch, int x, int y, int color) {
 #ifdef HAVE_RAYLIB
-    if (initialized_) {
-        Color c = {
-            static_cast<unsigned char>((color >> 16) & 0xFF),
-            static_cast<unsigned char>((color >> 8) & 0xFF),
-            static_cast<unsigned char>(color & 0xFF),
-            255
-        };
-        
-        if (fontLoaded_) {
-            // Use loaded Apple II font for single character
-            // Apple II character cell is 7×8 pixels
-            float fontSize = 8.0f * config_.scaleFactor;
-            
-            // Apply horizontal scaling for 80-column mode (0.5x)
-            float horizontalScale = 1.0f;
-            if (config_.textMode == TextMode::Text80) {
-                horizontalScale = 0.5f;
-            }
-            
-            Vector2 position = {
-                static_cast<float>(x * config_.scaleFactor * horizontalScale),
-                static_cast<float>(y * config_.scaleFactor)
-            };
-            
-            char str[2] = {ch, '\0'};
-            DrawTextEx(font_, str, position, fontSize, 0, c);
-        } else {
-            // Fallback to built-in drawing
-            char str[2] = {ch, '\0'};
-            drawText(str, x, y, color);
-        }
+  if (initialized_) {
+    Color c = {static_cast<unsigned char>((color >> 16) & 0xFF),
+               static_cast<unsigned char>((color >> 8) & 0xFF),
+               static_cast<unsigned char>(color & 0xFF), 255};
+
+    if (fontLoaded_) {
+      // Use loaded Apple II font for single character
+      // Apple II character cell is 7×8 pixels
+      float fontSize = 8.0f * config_.scaleFactor;
+
+      // Apply horizontal scaling for 80-column mode (0.5x)
+      float horizontalScale = 1.0f;
+      if (config_.textMode == TextMode::Text80) {
+        horizontalScale = 0.5f;
+      }
+
+      Vector2 position = {
+          static_cast<float>(x * config_.scaleFactor * horizontalScale),
+          static_cast<float>(y * config_.scaleFactor)};
+
+      char str[2] = {ch, '\0'};
+      DrawTextEx(font_, str, position, fontSize, 0, c);
+    } else {
+      // Fallback to built-in drawing
+      char str[2] = {ch, '\0'};
+      drawText(str, x, y, color);
     }
+  }
 #endif
 }
 
 /**
- * @brief Load Apple II font for authentic text rendering
- * 
- * Attempts to load the "Ultimate Apple II" font (PrintChar21.ttf) from
- * several common locations. This font provides authentic Apple II text
- * appearance in graphics modes.
- * 
- * Search paths (in order):
- * 1. assets/fonts/PrintChar21.ttf (relative to executable)
- * 2. ../assets/fonts/PrintChar21.ttf (one directory up)
- * 3. /usr/share/fonts/apple2/PrintChar21.ttf (system fonts on Unix)
- * 
- * Behavior:
- * - Searches paths in order until font found
- * - If found: Loads with Raylib's LoadFontEx() at 8pt base size
- * - If not found: Falls back to built-in Raylib font
- * - Sets fontLoaded_ flag for drawText/drawChar to check
- * 
- * File checking:
- * - Uses access() system call to check file existence
- * - Validates before attempting to load
- * - Prevents Raylib warnings about missing files
- * 
- * Only active when HAVE_RAYLIB is defined.
+ * @brief Load the Apple II TrueType font used for graphics text
+ *
+ * Attempts to load the "Ultimate Apple II Font" (PrintChar21.ttf) from a
+ * small set of known search paths (e.g., assets/fonts/PrintChar21.ttf,
+ * ../assets/fonts/PrintChar21.ttf, /usr/share/fonts/apple2/PrintChar21.ttf).
+ * On success, the font is configured for bilinear filtering to improve
+ * appearance when scaled. This method is best-effort: if the font cannot be
+ * found or fails to load the renderer falls back to Raylib's built-in font
+ * and execution continues. Errors are printed to stdout/stderr for user
+ * visibility.
  */
 void GraphicsRenderer::loadApple2Font() {
 #ifdef HAVE_RAYLIB
-    // Search for the Ultimate Apple II Font in common locations
-    const std::vector<const char*> fontPaths = {
-        "assets/fonts/PrintChar21.ttf",
-        "../assets/fonts/PrintChar21.ttf",
-        "/usr/share/fonts/apple2/PrintChar21.ttf"
-    };
-    
-    bool fontFound = false;
-    const char* foundPath = nullptr;
-    
-    for (const char* path : fontPaths) {
-        // Check if file exists - using access() for safer checking
+  // Search for the Ultimate Apple II Font in common locations
+  const std::vector<const char *> fontPaths = {
+      "assets/fonts/PrintChar21.ttf", "../assets/fonts/PrintChar21.ttf",
+      "/usr/share/fonts/apple2/PrintChar21.ttf"};
+
+  bool fontFound = false;
+  const char *foundPath = nullptr;
+
+  for (const char *path : fontPaths) {
+    // Check if file exists - using access() for safer checking
 #ifdef _WIN32
-        if (_access(path, 0) == 0) {
+    if (_access(path, 0) == 0) {
 #else
-        if (access(path, F_OK) == 0) {
+    if (access(path, F_OK) == 0) {
 #endif
-            foundPath = path;
-            fontFound = true;
-            break;
-        }
+      foundPath = path;
+      fontFound = true;
+      break;
     }
-    
-    if (fontFound) {
-        try {
-            // Load font at 8 pixels (Apple II character cell is 7×8)
-            // We use 8 here as the fontSize to get proper glyph rendering
-            font_ = LoadFontEx(foundPath, 8, nullptr, 0);
-            
-            // Check if font loaded successfully using IsFontReady()
-            if (IsFontReady(font_)) {
-                // Apply bilinear filtering for better quality when scaling
-                SetTextureFilter(font_.texture, TEXTURE_FILTER_BILINEAR);
-                
-                fontLoaded_ = true;
-                std::cout << "Successfully loaded Apple II font from: " << foundPath << "\n";
-                std::cout << "Font base size: " << font_.baseSize << " pixels\n";
-            } else {
-                std::cerr << "Warning: Font file found but failed to load from: " << foundPath << "\n";
-                // Unload the font to ensure proper cleanup of any partially loaded resources
-                UnloadFont(font_);
-                fontLoaded_ = false;
-            }
-        } catch (...) {
-            std::cerr << "Warning: Exception while loading font from: " << foundPath << "\n";
-            // Attempt to unload font in case of partial initialization
-            try {
-                UnloadFont(font_);
-            } catch (...) {
-                // Ignore cleanup errors
-            }
-            fontLoaded_ = false;
-        }
+  }
+
+  if (fontFound) {
+    try {
+      // Load font at 8 pixels (Apple II character cell is 7×8)
+      // We use 8 here as the fontSize to get proper glyph rendering
+      font_ = LoadFontEx(foundPath, 8, nullptr, 0);
+
+      // Check if font loaded successfully using IsFontReady()
+      if (IsFontReady(font_)) {
+        // Apply bilinear filtering for better quality when scaling
+        SetTextureFilter(font_.texture, TEXTURE_FILTER_BILINEAR);
+
+        fontLoaded_ = true;
+        std::cout << "Successfully loaded Apple II font from: " << foundPath
+                  << "\n";
+        std::cout << "Font base size: " << font_.baseSize << " pixels\n";
+      } else {
+        std::cerr << "Warning: Font file found but failed to load from: "
+                  << foundPath << "\n";
+        // Unload the font to ensure proper cleanup of any partially loaded
+        // resources
+        UnloadFont(font_);
+        fontLoaded_ = false;
+      }
+    } catch (...) {
+      std::cerr << "Warning: Exception while loading font from: " << foundPath
+                << "\n";
+      // Attempt to unload font in case of partial initialization
+      try {
+        UnloadFont(font_);
+      } catch (...) {
+        // Ignore cleanup errors
+      }
+      fontLoaded_ = false;
     }
-    
-    if (!fontLoaded_) {
-        std::cout << "Ultimate Apple II Font not found or failed to load - using Raylib default font\n";
-        std::cout << "Download from: https://www.kreativekorp.com/software/fonts/apple2/\n";
-        std::cout << "Place in: assets/fonts/PrintChar21.ttf\n";
-    }
+  }
+
+  if (!fontLoaded_) {
+    std::cout << "Ultimate Apple II Font not found or failed to load - using "
+                 "Raylib default font\n";
+    std::cout << "Download from: "
+                 "https://www.kreativekorp.com/software/fonts/apple2/\n";
+    std::cout << "Place in: assets/fonts/PrintChar21.ttf\n";
+  }
 #endif
 }
 
 /**
- * @brief Convert Apple II color code to RGB value
- * 
- * Converts an Apple II color code (0-15) to a 24-bit RGB color value.
- * This provides an approximation of the Apple II color palette for
- * modern displays.
- * 
- * Apple II color codes:
- * - 0: Black          - 8: Brown
- * - 1: Magenta/Red    - 9: Orange
- * - 2: Dark Blue     - 10: Gray
- * - 3: Purple        - 11: Pink
- * - 4: Dark Green    - 12: Light Green
- * - 5: Gray          - 13: Yellow
- * - 6: Medium Blue   - 14: Aqua
- * - 7: Light Blue    - 15: White
- * 
- * Color approximation:
- * - Simplified palette (Apple II had complex NTSC artifacts)
- * - Fixed RGB values for consistency
- * - Suitable for modern RGB displays
- * - Does not emulate composite video effects
- * 
- * @param appleColor Apple II color code (0-15)
- * @return 24-bit RGB color value (0xRRGGBB format)
+ * @brief Convert an Apple II color index into a packed RGB value
+ *
+ * Produces a simple approximation of the Apple II low-resolution (0-15)
+ * palette as a packed 24-bit RGB value (0xRRGGBB). Input values are
+ * masked with 0x0F to ensure valid indices. This does not attempt to
+ * reproduce NTSC composite artifacts; it provides stable RGB approximations
+ * suitable for modern displays.
+ *
+ * @param appleColor Apple II color index (0-15; other values are masked)
+ * @return Packed 0xRRGGBB color
  */
 unsigned int GraphicsRenderer::convertColor(int appleColor) const {
-    // Apple II color palette (simplified)
-    // This is a basic approximation of Apple II colors
-    static const unsigned int colors[] = {
-        0x000000, // 0 - Black
-        0xDD0033, // 1 - Magenta/Red
-        0x0000DD, // 2 - Dark Blue  
-        0xDD00DD, // 3 - Purple
-        0x00AA00, // 4 - Dark Green
-        0x888888, // 5 - Gray
-        0x00AAFF, // 6 - Medium Blue
-        0x00FFFF, // 7 - Light Blue/Aqua
-        0x885500, // 8 - Brown
-        0xFF6600, // 9 - Orange
-        0xAAAAAA, // 10 - Gray
-        0xFF9999, // 11 - Pink
-        0x00FF00, // 12 - Green
-        0xFFFF00, // 13 - Yellow
-        0xAAFF88, // 14 - Aqua
-        0xFFFFFF  // 15 - White
-    };
-    
-    int index = appleColor & 0x0F;  // Clamp to 0-15
-    return colors[index];
+  // Apple II color palette (simplified)
+  // This is a basic approximation of Apple II colors
+  static const unsigned int colors[] = {
+      0x000000, // 0 - Black
+      0xDD0033, // 1 - Magenta/Red
+      0x0000DD, // 2 - Dark Blue
+      0xDD00DD, // 3 - Purple
+      0x00AA00, // 4 - Dark Green
+      0x888888, // 5 - Gray
+      0x00AAFF, // 6 - Medium Blue
+      0x00FFFF, // 7 - Light Blue/Aqua
+      0x885500, // 8 - Brown
+      0xFF6600, // 9 - Orange
+      0xAAAAAA, // 10 - Gray
+      0xFF9999, // 11 - Pink
+      0x00FF00, // 12 - Green
+      0xFFFF00, // 13 - Yellow
+      0xAAFF88, // 14 - Aqua
+      0xFFFFFF  // 15 - White
+  };
+
+  int index = appleColor & 0x0F; // Clamp to 0-15
+  return colors[index];
 }
