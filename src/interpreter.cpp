@@ -1003,6 +1003,27 @@ void Interpreter::cont() {
   }
 }
 
+/**
+ * @brief Load a BASIC program from disk (LOAD command implementation)
+ * 
+ * Loads a BASIC program from a text file, replacing the current program.
+ * The file should contain BASIC source code with line numbers.
+ * 
+ * BASIC Usage:
+ *   LOAD "MYPROG.BAS"
+ * 
+ * File Format:
+ *   10 PRINT "HELLO"
+ *   20 GOTO 10
+ * 
+ * Behavior:
+ * - Clears current program and variables (like NEW)
+ * - Parses each line and adds to program
+ * - Silently ignores lines without valid line numbers
+ * - On error, prints error message and continues
+ * 
+ * @param filename Path to BASIC program file
+ */
 void Interpreter::loadProgram(const std::string &filename) {
   try {
     std::string content = readTextFile(filename);
@@ -1025,6 +1046,25 @@ void Interpreter::loadProgram(const std::string &filename) {
   }
 }
 
+/**
+ * @brief Save current program to disk (SAVE command implementation)
+ * 
+ * Saves the current BASIC program to a text file. The file will contain
+ * line numbers followed by the BASIC code for each line.
+ * 
+ * BASIC Usage:
+ *   SAVE "MYPROG.BAS"
+ * 
+ * File Format:
+ *   Each line: <line_number><space><code>
+ * 
+ * Behavior:
+ * - Overwrites existing file without warning
+ * - Saves lines in sorted order by line number
+ * - On error, prints error message but doesn't stop interpreter
+ * 
+ * @param filename Path where program will be saved
+ */
 void Interpreter::saveProgram(const std::string &filename) {
   try {
     std::ostringstream oss;
@@ -1037,6 +1077,29 @@ void Interpreter::saveProgram(const std::string &filename) {
   }
 }
 
+/**
+ * @brief Chain to another program (CHAIN command implementation)
+ * 
+ * Loads and runs a new BASIC program while preserving variable values.
+ * This allows breaking large programs into multiple files that share data.
+ * 
+ * BASIC Usage:
+ *   CHAIN "PART2.BAS"
+ * 
+ * Behavior:
+ * - Clears current program
+ * - Keeps all variable values intact
+ * - Loads new program from file
+ * - Begins execution at first line of new program
+ * - Common variables automatically transfer between programs
+ * 
+ * Use Cases:
+ * - Multi-part adventures/games
+ * - Menu systems that load different modules
+ * - Programs that exceed memory by splitting into parts
+ * 
+ * @param filename Path to next program to chain to
+ */
 void Interpreter::chainProgram(const std::string &filename) {
   try {
     std::string content = readTextFile(filename);
@@ -1960,10 +2023,38 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
   }
 }
 
+/**
+ * @brief Add a data value to the DATA cache
+ * 
+ * Called during program initialization to build the data cache. This is used
+ * internally by the DATA statement collection process.
+ * 
+ * @param value Value to add to data cache
+ */
 void Interpreter::addDataValue(const Value &value) {
   dataValues_.push_back(value);
 }
 
+/**
+ * @brief Read next value from DATA statements (READ implementation)
+ * 
+ * Returns the next value from the DATA cache and advances the data pointer.
+ * The DATA cache is built before program execution by scanning all DATA
+ * statements, regardless of where they appear in program flow.
+ * 
+ * BASIC Usage:
+ *   READ A, B$, C
+ * 
+ * Behavior:
+ * - Returns next unread DATA value
+ * - Advances data pointer
+ * - Throws "OUT OF DATA ERROR" if no more data available
+ * - Works across multiple DATA statements
+ * - Not affected by program control flow (GOTO, IF, etc.)
+ * 
+ * @return Next value from DATA statements
+ * @throws std::runtime_error if no more data available
+ */
 Value Interpreter::readData() {
   if (dataPointer_ >= dataValues_.size()) {
     throw std::runtime_error("OUT OF DATA ERROR");
@@ -1971,6 +2062,28 @@ Value Interpreter::readData() {
   return dataValues_[dataPointer_++];
 }
 
+/**
+ * @brief Reset DATA pointer (RESTORE implementation)
+ * 
+ * Resets the data pointer to the beginning of DATA statements or to a
+ * specific line number. This allows re-reading data values.
+ * 
+ * BASIC Usage:
+ *   RESTORE         (reset to beginning)
+ *   RESTORE 1000    (reset to DATA on line 1000 or after)
+ * 
+ * Behavior:
+ * - RESTORE with no argument: reset to first DATA value
+ * - RESTORE line: reset to first DATA value at or after specified line
+ * - If line has no DATA, pointer set to end (OUT OF DATA on next READ)
+ * 
+ * Algorithm:
+ * - Uses dataOffsets_ map that links line numbers to positions in dataValues_
+ * - Searches for first line >= target line that has DATA
+ * - Sets dataPointer_ to corresponding position in dataValues_ array
+ * 
+ * @param line Line number to restore to, or -1 for beginning
+ */
 void Interpreter::restoreData(int line) {
   if (line < 0) {
     dataPointer_ = 0;
