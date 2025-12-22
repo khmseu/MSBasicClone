@@ -193,112 +193,33 @@ void TapeManager::rewind() {
 
 /**
  * @brief Write a record to tape (sequential write)
- * 
+ *
  * Writes a data record to the tape file at the current position. Each record
  * consists of a 4-byte size header followed by the data bytes. This
  * implements the sequential tape write behavior of Applesoft BASIC.
- * 
+ *
  * Record format:
  * - Size header: 4 bytes (uint32_t) in native byte order
  * - Data: Variable length based on size header
- * 
+ *
  * Behavior:
  * - Writes at current file position (sequential)
  * - Automatically flushes to disk after write
  * - Updates position counter
  * - Position maintained across multiple writes
- * 
+ *
  * Error conditions:
  * - Tape not open: "TAPE NOT OPEN FOR WRITING"
  * - In read mode: "TAPE NOT OPEN FOR WRITING"
  * - Write failure: "TAPE WRITE ERROR"
- * 
+ *
  * Cross-platform note:
  * - Uses native byte order for size (not portable across architectures)
  * - For cross-platform compatibility, use tapes on same architecture
  * - Future: Could implement little-endian serialization
- * 
+ *
  * @param data Byte vector containing record data to write
  * @throws std::runtime_error if tape not open for writing or write fails
- */
-void TapeManager::writeRecord(const std::vector<uint8_t>& data) {
-    if (!isOpen() || readMode_) {
-        throw std::runtime_error("TAPE NOT OPEN FOR WRITING");
-    }
-    
-    // Write record size as 4-byte integer in native byte order
-    // Note: For cross-platform compatibility, tape files should be used on the same architecture
-    // or implement explicit little-endian serialization
-    uint32_t size = static_cast<uint32_t>(data.size());
-    file_.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    
-    // Write record data
-    file_.write(reinterpret_cast<const char*>(data.data()), data.size());
-    
-    if (!file_) {
-        throw std::runtime_error("TAPE WRITE ERROR");
-    }
-    
-    // Flush to ensure data is written to disk
-    file_.flush();
-    
-    updatePosition();
-}
-
-/**
- * @brief Read a record from tape (sequential read)
- * 
- * Reads the next data record from the tape file at the current position.
- * Each record consists of a 4-byte size header followed by the data bytes.
- * This implements the sequential tape read behavior of Applesoft BASIC.
- * 
- * Record format:
- * - Size header: 4 bytes (uint32_t) in native byte order
- * - Data: Variable length based on size header
- * 
- * Behavior:
- * - Reads from current file position (sequential)
- * - Advances position for next read
- * - Returns data as byte vector
- * - Validates size against MAX_RECORD_SIZE (1 MB)
- * 
- * Error conditions:
- * - Tape not open: "TAPE NOT OPEN FOR READING"
- * - In write mode: "TAPE NOT OPEN FOR READING"
- * - End of file: "END OF TAPE"
- * - Invalid size (0 or > 1MB): "INVALID TAPE FORMAT"
- * - Partial read: "TAPE READ ERROR"
- * 
- * Size validation:
- * - Maximum 1 MB prevents corruption issues
- * - Zero size indicates format error
- * - Checks gcount() to verify complete read
- * 
- * @return Vector of bytes containing record data
- * @throws std::runtime_error if tape not open for reading, EOF, or read fails
-=======
- * @brief Write a single record to the tape at the current position
- *
- * Record format:
- * - 4-byte uint32 length header (native byte order)
- * - raw data payload of that length
- *
- * Position semantics:
- * - Tape is sequential: records are appended/written at the current write
- *   position.
- * - After a successful write, position_ is updated to the new end position.
- *
- * Error behavior:
- * - Throws "TAPE NOT OPEN FOR WRITING" if no tape is open or tape is in read
- *   mode.
- * - Throws "TAPE WRITE ERROR" if the underlying stream fails.
- *
- * Portability note:
- * - The size header is written in native byte order, so tape files are only
- *   guaranteed portable across machines with the same endianness.
- *
- * @param data Record payload bytes
- * @throws std::runtime_error on invalid mode or I/O failure
  */
 void TapeManager::writeRecord(const std::vector<uint8_t> &data) {
   if (!isOpen() || readMode_) {
@@ -325,6 +246,39 @@ void TapeManager::writeRecord(const std::vector<uint8_t> &data) {
 }
 
 /**
+ * @brief Read a record from tape (sequential read)
+ *
+ * Reads the next data record from the tape file at the current position.
+ * Each record consists of a 4-byte size header followed by the data bytes.
+ * This implements the sequential tape read behavior of Applesoft BASIC.
+ *
+ * Record format:
+ * - Size header: 4 bytes (uint32_t) in native byte order
+ * - Data: Variable length based on size header
+ *
+ * Behavior:
+ * - Reads from current file position (sequential)
+ * - Advances position for next read
+ * - Returns data as byte vector
+ * - Validates size against MAX_RECORD_SIZE (1 MB)
+ *
+ * Error conditions:
+ * - Tape not open: "TAPE NOT OPEN FOR READING"
+ * - In write mode: "TAPE NOT OPEN FOR READING"
+ * - End of file: "END OF TAPE"
+ * - Invalid size (0 or > 1MB): "INVALID TAPE FORMAT"
+ * - Partial read: "TAPE READ ERROR"
+ *
+ * Size validation:
+ * - Maximum 1 MB prevents corruption issues
+ * - Zero size indicates format error
+ * - Checks gcount() to verify complete read
+ *
+ * @return Vector of bytes containing record data
+ * @throws std::runtime_error if tape not open for reading, EOF, or read fails
+ */
+
+/**
  * @brief Read the next record from the tape at the current position
  *
  * Reads the 4-byte size header followed by that many payload bytes.
@@ -341,7 +295,6 @@ void TapeManager::writeRecord(const std::vector<uint8_t> &data) {
  *
  * @return Record payload bytes
  * @throws std::runtime_error on invalid mode, EOF, format error, or I/O error
->>>>>>> a74b0a5 (chore: format and document runtime/IO/graphics sources)
  */
 std::vector<uint8_t> TapeManager::readRecord() {
   if (!isOpen() || !readMode_) {

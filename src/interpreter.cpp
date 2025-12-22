@@ -1216,7 +1216,6 @@ void Interpreter::dashProgram(const std::string &filename) {
  * metadata (file types, sizes, dates). Use `PREFIX` to change directories
  * before calling CATALOG to list other locations.
  */
- */
 void Interpreter::catalog() {
   auto files = listFiles(".");
 
@@ -1344,7 +1343,8 @@ void Interpreter::renameFile(const std::string &oldName,
  * implements the PREFIX command without arguments from ProDOS Applesoft BASIC.
  *
  * Output format:
- * - Absolute path to current directory (Unix-style by default, drive letters on Windows)
+ * - Absolute path to current directory (Unix-style by default, drive letters on
+ * Windows)
  *
  * BASIC Usage:
  *   PREFIX  (show current directory)
@@ -1419,7 +1419,9 @@ void Interpreter::changePrefix(const std::string &path) {
  * @param filename Path to file
  * @param options Mode string (READ, WRITE, APPEND, W, A)
  */
-void Interpreter::openFile(const std::string &filename, const std::string &options) {  if (filename.empty()) {
+void Interpreter::openFile(const std::string &filename,
+                           const std::string &options) {
+  if (filename.empty()) {
     handleError("SYNTAX ERROR");
     return;
   }
@@ -1442,11 +1444,11 @@ void Interpreter::openFile(const std::string &filename, const std::string &optio
 
 /**
  * @brief Close an open file (CLOSE implementation)
- * 
+ *
  * Closes a previously opened file and releases its file handle. Any buffered
  * data is flushed to disk. This implements the CLOSE command from ProDOS
  * Applesoft BASIC.
- * 
+ *
  * Behavior:
  * - Flushes any buffered write data
  * - Releases file handle for reuse
@@ -1512,16 +1514,16 @@ void Interpreter::appendFile(const std::string &filename) {
 
 /**
  * @brief Flush buffered file data to disk (FLUSH implementation)
- * 
+ *
  * Forces any buffered write data for the specified file to be written to
  * disk immediately. Useful for ensuring data persistence before long
  * operations or potential crashes.
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - File not open: Varies by implementation
  * - I/O error: Propagated from filesystem
- * 
+ *
  * BASIC Usage:
  *   FLUSH "DATA.TXT"
  *
@@ -1560,18 +1562,12 @@ void Interpreter::flushFile(const std::string &filename) {
  * BASIC Usage:
  *   POSITION filename, Rrecord, Bbyte
  *
- * @param filename Path of open file
+ * @param filename Path to file to open for reading
  * @param record Record number (512-byte blocks)
  * @param byte Byte offset within record
- */ * fully implemented and recommends sequential I/O.
- *
- * @param filename Path to file
- * @param record Record number (ProDOS semantics; currently unused)
- * @param byte Byte offset within record (currently unused)
  */
 void Interpreter::positionFile(const std::string &filename, int record,
                                int byte) {
->>>>>>> a74b0a5 (chore: format and document runtime/IO/graphics sources)
   // For now, position is interpreted as byte offset
   // Record numbers are not yet implemented in full ProDOS style
   try {
@@ -1644,41 +1640,32 @@ void Interpreter::unlockFile(const std::string &filename) {
 
 /**
  * @brief Create a new empty file (CREATE implementation)
- * 
+ *
  * Creates a new empty file with the specified name. If the file already
  * exists, behavior depends on the filesystem implementation. This implements
  * the CREATE command from ProDOS Applesoft BASIC.
- * 
+ *
  * File creation:
  * - Creates empty file (0 bytes)
  * - Default permissions set by OS
  * - Directory must exist
  * - Parent directory must be writable
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - Directory not found: "I/O ERROR"
  * - Permission denied: "I/O ERROR"
  * - Disk full: "I/O ERROR"
- * 
+ *
  * BASIC Usage:
  *   CREATE "NEWFILE.DAT"
  *   CREATE "DATA.TXT", T=TXT  (with type, not yet implemented)
- * 
+ *
  * @param filename Name of file to create
  * @param options File type and options (currently ignored)
  */
- * @brief Create a new file or directory (CREATE implementation)
- *
- * Creates a new empty file with the specified name. If the file already
- * exists, behavior depends on the filesystem implementation. This implements
- * the CREATE command from ProDOS Applesoft BASIC. Options (type/subtype)
- * are currently ignored.
- *
- * @param filename Path to create
- * @param options File type and options (currently ignored)
- */
-void Interpreter::createFile(const std::string &filename, const std::string &options) {
+void Interpreter::createFile(const std::string &filename,
+                             const std::string &options) {
 
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
@@ -1986,36 +1973,36 @@ std::string sanitizeArrayName(const std::string &arrayName) {
 
 /**
  * @brief Save array to tape or disk (STORE implementation)
- * 
+ *
  * Saves an array to cassette tape (if available) or to a disk file. This
  * implements the STORE command from Applesoft BASIC which was originally
  * used for saving arrays to cassette tape.
- * 
+ *
  * Storage format (tape):
  * - Array name length (1 byte) + name
  * - Number of dimensions (1 byte)
  * - Dimension sizes (4 bytes each, little-endian)
  * - Data type flag (1 byte: 0=numeric, 1=string)
  * - Array elements (8 bytes for numbers, length+chars for strings)
- * 
+ *
  * Storage format (disk):
  * - Same format but saved to <arrayname>.arr file
  * - Filename is sanitized (removes $, %, special chars)
- * 
+ *
  * Behavior:
  * - If tape is set (via TAPE command), writes to tape
  * - Otherwise creates .arr file in current directory
  * - Tape maintains position (sequential writes)
  * - Disk creates new file each time (overwrites)
- * 
+ *
  * Error conditions:
  * - Array not defined: "UNDEFINED ARRAY ERROR"
  * - I/O error: "FILE ERROR" or tape error
- * 
+ *
  * BASIC Usage:
  *   DIM A(100)
  *   STORE A   (save to tape or A.arr)
- * 
+ *
  * @param arrayName Name of array to save
  * @throws std::runtime_error if array undefined or I/O error
  */
@@ -2152,37 +2139,37 @@ void Interpreter::storeArray(const std::string &arrayName) {
 
 /**
  * @brief Load array from tape or disk (RECALL implementation)
- * 
+ *
  * Loads an array from cassette tape (if available) or from a disk file. This
  * implements the RECALL command from Applesoft BASIC which was originally
  * used for loading arrays from cassette tape.
- * 
+ *
  * Loading behavior:
  * - If tape is set, reads next record from tape sequentially
  * - Array name from tape record is used (parameter ignored for tape)
  * - From disk, reads from <arrayname>.arr file
  * - Creates array with DIM if it doesn't exist
  * - Overwrites existing array data if it does exist
- * 
+ *
  * File format:
  * - Same format as STORE command
  * - Validates dimensions and data type
  * - Checks for format corruption
- * 
+ *
  * Tape vs File:
  * - Tape: Sequential reading, position maintained
  * - File: Random access, reads specific array by name
- * 
+ *
  * Error conditions:
  * - File not found (disk): "PATH NOT FOUND ERROR"
  * - Invalid format: "INVALID TAPE FORMAT" or "INVALID ARRAY FILE FORMAT"
  * - Dimension mismatch: Format validation error
  * - I/O error: Propagated from filesystem or tape
- * 
+ *
  * BASIC Usage:
  *   RECALL A   (load from tape or A.arr)
  *   RECALL B   (load next array from tape, or B.arr from disk)
- * 
+ *
  * @param arrayName Name of array to load (used for disk files)
  * @throws std::runtime_error if file not found or format invalid
  */
@@ -2406,33 +2393,33 @@ void Interpreter::recallArray(const std::string &arrayName) {
 
 /**
  * @brief Save all variables to a file (extension of Applesoft functionality)
- * 
+ *
  * Saves all scalar variables (numeric and string) to a text file. This is
  * an extension beyond standard Applesoft BASIC, providing persistent
  * variable storage across sessions.
- * 
+ *
  * File format:
  * - Header: "MSBASIC_VARS_V1"
  * - Numeric variable count
  * - Each numeric variable: name value
  * - String variable count
  * - Each string variable: name value (with escaped newlines as \n)
- * 
+ *
  * Usage:
  * - Save game state or configuration
  * - Checkpoint long-running calculations
  * - Transfer data between programs
- * 
+ *
  * Note: Arrays are not included (use STORE for arrays)
- * 
+ *
  * Error conditions:
  * - Cannot create file: "I/O ERROR"
  * - Write error: "I/O ERROR"
- * 
+ *
  * Example usage:
  *   X = 100: Y$ = "TEST"
  *   CALL ... (implementation-specific call to storeVariables)
- * 
+ *
  * @param filename Path to file where variables will be saved
  * @throws std::runtime_error if file cannot be created or written
  */
@@ -2475,31 +2462,31 @@ void Interpreter::storeVariables(const std::string &filename) {
 
 /**
  * @brief Load all variables from a file (extension of Applesoft functionality)
- * 
+ *
  * Loads all scalar variables (numeric and string) from a text file previously
  * saved with storeVariables(). This is an extension beyond standard Applesoft
  * BASIC, providing persistent variable storage across sessions.
- * 
+ *
  * File format:
  * - Must match format from storeVariables()
  * - Validates version header "MSBASIC_VARS_V1"
  * - Reads numeric variables first, then string variables
  * - Escaped newlines (\n) are unescaped
- * 
+ *
  * Behavior:
  * - Existing variables with same names are overwritten
  * - Variables not in file are preserved
  * - Arrays are not affected (use RECALL for arrays)
- * 
+ *
  * Error conditions:
  * - File not found: "PATH NOT FOUND ERROR"
  * - Wrong format: "INVALID VARIABLE FILE FORMAT"
  * - Corrupt data: "INVALID VARIABLE FILE FORMAT"
- * 
+ *
  * Example usage:
  *   CALL ... (implementation-specific call to restoreVariables)
  *   PRINT X, Y$  (variables restored from file)
- * 
+ *
  * @param filename Path to file containing saved variables
  * @throws std::runtime_error if file not found or format invalid
  */
@@ -2572,35 +2559,35 @@ void Interpreter::restoreVariables(const std::string &filename) {
 
 /**
  * @brief Load shape table from file or tape (SHLOAD implementation)
- * 
+ *
  * Loads a shape table containing vector graphics shapes for use with DRAW
  * and XDRAW commands. This implements the SHLOAD command from Applesoft
  * BASIC which originally loaded shape tables from cassette tape.
- * 
+ *
  * Shape table format:
  * - Shape count (1 byte)
  * - For each shape:
  *   * Point count (2 bytes, little-endian)
  *   * Points as (x,y) pairs (4 bytes each: 2 for x, 2 for y, little-endian)
- * 
+ *
  * Loading behavior:
  * - If filename is empty and tape is set: reads from tape
  * - If filename provided: reads from disk file
  * - Shape table pointer stored in memory locations 0xE8-0xE9
  * - Shapes are numbered starting from 1
  * - Shape 0 is invalid/undefined
- * 
+ *
  * Usage with graphics:
  *   SHLOAD "SHAPES.SHP"
  *   DRAW 1 AT 100,100  (draw shape 1)
  *   XDRAW 2 AT 50,50   (draw shape 2 in XOR mode)
- * 
+ *
  * Error conditions:
  * - File not found: "PATH NOT FOUND ERROR"
  * - Invalid format: "INVALID SHAPE TABLE FORMAT"
  * - Corrupt data: "INVALID SHAPE TABLE FORMAT"
  * - Too many shapes: Handled by format limits
- * 
+ *
  * @param filename Path to shape table file (empty string for tape)
  * @throws std::runtime_error if file not found or format invalid
  */
@@ -3331,27 +3318,27 @@ void Interpreter::setSpeedDelay(int delayMs) {
 
 /**
  * @brief Set output device slot (PR# implementation)
- * 
+ *
  * Redirects output to a specific peripheral slot. This implements the PR#
  * (print) command from Applesoft BASIC which was used to select output
  * devices like printers and 80-column cards.
- * 
+ *
  * Apple II slot assignments:
  * - Slot 0: Internal screen (40-column text mode)
  * - Slot 1-2: Serial/printer interfaces
  * - Slot 3: 80-column card (switches to Text80 mode)
  * - Slot 4-7: Other peripherals
- * 
+ *
  * Current implementation:
  * - Slot 0: 40-column text mode
  * - Slot 3: 80-column text mode
  * - Other slots: Stored but no special behavior
- * 
+ *
  * BASIC Usage:
  *   PR#3  (switch to 80-column mode)
  *   PR#0  (switch back to 40-column mode)
  *   PR#1  (redirect to printer - not fully implemented)
- * 
+ *
  * @param slot Peripheral slot number (0-7)
  */
 void Interpreter::setOutputDevice(int slot) {
@@ -3372,24 +3359,24 @@ void Interpreter::setOutputDevice(int slot) {
 
 /**
  * @brief Set text display mode (40 or 80 column)
- * 
+ *
  * Changes the text display mode between 40-column and 80-column modes.
  * This is typically called by PR# command when switching between slot 0
  * (40-column) and slot 3 (80-column card).
- * 
+ *
  * Text modes:
  * - Text40: Standard 40-column mode (classic Apple II)
  * - Text80: 80-column mode (requires 80-column card in real hardware)
- * 
+ *
  * BASIC Usage:
  *   PR#3  (enables 80-column mode via setTextMode)
  *   PR#0  (returns to 40-column mode via setTextMode)
- * 
+ *
  * Future expansion:
  * - Could update graphics renderer's text display
  * - Could adjust line width for text wrapping
  * - Mode is stored for PEEK/POKE compatibility
- * 
+ *
  * @param mode Text display mode (Text40 or Text80)
  */
 void Interpreter::setTextMode(TextMode mode) {
@@ -3400,25 +3387,25 @@ void Interpreter::setTextMode(TextMode mode) {
 
 /**
  * @brief Set input device slot (IN# implementation)
- * 
+ *
  * Redirects input from a specific peripheral slot. This implements the IN#
  * command from Applesoft BASIC which was used to select input devices like
  * modems and serial interfaces.
- * 
+ *
  * Apple II slot assignments:
  * - Slot 0: Keyboard (default input)
  * - Slot 1-2: Serial/modem interfaces
  * - Slot 3-7: Other peripherals
- * 
+ *
  * Current implementation:
  * - All slots: Stored but no special behavior yet
  * - Keyboard input always active
  * - Future: Could redirect GET/INPUT to serial ports
- * 
+ *
  * BASIC Usage:
  *   IN#0  (keyboard input - default)
  *   IN#2  (serial port input - not fully implemented)
- * 
+ *
  * @param slot Peripheral slot number (0-7)
  */
 void Interpreter::setInputDevice(int slot) {
@@ -3445,27 +3432,27 @@ void Interpreter::applySpeedDelay() {
 
 /**
  * @brief Push WHILE loop state onto stack (WHILE implementation helper)
- * 
+ *
  * Records the current WHILE loop's condition and return point when entering
  * a WHILE loop. This information is used by WEND to determine if the loop
  * should continue or exit.
- * 
+ *
  * WHILE loop structure:
  * - WHILE condition: Evaluate condition, push state if true
  * - ... loop body ...
  * - WEND: Pop state, check condition, loop or exit
- * 
+ *
  * Stack entry contains:
  * - condition: Expression to re-evaluate at WEND
  * - returnLine: Line number to jump to if continuing
- * 
+ *
  * BASIC Usage:
  *   10 X = 0
  *   20 WHILE X < 10
  *   30   PRINT X
  *   40   X = X + 1
  *   50 WEND
- * 
+ *
  * @param condition Expression to evaluate for loop continuation
  * @param returnLine Line number to return to when continuing loop
  */
@@ -3479,24 +3466,24 @@ void Interpreter::pushWhileLoop(std::shared_ptr<Expression> condition,
 
 /**
  * @brief Handle WEND statement (WHILE loop terminator)
- * 
+ *
  * Checks the WHILE loop condition and either continues the loop or exits.
  * This implements the WEND statement which closes a WHILE loop.
- * 
+ *
  * Behavior:
  * - Pops WHILE loop info from stack
  * - Re-evaluates the loop condition
  * - If true: Jumps back to line after WHILE statement
  * - If false: Continues to next statement (exits loop)
- * 
+ *
  * Error conditions:
  * - No matching WHILE: "WEND WITHOUT WHILE ERROR"
- * 
+ *
  * BASIC Usage:
  *   WHILE X < 10
  *     X = X + 1
  *   WEND  (check condition and loop or continue)
- * 
+ *
  * @throws std::runtime_error if no matching WHILE found
  */
 void Interpreter::nextWhileLoop() {
@@ -3523,26 +3510,26 @@ void Interpreter::nextWhileLoop() {
 
 /**
  * @brief Pop GOSUB return address from stack (POP implementation)
- * 
+ *
  * Removes the top entry from the GOSUB stack without returning. This
  * implements the POP command from Applesoft BASIC which allows exiting
  * from a subroutine without using RETURN.
- * 
+ *
  * Use cases:
  * - Exit subroutine early without returning
  * - Clear return address after error in subroutine
  * - Clean up stack when changing program flow
- * 
+ *
  * Error conditions:
  * - Empty stack: "POP WITHOUT GOSUB ERROR"
- * 
+ *
  * BASIC Usage:
  *   100 GOSUB 1000
  *   110 PRINT "BACK"
  *   ...
  *   1000 IF X < 0 THEN POP: GOTO 100  (restart instead of return)
  *   1010 RETURN
- * 
+ *
  * @throws std::runtime_error if GOSUB stack is empty
  */
 void Interpreter::popGosub() {
@@ -3554,22 +3541,22 @@ void Interpreter::popGosub() {
 
 /**
  * @brief Check if graphics mode is enabled (internal helper)
- * 
+ *
  * Validates that graphics operations are allowed. Throws an error if
  * graphics are disabled (--no-graphics flag). This is called by all
  * graphics commands (GR, HGR, HPLOT, DRAW, etc.).
- * 
+ *
  * Error handling:
  * - If graphics disabled: "GRAPHICS NOT ENABLED ERROR" with code 255
  * - Error can be caught by ONERR handler
  * - Allows programs to test for graphics availability
- * 
+ *
  * Usage context:
  * - Called automatically by graphics commands
  * - Not directly accessible from BASIC
  * - Const method that modifies error state via const_cast (necessary
  *   for error reporting from const methods)
- * 
+ *
  * @throws Uses handleError() which may throw or jump to ONERR handler
  */
 void Interpreter::requireGraphicsMode() const {
@@ -3584,14 +3571,14 @@ void Interpreter::requireGraphicsMode() const {
 
 /**
  * @brief Set or show directory prefix (internal PREFIX helper)
- * 
+ *
  * Internal implementation of the PREFIX command. Dispatches to showPrefix()
  * if path is empty, otherwise changes to the specified directory.
- * 
+ *
  * This is a convenience wrapper that handles the dual behavior of PREFIX:
  * - PREFIX (no argument): Show current directory
  * - PREFIX path: Change to directory
- * 
+ *
  * @param path New directory path (empty to show current)
  */
 void Interpreter::setPrefix(const std::string &path) {
@@ -3604,19 +3591,19 @@ void Interpreter::setPrefix(const std::string &path) {
 
 /**
  * @brief List files in specified directory (internal CATALOG helper)
- * 
+ *
  * Lists all non-hidden files in the specified directory. This is similar to
  * catalog() but allows specifying a directory path instead of using the
  * current directory.
- * 
+ *
  * Output format:
  * - Header: "CAT <path>"
  * - One filename per line with leading space
  * - Hidden files (starting with '.') are excluded
  * - Directories are excluded (files only)
- * 
+ *
  * Used internally by ProDOS-style CATALOG commands that specify a path.
- * 
+ *
  * @param path Directory path to list
  */
 void Interpreter::catalogFiles(const std::string &path) {
@@ -3632,35 +3619,37 @@ void Interpreter::catalogFiles(const std::string &path) {
 }
 
 /**
- * @brief Load and run program with optional starting line (CHAIN implementation)
- * 
+ * @brief Load and run program with optional starting line (CHAIN
+ * implementation)
+ *
  * Implements the CHAIN command which loads a new program and runs it while
  * preserving all variables. Optionally starts execution from a specified
  * line number instead of the beginning.
- * 
+ *
  * Behavior:
  * - Clears the current program listing
  * - Loads new program from file
  * - Preserves all variables and arrays
  * - Clears DATA/READ state
  * - Starts execution from specified line or beginning
- * 
+ *
  * Difference from dash (-) command:
  * - CHAIN allows specifying starting line
  * - CHAIN is more flexible for program chaining
  * - Both preserve variables
- * 
+ *
  * Error handling:
  * - File not found: Displays error message
  * - Invalid starting line: Propagated from runFrom()
  * - Parse errors: Handled during program loading
- * 
+ *
  * BASIC Usage:
  *   CHAIN "PROG2"        (run from beginning)
  *   CHAIN "PROG2", 100   (run from line 100)
- * 
+ *
  * @param filename Path to BASIC program file
- * @param startLine Line number to start from (0 or negative = start from beginning)
+ * @param startLine Line number to start from (0 or negative = start from
+ * beginning)
  */
 void Interpreter::chainProgram(const std::string &filename, int startLine) {
   try {
@@ -3717,32 +3706,32 @@ void Interpreter::dashRun(const std::string &filename) {
 
 /**
  * @brief Open file for reading with optional positioning (READ implementation)
- * 
+ *
  * Opens a file for reading, optionally positioning to a specific record and
  * byte offset. This implements the READ file command from ProDOS Applesoft
  * BASIC (different from READ for DATA statements).
- * 
+ *
  * Positioning (currently stub):
  * - record: 512-byte record number
  * - byte: Byte offset within record
  * - position = record * 512 + byte
  * - Full positioning not yet implemented
- * 
+ *
  * Current behavior:
  * - Opens file for reading via FileManager
  * - Acknowledges the open operation
  * - TODO: Implement actual file positioning
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - File not found: Propagated from FileManager
  * - I/O error: Propagated from FileManager
- * 
+ *
  * Usage context:
  * - ProDOS file I/O commands
  * - Sequential or random access file reading
  * - Use with subsequent READ operations
- * 
+ *
  * @param filename Path to file to open for reading
  * @param record Record number for positioning (512-byte blocks)
  * @param byte Byte offset within record
@@ -3773,31 +3762,31 @@ void Interpreter::readFile(const std::string &filename, int record, int byte) {
 
 /**
  * @brief Open file for writing with optional positioning (WRITE implementation)
- * 
+ *
  * Opens a file for writing, optionally positioning to a specific record
  * number. This implements the WRITE file command from ProDOS Applesoft
  * BASIC (different from WRITE for OUTPUT operations).
- * 
+ *
  * Positioning (currently stub):
  * - record: 512-byte record number
  * - Full positioning not yet implemented
  * - Currently opens file for writing at beginning
- * 
+ *
  * Current behavior:
  * - Opens file for writing via FileManager
  * - Acknowledges the open operation
  * - TODO: Implement actual record positioning
- * 
+ *
  * Error conditions:
  * - Empty filename: "SYNTAX ERROR"
  * - Cannot create file: Propagated from FileManager
  * - I/O error: Propagated from FileManager
- * 
+ *
  * Usage context:
  * - ProDOS file I/O commands
  * - Sequential or random access file writing
  * - Use with subsequent WRITE operations
- * 
+ *
  * @param filename Path to file to open for writing
  * @param record Record number for positioning (512-byte blocks)
  */
