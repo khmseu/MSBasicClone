@@ -11,12 +11,20 @@ endif()
 set(_output_dir "${SOURCE_DIR}/docs/api")
 set(_latex_dir "${_output_dir}/latex")
 
+# Logging
+if(NOT DEFINED DOCS_LOG_DIR OR "${DOCS_LOG_DIR}" STREQUAL "")
+  set(DOCS_LOG_DIR "${SOURCE_DIR}/build")
+endif()
+file(MAKE_DIRECTORY "${DOCS_LOG_DIR}")
+set(_doxygen_log "${DOCS_LOG_DIR}/docs-doxygen.log")
+set(_latex_log "${DOCS_LOG_DIR}/docs-latex.log")
+
 # Options
 if(NOT DEFINED DOCS_CLEAN_OUTPUT)
   set(DOCS_CLEAN_OUTPUT ON)
 endif()
 if(NOT DEFINED DOCS_ENABLE_DOT)
-  set(DOCS_ENABLE_DOT ON)
+  set(DOCS_ENABLE_DOT OFF)
 endif()
 if(NOT DEFINED DOCS_BUILD_PDF)
   set(DOCS_BUILD_PDF ON)
@@ -58,34 +66,101 @@ function(_print_tail file_path max_lines)
 endfunction()
 
 # Pick LaTeX engine (switch) with fallback.
+unset(_latex_cmd CACHE)
 set(_latex_cmd "")
 string(TOLOWER "${DOCS_LATEX_ENGINE}" _engine)
 
+# Make sure `find_program()` consults the environment PATH.
+set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH TRUE)
+
+# Some CMake find_* commands can cache results across runs in unexpected ways,
+# especially when invoked via `cmake -P` from different working directories.
+# Make sure we re-search after the user installs TeX.
+set(_latex_search_paths
+  /usr/bin
+  /bin
+  /usr/local/bin
+)
+
+function(_docs_try_set_latex_cmd _name)
+  if(_latex_cmd)
+    return()
+  endif()
+
+  foreach(_p IN LISTS _latex_search_paths)
+    if(EXISTS "${_p}/${_name}")
+      set(_latex_cmd "${_p}/${_name}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+endfunction()
+
 if(DOCS_BUILD_PDF)
+  # Doxygen/LaTeX generation may need epstopdf (EPS -> PDF conversion),
+  # especially when diagrams are emitted as EPS.
+  find_program(_epstopdf_cmd NAMES epstopdf)
+  if(NOT _epstopdf_cmd)
+    message(FATAL_ERROR
+      "DOCS_BUILD_PDF=ON but 'epstopdf' was not found.\n"
+      "This tool is required to convert EPS images for the LaTeX/PDF pipeline.\n"
+      "On Debian/Ubuntu: sudo apt-get install texlive-font-utils\n"
+      "Or disable the PDF step by configuring with: -DDOCS_BUILD_PDF=OFF"
+    )
+  endif()
+
+  # Prefer explicit, well-known locations first to avoid any find_program()
+  # quirks when invoked via build tools.
   if(_engine STREQUAL "xelatex")
-    find_program(_latex_cmd xelatex)
+    _docs_try_set_latex_cmd("xelatex")
   elseif(_engine STREQUAL "lualatex")
-    find_program(_latex_cmd lualatex)
+    _docs_try_set_latex_cmd("lualatex")
   elseif(_engine STREQUAL "pdflatex")
-    find_program(_latex_cmd pdflatex)
+    _docs_try_set_latex_cmd("pdflatex")
+  endif()
+
+  if(_engine STREQUAL "xelatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES xelatex HINTS ${_latex_search_paths})
+    endif()
+  elseif(_engine STREQUAL "lualatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES lualatex HINTS ${_latex_search_paths})
+    endif()
+  elseif(_engine STREQUAL "pdflatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES pdflatex HINTS ${_latex_search_paths})
+    endif()
   else()
     message(WARNING "Unknown DOCS_LATEX_ENGINE='${DOCS_LATEX_ENGINE}', trying xelatex")
-    find_program(_latex_cmd xelatex)
+    _docs_try_set_latex_cmd("xelatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES xelatex HINTS ${_latex_search_paths})
+    endif()
   endif()
 
   if(NOT _latex_cmd)
-    find_program(_latex_cmd xelatex)
+    _docs_try_set_latex_cmd("xelatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES xelatex HINTS ${_latex_search_paths})
+    endif()
   endif()
   if(NOT _latex_cmd)
-    find_program(_latex_cmd lualatex)
+    _docs_try_set_latex_cmd("lualatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES lualatex HINTS ${_latex_search_paths})
+    endif()
   endif()
   if(NOT _latex_cmd)
-    find_program(_latex_cmd pdflatex)
+    _docs_try_set_latex_cmd("pdflatex")
+    if(NOT _latex_cmd)
+      find_program(_latex_cmd NAMES pdflatex HINTS ${_latex_search_paths})
+    endif()
   endif()
 
   if(NOT _latex_cmd)
     message(FATAL_ERROR
       "No LaTeX engine found (tried xelatex, lualatex, pdflatex).\n"
+      "PATH=$ENV{PATH}\n"
       "To build the PDF on Debian/Ubuntu: sudo apt-get install texlive-xetex texlive-luatex texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended\n"
       "Or disable the PDF step by configuring with: -DDOCS_BUILD_PDF=OFF"
     )
@@ -169,15 +244,52 @@ if(DOCS_CLEAN_OUTPUT)
 endif()
 
 # Run Doxygen
-message(STATUS "Running Doxygen...")
+message(STATUS "Running Doxygen (log: ${_doxygen_log})")
 execute_process(
   COMMAND "${DOXYGEN_EXECUTABLE}" "${_doxy_out}"
   WORKING_DIRECTORY "${SOURCE_DIR}"
   RESULT_VARIABLE _doxygen_rv
+  OUTPUT_FILE "${_doxygen_log}"
+  ERROR_FILE "${_doxygen_log}"
 )
 
 if(NOT _doxygen_rv EQUAL 0)
+  _print_tail("${_doxygen_log}" 80)
   message(FATAL_ERROR "Doxygen failed with exit code ${_doxygen_rv}")
+endif()
+
+# Doxygen's LaTeX output is primarily tailored for pdfTeX/LuaTeX.
+# When using XeLaTeX, guard pdfTeX-only primitives that can appear in refman.tex.
+if(DOCS_BUILD_PDF AND _engine STREQUAL "xelatex")
+  if(EXISTS "${_latex_dir}/refman.tex")
+    file(READ "${_latex_dir}/refman.tex" _refman_tex)
+    set(_refman_tex_patched "${_refman_tex}")
+
+    # XeTeX does not define \pdfminorversion; make it conditional.
+    # Keeps behavior for engines that do define it, and avoids a hard error on XeLaTeX.
+    string(REPLACE "\\pdfminorversion=7" "\\ifdefined\\pdfminorversion\\pdfminorversion=7\\fi" _refman_tex_patched "${_refman_tex_patched}")
+    string(REPLACE "\\pdfminorversion =7" "\\ifdefined\\pdfminorversion\\pdfminorversion=7\\fi" _refman_tex_patched "${_refman_tex_patched}")
+    string(REPLACE "\\pdfminorversion = 7" "\\ifdefined\\pdfminorversion\\pdfminorversion=7\\fi" _refman_tex_patched "${_refman_tex_patched}")
+
+    # XeTeX also does not define \pdfsuppresswarningpagegroup; guard it similarly.
+    string(REPLACE "\\pdfsuppresswarningpagegroup=1" "\\ifdefined\\pdfsuppresswarningpagegroup\\pdfsuppresswarningpagegroup=1\\fi" _refman_tex_patched "${_refman_tex_patched}")
+    string(REPLACE "\\pdfsuppresswarningpagegroup =1" "\\ifdefined\\pdfsuppresswarningpagegroup\\pdfsuppresswarningpagegroup=1\\fi" _refman_tex_patched "${_refman_tex_patched}")
+    string(REPLACE "\\pdfsuppresswarningpagegroup = 1" "\\ifdefined\\pdfsuppresswarningpagegroup\\pdfsuppresswarningpagegroup=1\\fi" _refman_tex_patched "${_refman_tex_patched}")
+
+    # Some TeX distributions ship a newunicodechar version without \nuc@check.
+    # Doxygen's refman.tex defines \doxynewunicodechar in terms of \nuc@check, so
+    # provide a small compatibility shim to avoid a hard XeLaTeX failure.
+    string(REPLACE
+      "  \\usepackage{newunicodechar}\n  \\makeatletter\n    \\def\\doxynewunicodechar"
+      "  \\usepackage{newunicodechar}\n  \\makeatletter\n  \\@ifundefined{nuc@check}{\\def\\nuc@check{\\@tempswatrue}}{}\n  \\@ifundefined{nuc@emptyargerr}{\\def\\nuc@emptyargerr{}}{}\n    \\def\\doxynewunicodechar"
+      _refman_tex_patched
+      "${_refman_tex_patched}"
+    )
+
+    if(NOT "${_refman_tex_patched}" STREQUAL "${_refman_tex}")
+      file(WRITE "${_latex_dir}/refman.tex" "${_refman_tex_patched}")
+    endif()
+  endif()
 endif()
 
 if(NOT EXISTS "${_latex_dir}/Makefile")
@@ -186,18 +298,23 @@ endif()
 
 if(DOCS_BUILD_PDF)
   # Build PDF; if it fails, print log tail.
-  message(STATUS "Building PDF with LATEX_CMD=${_latex_cmd}")
+  message(STATUS "Building PDF with LATEX_CMD=${_latex_cmd} (log: ${_latex_log})")
   execute_process(
-    COMMAND "${CMAKE_COMMAND}" -E chdir "${_latex_dir}" make LATEX_CMD="${_latex_cmd}"
+    COMMAND "${CMAKE_COMMAND}" -E chdir "${_latex_dir}" make "LATEX_CMD=${_latex_cmd}"
     RESULT_VARIABLE _make_rv
+    OUTPUT_FILE "${_latex_log}"
+    ERROR_FILE "${_latex_log}"
   )
 
   if(NOT _make_rv EQUAL 0)
+    _print_tail("${_latex_log}" 80)
     _print_tail("${_latex_dir}/refman.log" 80)
     message(FATAL_ERROR "LaTeX build failed with exit code ${_make_rv}")
   endif()
 
   message(STATUS "Docs built successfully: ${_latex_dir}/refman.pdf")
+  message(STATUS "Logs saved: ${_doxygen_log}; ${_latex_log}")
 else()
   message(STATUS "PDF build skipped (DOCS_BUILD_PDF=OFF). HTML/LaTeX outputs are under ${_output_dir}.")
+  message(STATUS "Log saved: ${_doxygen_log}")
 endif()
