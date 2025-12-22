@@ -209,6 +209,30 @@ bool Tokenizer::isKeyword(const std::string &word) const {
   return keywords.find(upper) != keywords.end();
 }
 
+/**
+ * @brief Get TokenType for a keyword string (tokenizer helper)
+ * 
+ * Maps a keyword string to its corresponding TokenType enum value. This
+ * function contains the complete keyword-to-token mapping used during
+ * tokenization.
+ * 
+ * The keyword map includes:
+ * - Commands: PRINT, INPUT, LIST, RUN, NEW, etc.
+ * - Control flow: IF, THEN, ELSE, FOR, NEXT, GOTO, GOSUB, etc.
+ * - Data: DATA, READ, RESTORE, DIM
+ * - Functions: FN, DEF
+ * - Graphics: GR, HGR, HPLOT, DRAW, XDRAW, etc.
+ * - ProDOS: OPEN, CLOSE, READ, WRITE, etc.
+ * - Special: ? as alias for PRINT
+ * 
+ * Case handling:
+ * - Keywords are matched case-insensitively
+ * - Input is converted to uppercase before lookup
+ * 
+ * @param word Keyword string to look up (case-insensitive)
+ * @return TokenType corresponding to the keyword
+ * @throws May return undefined behavior if word is not a keyword (caller should check isKeyword first)
+ */
 TokenType Tokenizer::getKeywordType(const std::string &word) const {
   static const std::map<std::string, TokenType> keywords = {
       {"PRINT", TokenType::PRINT},
@@ -717,4 +741,13 @@ char Tokenizer::advance() {
   return ch;
 }
 
+/**
+ * @brief Check if tokenizer is at end of input (tokenizer helper)
+ * 
+ * Returns true if the current position has reached or exceeded the length
+ * of the input string. Used throughout tokenization to prevent reading
+ * past the end of input.
+ * 
+ * @return true if at end of input, false otherwise
+ */
 bool Tokenizer::isAtEnd() const { return pos_ >= input_.length(); }

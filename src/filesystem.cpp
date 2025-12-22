@@ -169,11 +169,48 @@ bool setPrefix(const std::string& path) {
 }
 
 // FileManager implementation
+
+/**
+ * @brief Get the FileManager singleton instance
+ * 
+ * Returns the global FileManager instance used to manage all open files.
+ * Uses static initialization to ensure thread-safe singleton creation.
+ * 
+ * @return Reference to FileManager singleton
+ */
 FileManager& FileManager::getInstance() {
     static FileManager instance;
     return instance;
 }
 
+/**
+ * @brief Open a file with specified access mode
+ * 
+ * Opens a file for reading, writing, or appending. Returns a unique handle
+ * that can be used for subsequent file operations. If the file is already
+ * open, returns the existing handle.
+ * 
+ * Access modes:
+ * - READ: Open existing file for reading (ios::in)
+ * - WRITE: Create/truncate file for writing (ios::out | ios::trunc)
+ * - APPEND: Open/create file for appending (ios::out | ios::app)
+ * 
+ * Handle management:
+ * - Each file gets a unique numeric handle
+ * - Handles are tracked in handles_ map
+ * - Filename-to-handle mapping in filenameToHandle_
+ * - Prevents opening same file twice (returns existing handle)
+ * 
+ * Error conditions:
+ * - File not found (READ mode): "PATH NOT FOUND ERROR"
+ * - Cannot create file: "PATH NOT FOUND ERROR"
+ * - Permission denied: Propagated from filesystem
+ * 
+ * @param filename Path to file to open
+ * @param mode File access mode (READ, WRITE, APPEND)
+ * @return File handle for subsequent operations
+ * @throws std::runtime_error if file cannot be opened
+ */
 int FileManager::openFile(const std::string& filename, FileAccessMode mode) {
     // Check if file is already open
     auto it = filenameToHandle_.find(filename);
