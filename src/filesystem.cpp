@@ -548,6 +548,7 @@ bool FileManager::createFile(const std::string &filename) {
  */
 std::vector<uint8_t> FileManager::loadBinaryFile(const std::string &filename,
                                                  int address) {
+  (void)address; // address is informational only in this host implementation
   std::ifstream file(filename, std::ios::binary | std::ios::ate);
   if (!file) {
     throw std::runtime_error("PATH NOT FOUND ERROR");
@@ -584,6 +585,7 @@ std::vector<uint8_t> FileManager::loadBinaryFile(const std::string &filename,
 void FileManager::saveBinaryFile(const std::string &filename,
                                  const std::vector<uint8_t> &data, int address,
                                  int length) {
+  (void)address; // preserved for API compatibility
   std::ofstream file(filename, std::ios::binary);
   if (!file) {
     throw std::runtime_error("I/O ERROR");

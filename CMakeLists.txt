@@ -55,9 +55,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         -pedantic
         -O3  # Performance optimization
     )
-    if(WARNINGS_AS_ERRORS)
-        add_compile_options(-Werror)
-    endif()
 endif()
 
 if(MSVC)
@@ -65,9 +62,6 @@ if(MSVC)
         /W4
         /O2
     )
-    if(WARNINGS_AS_ERRORS)
-        add_compile_options(/WX)
-    endif()
 endif()
 
 # Source files
@@ -180,6 +174,15 @@ fetch_apple2_font()
 # Create executable
 add_executable(msbasic ${SOURCES} ${HEADERS})
 target_include_directories(msbasic PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/generated)
+
+# Apply warnings-as-errors only to msbasic target (not vendored dependencies)
+if(WARNINGS_AS_ERRORS)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(msbasic PRIVATE -Werror)
+    elseif(MSVC)
+        target_compile_options(msbasic PRIVATE /WX)
+    endif()
+endif()
 
 enable_testing()
 

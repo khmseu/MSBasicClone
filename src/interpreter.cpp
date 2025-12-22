@@ -1568,14 +1568,17 @@ void Interpreter::flushFile(const std::string &filename) {
  */
 void Interpreter::positionFile(const std::string &filename, int record,
                                int byte) {
+  (void)filename; // stub: filename not used in current implementation
+  (void)record;
+  (void)byte;
   // For now, position is interpreted as byte offset
   // Record numbers are not yet implemented in full ProDOS style
   try {
-    auto &fm = FileManager::getInstance();
+    // auto &fm = FileManager::getInstance();
     // Get handle by filename (this is a simplification)
     // In real ProDOS, you'd use the handle directly
-    size_t position =
-        static_cast<size_t>(record * 512 + byte); // Assume 512-byte records
+    // size_t position =
+    //     static_cast<size_t>(record * 512 + byte); // Assume 512-byte records
     handleError("POSITION not fully implemented - use sequential I/O");
   } catch (const std::exception &e) {
     handleError(e.what());
@@ -1666,6 +1669,7 @@ void Interpreter::unlockFile(const std::string &filename) {
  */
 void Interpreter::createFile(const std::string &filename,
                              const std::string &options) {
+  (void)options; // options not yet used in this stub implementation
 
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
@@ -2607,7 +2611,8 @@ void Interpreter::loadShapeTableFromFile(const std::string &filename) {
 
       // First byte should be number of shapes
       uint8_t numShapes = record[0];
-      if (numShapes == 0 || record.size() < 1 + numShapes * 2) {
+      const size_t requiredSize = 1 + static_cast<size_t>(numShapes) * 2;
+      if (numShapes == 0 || record.size() < requiredSize) {
         throw std::runtime_error("INVALID SHAPE TABLE FORMAT");
       }
 

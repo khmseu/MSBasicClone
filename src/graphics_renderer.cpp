@@ -291,8 +291,8 @@ void GraphicsRenderer::drawText(const std::string &text, int x, int y,
         float currentX = position.x;
         for (const char &ch : text) {
           charBuffer[0] = ch;
-          DrawTextEx(font_, charBuffer, (Vector2){currentX, position.y},
-                     fontSize, 0, c);
+          Vector2 glyphPos{currentX, position.y};
+          DrawTextEx(font_, charBuffer, glyphPos, fontSize, 0, c);
           // In 80-column mode, characters are compressed horizontally
           currentX += (7.0f * config_.scaleFactor * horizontalScale);
         }
