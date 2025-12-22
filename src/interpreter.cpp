@@ -1395,7 +1395,21 @@ namespace {
 // being large enough for any practical use case
 constexpr size_t kMaxArrayDimensions = 255;
 
-// Helper function to sanitize array name for use as filename
+/**
+ * @brief Sanitize array name for use as filename
+ * 
+ * Converts an array name to a safe filename by removing characters that
+ * are problematic on various filesystems (/, \, :, *, ?, ", <, >, |, $, %).
+ * Adds ".arr" extension to create a valid array file name.
+ * 
+ * Examples:
+ *   "DATA$" → "DATA.arr"
+ *   "VALUES%" → "VALUES.arr"
+ *   "MY:ARRAY" → "MYARRAY.arr"
+ * 
+ * @param arrayName Array name from BASIC program
+ * @return Sanitized filename with .arr extension
+ */
 std::string sanitizeArrayName(const std::string &arrayName) {
   std::string filename = arrayName;
   // Remove problematic characters for filenames
