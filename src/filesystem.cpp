@@ -233,9 +233,9 @@ bool setPrefix(const std::string &path) { return chdir(path.c_str()) == 0; }
  *
  * @return Reference to FileManager singleton
  */
-FileManager& FileManager::getInstance() {
-    static FileManager instance;
-    return instance;
+FileManager &FileManager::getInstance() {
+  static FileManager instance;
+  return instance;
 }
 
 /**
@@ -255,44 +255,44 @@ FileManager& FileManager::getInstance() {
  * @return Positive integer handle
  * @throws std::runtime_error if the file cannot be opened
  */
-int FileManager::openFile(const std::string& filename, FileAccessMode mode) {
-    // Check if file is already open
-    auto it = filenameToHandle_.find(filename);
-    if (it != filenameToHandle_.end()) {
-        return it->second;  // Return existing handle
-    }
-    
-    int handle = nextHandle_++;
-    FileHandle& fh = handles_[handle];
-    fh.filename = filename;
-    fh.mode = mode;
-    fh.position = 0;
-    fh.stream = std::make_unique<std::fstream>();
-    
-    std::ios_base::openmode openMode = std::ios_base::binary;
-    switch (mode) {
-        case FileAccessMode::READ:
-            openMode |= std::ios_base::in;
-            break;
-        case FileAccessMode::WRITE:
-            openMode |= std::ios_base::out | std::ios_base::trunc;
-            break;
-        case FileAccessMode::APPEND:
-            openMode |= std::ios_base::out | std::ios_base::app;
-            break;
-    }
-    
-    fh.stream->open(filename, openMode);
-    fh.isOpen = fh.stream->is_open();
-    
-    if (fh.isOpen) {
-        filenameToHandle_[filename] = handle;
-        return handle;
-    } else {
-        handles_.erase(handle);
-        throw std::runtime_error("PATH NOT FOUND ERROR");
-    }
-}}
+int FileManager::openFile(const std::string &filename, FileAccessMode mode) {
+  // Check if file is already open
+  auto it = filenameToHandle_.find(filename);
+  if (it != filenameToHandle_.end()) {
+    return it->second; // Return existing handle
+  }
+
+  int handle = nextHandle_++;
+  FileHandle &fh = handles_[handle];
+  fh.filename = filename;
+  fh.mode = mode;
+  fh.position = 0;
+  fh.stream = std::make_unique<std::fstream>();
+
+  std::ios_base::openmode openMode = std::ios_base::binary;
+  switch (mode) {
+  case FileAccessMode::READ:
+    openMode |= std::ios_base::in;
+    break;
+  case FileAccessMode::WRITE:
+    openMode |= std::ios_base::out | std::ios_base::trunc;
+    break;
+  case FileAccessMode::APPEND:
+    openMode |= std::ios_base::out | std::ios_base::app;
+    break;
+  }
+
+  fh.stream->open(filename, openMode);
+  fh.isOpen = fh.stream->is_open();
+
+  if (fh.isOpen) {
+    filenameToHandle_[filename] = handle;
+    return handle;
+  } else {
+    handles_.erase(handle);
+    throw std::runtime_error("PATH NOT FOUND ERROR");
+  }
+}
 
 /**
  * @brief Close an open file by handle

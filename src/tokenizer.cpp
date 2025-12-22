@@ -740,11 +740,11 @@ char Tokenizer::advance() {
 
 /**
  * @brief Check if tokenizer is at end of input (tokenizer helper)
- * 
+ *
  * Returns true if the current position has reached or exceeded the length
  * of the input string. Used throughout tokenization to prevent reading
  * past the end of input.
- * 
+ *
  * @return true if at end of input, false otherwise
  */
 bool Tokenizer::isAtEnd() const { return pos_ >= input_.length(); }
