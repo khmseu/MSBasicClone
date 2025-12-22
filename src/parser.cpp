@@ -1525,13 +1525,52 @@ private:
   int record_;
 };
 
-// Statement implementations for WHILE/WEND/POP
+/**
+ * @brief WHILE statement execution - pushes loop state onto stack
+ * 
+ * Begins a WHILE loop by evaluating the condition and pushing loop state.
+ * The actual loop logic (condition checking, iteration) is handled by the
+ * interpreter's WHILE stack management.
+ * 
+ * BASIC Usage:
+ *   WHILE condition
+ *     ... statements ...
+ *   WEND
+ * 
+ * @param interp Interpreter instance
+ */
 void WhileStmt::execute(Interpreter *interp) {
   interp->pushWhileLoop(condition_, interp->getCurrentLine());
 }
 
+/**
+ * @brief WEND statement execution - loops back to matching WHILE
+ * 
+ * Marks the end of a WHILE loop and jumps back to the corresponding WHILE
+ * statement for condition re-evaluation. The interpreter handles loop
+ * stack management and condition checking.
+ * 
+ * @param interp Interpreter instance
+ */
 void WendStmt::execute(Interpreter *interp) { interp->nextWhileLoop(); }
 
+/**
+ * @brief POP statement execution - removes GOSUB return address from stack
+ * 
+ * Removes the most recent GOSUB return address from the stack without
+ * returning. This is useful for breaking out of subroutines when you want
+ * to jump directly to another location instead of returning to the caller.
+ * 
+ * BASIC Usage:
+ *   100 GOSUB 1000
+ *   110 END
+ *   1000 REM Subroutine
+ *   1010 IF X > 0 THEN POP : GOTO 2000
+ *   1020 RETURN
+ *   2000 REM Jump here instead of returning to line 110
+ * 
+ * @param interp Interpreter instance
+ */
 void PopStmt::execute(Interpreter *interp) { interp->popGosub(); }
 
 // Parser implementation
@@ -2397,6 +2436,35 @@ std::shared_ptr<Statement> Parser::parsePrint(const std::vector<Token> &tokens,
   return std::make_shared<PrintStmt>(exprs, separators);
 }
 
+/**
+ * @brief Parse variable or array assignment statement (LET implementation)
+ * 
+ * Handles both simple variable assignment and array element assignment.
+ * The LET keyword is optional in Applesoft BASIC.
+ * 
+ * Syntax:
+ *   [LET] variable = expression
+ *   [LET] array(index1[,index2...]) = expression
+ * 
+ * Examples:
+ *   LET X = 10
+ *   Y = X * 2    (LET is optional)
+ *   A(5) = 100   (array assignment)
+ *   B(I,J) = X+Y (multi-dimensional array)
+ * 
+ * Implementation:
+ * 1. Skip optional LET keyword
+ * 2. Parse variable name
+ * 3. Check for array indices (parentheses)
+ * 4. Require equals sign
+ * 5. Parse right-hand side expression
+ * 6. Return appropriate statement (LetStmt or ArrayLetStmt)
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return LetStmt for variable or ArrayLetStmt for array assignment
+ * @throws std::runtime_error on syntax errors
+ */
 std::shared_ptr<Statement>
 Parser::parseLetOrAssignment(const std::vector<Token> &tokens, size_t &pos) {
   if (tokens[pos].type == TokenType::LET) {
@@ -2918,6 +2986,30 @@ Parser::parsePrimaryExpression(const std::vector<Token> &tokens, size_t &pos) {
 
 // (moved class definitions earlier)
 
+/**
+ * @brief Parse ON...GOTO or ON...GOSUB computed transfer statement
+ * 
+ * Implements computed branching based on an integer index value. The index
+ * selects which line number to jump to from a list of targets.
+ * 
+ * Syntax:
+ *   ON expression GOTO line1[,line2,...]
+ *   ON expression GOSUB line1[,line2,...]
+ * 
+ * Examples:
+ *   ON X GOTO 100,200,300     (if X=1 goto 100, X=2 goto 200, X=3 goto 300)
+ *   ON CHOICE GOSUB 1000,2000 (if CHOICE=1 gosub 1000, if CHOICE=2 gosub 2000)
+ * 
+ * Behavior:
+ * - Expression is rounded to integer and 1-indexed
+ * - If index < 1 or > list length, continues to next statement (no jump)
+ * - GOSUB variant pushes return address on stack
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return OnTransferStmt with index expression and line number list
+ * @throws std::runtime_error if GOTO/GOSUB keyword missing or syntax error
+ */
 std::shared_ptr<Statement> Parser::parseOn(const std::vector<Token> &tokens,
                                            size_t &pos) {
   pos++; // Skip ON
@@ -2951,6 +3043,32 @@ std::shared_ptr<Statement> Parser::parseOn(const std::vector<Token> &tokens,
   return std::make_shared<OnTransferStmt>(index, kind, lines);
 }
 
+/**
+ * @brief Parse INPUT statement for user input
+ * 
+ * Reads values from user input into variables. Can include an optional
+ * prompt string and supports multiple variables in one statement.
+ * 
+ * Syntax:
+ *   INPUT [prompt;] variable[,variable...]
+ * 
+ * Examples:
+ *   INPUT X          (reads number into X)
+ *   INPUT A$         (reads string into A$)
+ *   INPUT "NAME"; N$ (prompt with semicolon)
+ *   INPUT X,Y,Z      (read three values)
+ * 
+ * Behavior:
+ * - Displays "?" prompt if no prompt string provided
+ * - Semicolon after prompt suppresses default "?"
+ * - Type mismatch causes "?REDO FROM START" message
+ * - Multiple values separated by commas in input
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return InputStmt with prompt and variable list
+ * @throws std::runtime_error on syntax errors
+ */
 std::shared_ptr<Statement> Parser::parseInput(const std::vector<Token> &tokens,
                                               size_t &pos) {
   pos++; // Skip INPUT
@@ -3299,6 +3417,24 @@ std::shared_ptr<Statement> Parser::parseOnErr(const std::vector<Token> &tokens,
   return std::make_shared<OnErrStmt>(lineNum);
 }
 
+/**
+ * @brief Parse RANDOMIZE statement to seed random number generator
+ * 
+ * Seeds the random number generator for RND() function. If no seed is
+ * provided, implementation uses current time or default seed.
+ * 
+ * Syntax:
+ *   RANDOMIZE [seed]
+ * 
+ * Examples:
+ *   RANDOMIZE       (use default/time-based seed)
+ *   RANDOMIZE 42    (explicit seed for reproducible results)
+ *   RANDOMIZE X*10  (seed can be an expression)
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return RandomizeStmt with optional seed expression
+ */
 std::shared_ptr<Statement>
 Parser::parseRandomize(const std::vector<Token> &tokens, size_t &pos) {
   pos++; // Skip RANDOMIZE
@@ -3310,6 +3446,27 @@ Parser::parseRandomize(const std::vector<Token> &tokens, size_t &pos) {
   return std::make_shared<RandomizeStmt>(seed);
 }
 
+/**
+ * @brief Parse SPEED statement for execution delay control
+ * 
+ * Sets a delay in milliseconds between each statement execution, useful
+ * for debugging or creating visual effects in programs.
+ * 
+ * Syntax:
+ *   SPEED [=] delay
+ * 
+ * Examples:
+ *   SPEED = 100   (100ms delay between statements)
+ *   SPEED 0       (no delay - full speed)
+ *   SPEED 255     (maximum delay - 255ms)
+ * 
+ * The delay value should be 0-255. Values outside this range will be
+ * clamped during execution.
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return SpeedStmt with delay expression
+ */
 std::shared_ptr<Statement> Parser::parseSpeed(const std::vector<Token> &tokens,
                                               size_t &pos) {
   pos++; // Skip SPEED
@@ -3320,6 +3477,31 @@ std::shared_ptr<Statement> Parser::parseSpeed(const std::vector<Token> &tokens,
   return std::make_shared<SpeedStmt>(delay);
 }
 
+/**
+ * @brief Parse device I/O redirection (PR# and IN# statements)
+ * 
+ * Handles ProDOS-style device redirection for output (PR#) and input (IN#).
+ * These commands were used in Apple II to redirect I/O to different slots
+ * (printers, modems, disk drives, etc.).
+ * 
+ * Syntax:
+ *   PR[#] slot    (redirect output to slot)
+ *   IN[#] slot    (redirect input from slot)
+ * 
+ * Examples:
+ *   PR#1          (redirect output to printer in slot 1)
+ *   PR#0          (restore output to screen)
+ *   IN#2          (redirect input from slot 2)
+ *   IN#0          (restore input from keyboard)
+ * 
+ * Note: This implementation provides stub support for compatibility;
+ * actual device redirection depends on platform capabilities.
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @param isOutput true for PR# (output), false for IN# (input)
+ * @return DeviceRedirectStmt with slot expression
+ */
 std::shared_ptr<Statement>
 Parser::parseDeviceRedirect(const std::vector<Token> &tokens, size_t &pos,
                             bool isOutput) {
@@ -3342,6 +3524,32 @@ std::shared_ptr<Statement> Parser::parseWhile(const std::vector<Token> &tokens,
                                      -1); // returnLine set at runtime
 }
 
+/**
+ * @brief Parse WAIT statement for memory polling
+ * 
+ * Waits for a memory location to match a specific bit pattern, with
+ * optional timeout. This was used in Applesoft to wait for hardware
+ * status changes.
+ * 
+ * Syntax:
+ *   WAIT address, mask[, timeout]
+ * 
+ * Examples:
+ *   WAIT 49152,128        (wait for bit 7 at address 49152)
+ *   WAIT -16384,128       (same - negative addresses supported)
+ *   WAIT 49152,128,1000   (wait up to 1000ms)
+ * 
+ * Behavior:
+ * - Loops until (PEEK(address) AND mask) != 0
+ * - Optional third parameter: timeout in milliseconds
+ * - Without timeout, waits indefinitely (use Ctrl+C to break)
+ * - With timeout, exits silently when time expires
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return WaitStmt with address, mask, and optional timeout
+ * @throws std::runtime_error on syntax errors
+ */
 std::shared_ptr<Statement> Parser::parseWait(const std::vector<Token> &tokens,
                                              size_t &pos) {
   pos++; // Skip WAIT
@@ -3360,6 +3568,29 @@ std::shared_ptr<Statement> Parser::parseWait(const std::vector<Token> &tokens,
   return std::make_shared<WaitStmt>(addr, mask, timeout);
 }
 
+/**
+ * @brief Parse HIMEM statement to set upper memory limit
+ * 
+ * Sets the highest memory address that BASIC can use for variables and
+ * arrays. Memory above HIMEM is protected from BASIC programs.
+ * 
+ * Syntax:
+ *   HIMEM = address
+ * 
+ * Examples:
+ *   HIMEM = 32767    (set upper limit to 32767)
+ *   HIMEM = 16384    (protect upper half of memory)
+ * 
+ * Behavior:
+ * - HIMEM must be > LOMEM
+ * - PEEK/POKE operations outside LOMEM-HIMEM range will error
+ * - Used to reserve memory for machine language routines or data
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return HimemStmt with address expression
+ * @throws std::runtime_error if equals sign missing
+ */
 std::shared_ptr<Statement> Parser::parseHimem(const std::vector<Token> &tokens,
                                               size_t &pos) {
   pos++; // Skip HIMEM
@@ -3371,6 +3602,30 @@ std::shared_ptr<Statement> Parser::parseHimem(const std::vector<Token> &tokens,
   return std::make_shared<HimemStmt>(addr);
 }
 
+/**
+ * @brief Parse LOMEM statement to set lower memory limit
+ * 
+ * Sets the lowest memory address that BASIC can use for variables and
+ * arrays. Memory below LOMEM is protected from BASIC programs.
+ * 
+ * Syntax:
+ *   LOMEM = address
+ * 
+ * Examples:
+ *   LOMEM = 2048     (set lower limit to 2048)
+ *   LOMEM = 8192     (protect lower 8K for machine code)
+ * 
+ * Behavior:
+ * - LOMEM must be < HIMEM
+ * - PEEK/POKE operations outside LOMEM-HIMEM range will error
+ * - Used to reserve memory for machine language routines
+ * - Often set before loading assembly language programs with BLOAD
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return LomemStmt with address expression
+ * @throws std::runtime_error if equals sign missing
+ */
 std::shared_ptr<Statement> Parser::parseLomem(const std::vector<Token> &tokens,
                                               size_t &pos) {
   pos++; // Skip LOMEM
@@ -3382,6 +3637,29 @@ std::shared_ptr<Statement> Parser::parseLomem(const std::vector<Token> &tokens,
   return std::make_shared<LomemStmt>(addr);
 }
 
+/**
+ * @brief Parse SHLOAD statement to load shape table
+ * 
+ * Loads a shape table from tape or disk for use with DRAW and XDRAW
+ * commands. Shape tables contain vector graphics data.
+ * 
+ * Syntax:
+ *   SHLOAD [filename]
+ * 
+ * Examples:
+ *   SHLOAD           (load from current tape position)
+ *   SHLOAD "SHAPES"  (load from file named "SHAPES")
+ * 
+ * Behavior:
+ * - Without filename: reads from current tape position (sequential)
+ * - With filename: loads from disk file
+ * - Shape table pointer stored in memory locations 232-233 (0xE8-0xE9)
+ * - After loading, shapes can be drawn with DRAW/XDRAW
+ * 
+ * @param tokens Token sequence to parse
+ * @param pos Current position (updated after parsing)
+ * @return ShloadStmt with optional filename
+ */
 std::shared_ptr<Statement> Parser::parseShload(const std::vector<Token> &tokens,
                                                size_t &pos) {
   pos++; // Skip SHLOAD

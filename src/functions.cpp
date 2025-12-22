@@ -900,22 +900,90 @@ Value funcPos(const Value &) {
   return Value(static_cast<double>(col));
 }
 
+/**
+ * @brief Report free memory (FRE() function)
+ * 
+ * In Applesoft BASIC, FRE() returned the number of free bytes available
+ * for program and variables. This implementation returns a fixed value
+ * for deterministic behavior across platforms.
+ * 
+ * Usage in BASIC:
+ *   PRINT FRE(0)   (argument ignored, always returns same value)
+ * 
+ * Note: Original Applesoft would trigger garbage collection when called
+ * with a string argument (FRE("")) to reclaim string space.
+ * 
+ * @param dummy Argument (ignored, kept for compatibility)
+ * @return Fixed value 32767.0 representing available memory
+ */
 Value funcFre(const Value &) {
   // Placeholder free-memory report; Applesoft returned bytes free. Use fixed
   // value to keep behavior deterministic across platforms.
   return Value(32767.0);
 }
 
+/**
+ * @brief Read paddle controller position (PDL() function)
+ * 
+ * In Applesoft BASIC, PDL() read analog game paddle controllers connected
+ * to the Apple II game port. Values ranged from 0-255 based on paddle
+ * position.
+ * 
+ * Usage in BASIC:
+ *   X = PDL(0)   (read paddle 0)
+ *   Y = PDL(1)   (read paddle 1)
+ * 
+ * This implementation returns 0 as paddle input is not supported on
+ * modern platforms. Programs using PDL() for input should be adapted
+ * to use keyboard (GET) or INPUT instead.
+ * 
+ * @param paddle Paddle number 0-3 (ignored)
+ * @return Always 0.0 (paddle not supported)
+ */
 Value funcPdl(const Value &) {
   // Paddle input not supported; return 0.
   return Value(0.0);
 }
 
+/**
+ * @brief Read byte from memory (PEEK() function)
+ * 
+ * Reads a single byte from the specified memory address. This is the
+ * functional equivalent of the PEEK statement.
+ * 
+ * Usage in BASIC:
+ *   A = PEEK(49152)      (read keyboard register)
+ *   X = PEEK(-16384)     (negative addresses converted to 16-bit unsigned)
+ * 
+ * See peekMemory() for details on address handling and special locations.
+ * 
+ * @param arg Address to read from (converted to integer)
+ * @return Byte value at address (0-255)
+ */
 Value funcPeek(const Value &arg) {
   int addr = static_cast<int>(arg.getNumber());
   int result = peekMemory(addr);
   return Value(static_cast<double>(result));
 }
+
+/**
+ * @brief Read screen color at position (SCRN() function)
+ * 
+ * Returns the color value of the pixel at the specified screen coordinates.
+ * Works in both GR (low-res) and HGR (high-res) graphics modes.
+ * 
+ * Usage in BASIC:
+ *   C = SCRN(X,Y)        (get color at position X,Y)
+ *   IF SCRN(10,10) = 5 THEN PRINT "WHITE"
+ * 
+ * Color values:
+ * - GR mode: 0-15 (16 colors)
+ * - HGR mode: 0-7 (8 colors including black/white)
+ * 
+ * @param x X coordinate
+ * @param y Y coordinate
+ * @return Color value at specified position
+ */
 Value funcScrn(const Value &x, const Value &y) {
   double dx = x.getNumber();
   double dy = y.getNumber();
@@ -923,6 +991,25 @@ Value funcScrn(const Value &x, const Value &y) {
   return Value(static_cast<double>(color));
 }
 
+/**
+ * @brief Call machine language routine (USR() function)
+ * 
+ * In Applesoft BASIC, USR() called a machine language subroutine at the
+ * specified memory address and returned a result value.
+ * 
+ * Usage in BASIC:
+ *   X = USR(2048)        (call routine at address 2048)
+ * 
+ * This implementation is a stub that always returns 0. Machine language
+ * calls are not supported as they would be highly platform-specific and
+ * potentially unsafe.
+ * 
+ * Programs using USR() need to be rewritten using native language
+ * extensions or external tools for equivalent functionality.
+ * 
+ * @param addr Address of machine code (ignored)
+ * @return Always 0.0 (machine code calls not supported)
+ */
 Value funcUsr(const Value &addr) {
   // USR(addr) calls machine language code at address
   // Stub implementation: return 0
