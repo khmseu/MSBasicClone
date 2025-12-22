@@ -189,6 +189,34 @@ void Variables::clear() {
   // Don't clear functions - they persist
 }
 
+/**
+ * @brief Dimension an array with specified sizes
+ * 
+ * Explicitly dimensions an array to specified sizes per dimension.
+ * This is called by the DIM statement or automatically on first array use.
+ * 
+ * Array index behavior:
+ * - Indices start at 0 and go to dimension size (inclusive)
+ * - DIM A(10) creates indices 0-10 (11 elements)
+ * - Multi-dimensional: DIM A(5,5) creates 6×6 grid (indices 0-5)
+ * 
+ * Auto-dimensioning:
+ * - If array accessed before DIM, auto-dimensioned to size 10 per dimension
+ * - Auto-dimensioning matches Applesoft BASIC behavior
+ * - Explicit DIM overrides auto-dimension (if array not yet used)
+ * 
+ * Memory management:
+ * - Uses sparse storage (only stores non-default values)
+ * - Clearing array data frees all element storage
+ * - Redimensioning clears existing array data
+ * 
+ * Error conditions:
+ * - Cannot redimension an array that's already in use (REDIM'D ARRAY ERROR)
+ * - Handled by caller (DimStmt) to check if array exists
+ * 
+ * @param name Array name (normalized internally)
+ * @param dimensions Vector of dimension sizes (e.g., [10] for 1D, [5,5] for 2D)
+ */
 void Variables::dimArray(const std::string &name,
                          const std::vector<int> &dimensions) {
   std::string normalized = normalizeName(name);
@@ -197,6 +225,39 @@ void Variables::dimArray(const std::string &name,
   arr.data.clear();
 }
 
+/**
+ * @brief Set an array element value
+ * 
+ * Sets the value of a specific array element identified by indices.
+ * Automatically dimensions the array if not yet dimensioned (size 10 per dimension).
+ * Performs bounds checking and raises error if indices out of range.
+ * 
+ * Auto-dimensioning:
+ * - If array not explicitly DIM'd, auto-dimensions to size 10
+ * - Example: A(5) = 10 auto-creates A with indices 0-10
+ * - Multi-dimensional arrays auto-dimension each axis to 10
+ * 
+ * Integer coercion:
+ * - Array names ending with % store integer values
+ * - Values are clamped to 16-bit signed range (-32768 to 32767)
+ * - Matches Applesoft BASIC integer variable behavior
+ * 
+ * Sparse storage:
+ * - Only explicitly set elements are stored in memory
+ * - Unset elements return default values (0 or "")
+ * - Efficient for large arrays with few used elements
+ * 
+ * Examples:
+ *   A(5) = 100              (1D array access)
+ *   B(2,3) = 50             (2D array access)
+ *   C$(I) = "HELLO"         (string array)
+ *   D%(10) = 32000          (integer array)
+ * 
+ * @param name Array name
+ * @param indices Vector of indices (one per dimension)
+ * @param value Value to store
+ * @throws std::runtime_error if any index out of bounds ("BAD SUBSCRIPT ERROR")
+ */
 void Variables::setArrayElement(const std::string &name,
                                 const std::vector<int> &indices,
                                 const Value &value) {
@@ -224,6 +285,44 @@ void Variables::setArrayElement(const std::string &name,
   }
 }
 
+/**
+ * @brief Get an array element value
+ * 
+ * Retrieves the value of a specific array element identified by indices.
+ * Automatically dimensions the array if not yet dimensioned (size 10 per dimension).
+ * Performs bounds checking and returns default values for uninitialized elements.
+ * 
+ * Auto-dimensioning:
+ * - If array not explicitly DIM'd, auto-dimensions to size 10
+ * - Matches Applesoft BASIC behavior for undeclared arrays
+ * - Multi-dimensional arrays auto-dimension each axis to 10
+ * 
+ * Default values:
+ * - Uninitialized numeric array elements return 0.0
+ * - Uninitialized string array elements return ""
+ * - Sparse storage: only explicitly set elements consume memory
+ * 
+ * Bounds checking:
+ * - Each index must be >= 0 and <= dimension size
+ * - Accessing A(11) when DIM A(10) raises "BAD SUBSCRIPT ERROR"
+ * - All dimensions checked before access
+ * 
+ * Type handling:
+ * - Numeric arrays return numeric values
+ * - String arrays (name ending with $) return string values
+ * - Integer arrays (name ending with %) return clamped integers
+ * 
+ * Examples:
+ *   X = A(5)                (1D array access)
+ *   Y = B(2,3)              (2D array access)
+ *   S$ = C$(I)              (string array)
+ *   N% = D%(10)             (integer array)
+ * 
+ * @param name Array name
+ * @param indices Vector of indices (one per dimension)
+ * @return Array element value, or default (0 or "") if uninitialized
+ * @throws std::runtime_error if any index out of bounds ("BAD SUBSCRIPT ERROR")
+ */
 Value Variables::getArrayElement(const std::string &name,
                                  const std::vector<int> &indices) {
   std::string normalized = normalizeName(name);
@@ -255,6 +354,43 @@ Value Variables::getArrayElement(const std::string &name,
   return Value(0.0);
 }
 
+/**
+ * @brief Define a user function (DEF FN implementation)
+ * 
+ * Stores a user-defined function definition for later evaluation.
+ * Functions defined with DEF FN can be called like built-in functions.
+ * 
+ * Function definition:
+ * - Function name must start with "FN" (e.g., FNxy, FNa, FNmax)
+ * - Single parameter (Applesoft limitation)
+ * - Expression can reference parameter and global variables
+ * 
+ * Function naming:
+ * - Name normalized to FN + 2 chars (FNxy, not FNxyz)
+ * - Case insensitive: FNA, FNa, Fna are the same
+ * - Normalized before storage for consistent lookup
+ * 
+ * Function storage:
+ * - Functions stored separately from variables
+ * - Functions persist across CLR (variables cleared, functions kept)
+ * - NEW command clears functions along with everything else
+ * - Redefining a function replaces the previous definition
+ * 
+ * Function evaluation:
+ * - Function call FNxy(10) substitutes parameter with value 10
+ * - Expression evaluated in context with parameter substituted
+ * - Can reference and modify global variables
+ * - Recursive calls supported but uncommon
+ * 
+ * Examples:
+ *   DEF FNA(X) = X * X
+ *   DEF FNB(Y) = SQR(Y * Y + 1)
+ *   DEF FNC(Z) = INT(Z + 0.5)
+ * 
+ * @param name Function name (e.g., "FNXY") - normalized internally
+ * @param param Parameter variable name (e.g., "X")
+ * @param expr Function body expression AST
+ */
 void Variables::defineFunction(const std::string &name,
                                const std::string &param,
                                const std::shared_ptr<Expression> &expr) {
