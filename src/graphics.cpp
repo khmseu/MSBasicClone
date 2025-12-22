@@ -341,11 +341,51 @@ void Graphics::hlin(double x1, double x2, double y) {
   recordPoint(x2, y);
 }
 
+/**
+ * @brief Draw vertical line (VLIN implementation)
+ * 
+ * Draws a vertical line from (x,y1) to (x,y2). This implements the
+ * VLIN command from Applesoft BASIC for low-resolution graphics.
+ * 
+ * Usage in BASIC:
+ *   VLIN 0,39 AT 20  (draw line down screen at column 20)
+ *   VLIN 10,30 AT 5  (draw vertical segment)
+ * 
+ * The line is drawn in the current color (set by COLOR command).
+ * Y coordinates are automatically clamped to valid screen range.
+ * 
+ * @param y1 Starting Y coordinate
+ * @param y2 Ending Y coordinate
+ * @param x X coordinate (constant for vertical line)
+ */
 void Graphics::vlin(double y1, double y2, double x) {
   recordPoint(x, y1);
   recordPoint(x, y2);
 }
 
+/**
+ * @brief Plot a high-resolution point (HPLOT implementation)
+ * 
+ * Plots a single point in high-resolution graphics mode at the specified
+ * coordinates. This implements the HPLOT command from Applesoft BASIC.
+ * 
+ * Behavior:
+ * - Plots point in current HCOLOR (set by HCOLOR command)
+ * - Updates last position for HPLOT TO operations
+ * - Coordinates in Apple II hi-res space (0-279 horizontal, 0-191 vertical)
+ * - Points outside valid range are clipped
+ * 
+ * Usage in BASIC:
+ *   HPLOT 100,100  (plot single point)
+ *   HPLOT 0,0  (top-left corner)
+ *   HPLOT 279,191  (bottom-right corner)
+ * 
+ * The last plotted position is saved for HPLOT TO operations which
+ * draw lines from the previous point.
+ * 
+ * @param x X coordinate (0-279 in standard hi-res)
+ * @param y Y coordinate (0-191 in standard hi-res)
+ */
 void Graphics::hplot(double x, double y) {
   recordPoint(x, y);
   lastX_ = x;

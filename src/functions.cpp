@@ -802,6 +802,31 @@ Value funcStr(const Value &arg) {
  * @param arg Target column position
  * @return String of spaces
  */
+/**
+ * @brief Generate spaces to move cursor to specific column (TAB)
+ * 
+ * TAB is used in PRINT statements to position the cursor at a specific column.
+ * Unlike SPC which outputs a fixed number of spaces, TAB calculates the number
+ * of spaces needed based on current cursor position.
+ * 
+ * Behavior:
+ * - If target column already passed, does nothing (no spaces)
+ * - If target column ahead, outputs spaces to reach it
+ * - Negative values treated as 0
+ * 
+ * This function returns the string of spaces; the PRINT logic handles
+ * tracking the current column position.
+ * 
+ * BASIC Usage:
+ *   PRINT TAB(10);"HELLO"  (start at column 10)
+ *   PRINT TAB(5);A;TAB(15);B;TAB(25);C  (columnar output)
+ * 
+ * Note: The actual cursor positioning logic is in Interpreter::htab().
+ * This function just creates the spacing string.
+ * 
+ * @param arg Target column number (0-based)
+ * @return String containing spaces (may be empty if n <= 0)
+ */
 Value funcTab(const Value &arg) {
   int n = static_cast<int>(arg.getNumber());
   if (n < 0)
