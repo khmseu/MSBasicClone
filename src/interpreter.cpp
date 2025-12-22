@@ -787,6 +787,28 @@ void Interpreter::executeImmediate(const std::string &line) {
  * @param lineNum Target line number to jump to
  * @throws std::runtime_error if line number not found in program
  */
+/**
+ * @brief Jump to a specific line (GOTO implementation)
+ * 
+ * Changes program execution to the specified line number. This is the
+ * core control flow primitive used by GOTO, IF...THEN, and ON...GOTO.
+ * 
+ * Implementation:
+ * - Searches program_ map for target line
+ * - Updates programCounter_ to point to that line
+ * - Sets jumped_ flag to prevent automatic advancement
+ * 
+ * The jumped_ flag tells the main execution loop not to advance to the
+ * next line automatically, since we've explicitly changed position.
+ * 
+ * BASIC Usage:
+ *   GOTO 100
+ *   IF X > 10 THEN GOTO 200
+ *   ON N GOTO 100,200,300
+ * 
+ * @param lineNum Target line number to jump to
+ * @throws std::runtime_error if line number not found
+ */
 void Interpreter::gotoLine(LineNumber lineNum) {
   auto it = program_.find(lineNum);
   if (it == program_.end()) {
@@ -1342,6 +1364,36 @@ void Interpreter::createFile(const std::string &filename, const std::string &opt
   }
 }
 
+/**
+ * @brief Load binary file into memory (BLOAD implementation)
+ * 
+ * Loads a binary file from disk, optionally at a specific memory address.
+ * This implements the BLOAD command from Applesoft BASIC, used for loading
+ * machine language programs and data files.
+ * 
+ * BASIC Usage:
+ *   BLOAD "PROGRAM.BIN"        (load at default/stored address)
+ *   BLOAD "PROGRAM.BIN",A8192  (load at address 8192/$2000)
+ *   BLOAD "DATA.BIN",A$4000    (load at hex address $4000)
+ * 
+ * Address handling:
+ * - If address = -1: Uses address stored in file header (if any)
+ * - If address >= 0: Loads at specified address, ignoring file header
+ * - Negative addresses use Apple II 16-bit wraparound convention
+ * 
+ * File format compatibility:
+ * - ProDOS binary format: 4-byte header (address, length)
+ * - Raw binary files: No header, requires explicit address
+ * 
+ * Current implementation:
+ * - Loads file data but doesn't populate emulated memory yet
+ * - Full Apple II emulation would copy bytes to memory array
+ * - Useful for loading shape tables, fonts, or ML routines
+ * 
+ * @param filename Path to binary file to load
+ * @param address Target memory address, or -1 for file's stored address
+ * @throws std::runtime_error on I/O errors or invalid file format
+ */
 void Interpreter::bloadFile(const std::string &filename, int address) {
   if (filename.empty()) {
     handleError("SYNTAX ERROR");
@@ -1358,6 +1410,42 @@ void Interpreter::bloadFile(const std::string &filename, int address) {
   }
 }
 
+/**
+ * @brief Save memory region to binary file (BSAVE implementation)
+ * 
+ * Saves a region of memory to a binary file with ProDOS-compatible format.
+ * This implements the BSAVE command from Applesoft BASIC, used for saving
+ * machine language programs, screen images, and data arrays.
+ * 
+ * BASIC Usage:
+ *   BSAVE "SCREEN.BIN",A8192,L8192   (save hi-res page 1)
+ *   BSAVE "PROG.BIN",A$300,L$100     (save page 3 ML routine)
+ *   BSAVE "DATA.BIN",A16384,L4096    (save 4K data block)
+ * 
+ * Parameters:
+ * - filename: Output file path
+ * - address: Starting memory address to save from
+ * - length: Number of bytes to save
+ * 
+ * File format:
+ * - 4-byte header: 2-byte address (little-endian), 2-byte length
+ * - Followed by raw memory contents
+ * - Compatible with ProDOS BLOAD command
+ * 
+ * Common uses in Applesoft:
+ * - Save hi-res graphics: BSAVE "PIC",A8192,L8192 (page 1)
+ * - Save shape tables: After creating with DRAW/XDRAW
+ * - Save ML routines: After POKEing machine code
+ * 
+ * Current implementation:
+ * - Creates dummy data (zeros) instead of reading from memory
+ * - Full implementation would copy bytes from emulated memory array
+ * 
+ * @param filename Path to output binary file
+ * @param address Starting memory address
+ * @param length Number of bytes to save
+ * @throws std::runtime_error on I/O errors or invalid parameters
+ */
 void Interpreter::bsaveFile(const std::string &filename, int address, int length) {
   if (filename.empty() || length <= 0) {
     handleError("SYNTAX ERROR");
@@ -1374,6 +1462,35 @@ void Interpreter::bsaveFile(const std::string &filename, int address, int length
   }
 }
 
+/**
+ * @brief Load and execute binary file (BRUN implementation)
+ * 
+ * Loads a binary file into memory and executes it as machine language code.
+ * This implements the BRUN command from Applesoft BASIC. BRUN is equivalent
+ * to BLOAD followed by CALL.
+ * 
+ * BASIC Usage:
+ *   BRUN HELLO              (standard DOS 3.3 boot)
+ *   BRUN PROGRAM.BIN,A$300  (load and execute at page 3)
+ * 
+ * Execution sequence:
+ * 1. Load binary file via bloadFile()
+ * 2. If address specified, call machine code at that address
+ * 3. If no address, use file's stored start address
+ * 
+ * Common uses:
+ * - Boot programs: BRUN HELLO
+ * - Launch ML utilities: BRUN TOOLKIT
+ * - Run assembly programs: BRUN GAME.BIN
+ * 
+ * Current implementation:
+ * - Loads file but doesn't execute actual machine code
+ * - Calls callAddress() which handles special Apple II ROM addresses
+ * - Full implementation would require CPU emulation
+ * 
+ * @param filename Path to binary file to load and execute
+ * @param address Execution address, or -1 to use file's stored address
+ */
 void Interpreter::brunFile(const std::string &filename, int address) {
   // BRUN = BLOAD + CALL
   bloadFile(filename, address);
@@ -1383,6 +1500,54 @@ void Interpreter::brunFile(const std::string &filename, int address) {
   }
 }
 
+/**
+ * @brief Execute machine language at address (CALL implementation)
+ * 
+ * Simulates calling machine language routines at specific memory addresses.
+ * This implements the CALL command from Applesoft BASIC. Since we don't have
+ * a full 6502 emulator, we handle known Apple II ROM addresses specially.
+ * 
+ * BASIC Usage:
+ *   CALL -936         (HOME - clear screen, same as $FC58)
+ *   CALL 768          (page 3 user ML routine, same as $0300)
+ *   CALL -3288        (clean up stack, same as $F308)
+ * 
+ * Address handling:
+ * - Negative addresses use Apple II 16-bit wraparound convention:
+ *   CALL -936 becomes $10000 + (-936) = $FC58 (65,368)
+ * - This matches Applesoft BASIC address notation
+ * 
+ * Known ROM addresses (special handling):
+ * 
+ * Text/Screen Control:
+ * - $FC58 (-936): HOME - Clear screen and home cursor
+ * - $FC66 (-922): Line feed
+ * - $FC70 (-912): Scroll text window up
+ * - $FC9C (-868): CLREOL - Clear to end of line
+ * - $FC42 (-958): Clear from cursor to bottom-right
+ * 
+ * Graphics Control:
+ * - $F3D2 (-3086): Clear hi-res page to black
+ * - $F3D6 (-3082): Clear hi-res to last HPLOT color
+ * - $F832 (-1998): BKGND - Set background color
+ * 
+ * System Control:
+ * - $F308 (-3288): Stack cleanup routine
+ * - $FF69 (-151): Enter Monitor (not implemented)
+ * - $03EA: Restore ProDOS connection
+ * 
+ * User ML Area:
+ * - $0300 (768): Common location for user ML routines (page 3)
+ * 
+ * Implementation notes:
+ * - Known ROM addresses output stub messages or perform equivalent actions
+ * - Unknown addresses print "NOT IMPLEMENTED" message
+ * - Full implementation would require 6502 CPU emulation
+ * - HOME ($FC58) is fully implemented with ANSI clear screen
+ * - CLREOL ($FC9C) is fully implemented with ANSI clear to EOL
+ * 
+ * @param address Memory address to call (may be negative)
+ */
 void Interpreter::callAddress(int address) {
   // Handle negative addresses (Apple II convention)
   if (address < 0) {
@@ -2099,6 +2264,24 @@ void Interpreter::restoreData(int line) {
   }
 }
 
+/**
+ * @brief Move cursor to horizontal column (HTAB implementation)
+ * 
+ * Moves the cursor to the specified column by printing spaces. This implements
+ * the HTAB (horizontal tab) command from Applesoft BASIC.
+ * 
+ * Behavior:
+ * - Column numbers are 1-based (HTAB 1 = leftmost column)
+ * - If target column is left of or at current position, does nothing
+ * - If target column is right of current position, prints spaces to reach it
+ * - Does not wrap to next line if target exceeds line width
+ * 
+ * BASIC Usage:
+ *   HTAB 10: PRINT "TEXT"  (print starting at column 10)
+ *   HTAB 1                 (return to left margin)
+ * 
+ * @param col1 Target column (1-based, 1 = leftmost)
+ */
 void Interpreter::htab(int col1) {
   int targetCol = std::max(0, col1 - 1);
   if (targetCol <= outputColumn_) {
@@ -2109,6 +2292,28 @@ void Interpreter::htab(int col1) {
   printText(std::string(static_cast<size_t>(spaces), ' '));
 }
 
+/**
+ * @brief Move cursor to vertical row (VTAB implementation)
+ * 
+ * Moves the cursor to the specified row by printing newlines. This implements
+ * the VTAB (vertical tab) command from Applesoft BASIC.
+ * 
+ * Behavior:
+ * - Row numbers are 1-based (VTAB 1 = top row)
+ * - If target row is above current position, does nothing
+ * - If target row is below current position, prints newlines to reach it
+ * - Updates memory location 0x0025 (37) with current cursor row
+ * 
+ * BASIC Usage:
+ *   VTAB 10: PRINT "TEXT"  (print starting at row 10)
+ *   VTAB 1                 (return to top of screen)
+ *   HTAB 1: VTAB 1         (home cursor to top-left)
+ * 
+ * Memory Update:
+ * - Location 37 ($25): Cursor vertical position (0-based internally)
+ * 
+ * @param row1 Target row (1-based, 1 = top)
+ */
 void Interpreter::vtab(int row1) {
   int targetRow = std::max(0, row1 - 1);
   while (outputRow_ < targetRow) {
@@ -2118,22 +2323,90 @@ void Interpreter::vtab(int row1) {
   pokeMemory(0x0025, outputRow_);
 }
 
+/**
+ * @brief Enable inverse video mode (INVERSE implementation)
+ * 
+ * Enables inverse (reverse) video text output where foreground and background
+ * colors are swapped. This implements the INVERSE command from Applesoft BASIC.
+ * 
+ * Platform support:
+ * - Uses ANSI escape sequence \x1b[7m for inverse video
+ * - Windows: Requires virtual terminal support (enabled in constructor)
+ * - Unix/Linux: Works on any terminal supporting ANSI codes
+ * 
+ * BASIC Usage:
+ *   INVERSE: PRINT "HIGHLIGHTED"
+ *   NORMAL: PRINT "REGULAR"
+ * 
+ * @param on true to enable inverse video, false to disable
+ */
 void Interpreter::setInverse(bool on) {
   inverse_ = on;
   updateTextAttributes();
 }
 
+/**
+ * @brief Enable flashing text mode (FLASH implementation)
+ * 
+ * Enables blinking/flashing text output. This implements the FLASH command
+ * from Applesoft BASIC.
+ * 
+ * Platform support:
+ * - Uses ANSI escape sequence \x1b[5m for blinking text
+ * - Windows: Requires virtual terminal support (enabled in constructor)
+ * - Unix/Linux: Works on terminals supporting ANSI codes
+ * - Note: Not all terminal emulators support blinking text
+ * 
+ * BASIC Usage:
+ *   FLASH: PRINT "BLINKING"
+ *   NORMAL: PRINT "STEADY"
+ * 
+ * @param on true to enable flashing, false to disable
+ */
 void Interpreter::setFlash(bool on) {
   flash_ = on;
   updateTextAttributes();
 }
 
+/**
+ * @brief Reset text to normal mode (NORMAL implementation)
+ * 
+ * Disables both inverse and flash text modes, returning to normal text output.
+ * This implements the NORMAL command from Applesoft BASIC.
+ * 
+ * Behavior:
+ * - Clears inverse_ flag
+ * - Clears flash_ flag
+ * - Sends ANSI reset sequence \x1b[0m to terminal
+ * 
+ * BASIC Usage:
+ *   INVERSE: PRINT "REVERSE"
+ *   NORMAL: PRINT "REGULAR"
+ */
 void Interpreter::setNormal() {
   inverse_ = false;
   flash_ = false;
   updateTextAttributes();
 }
 
+/**
+ * @brief Update terminal text attributes (internal helper)
+ * 
+ * Sends ANSI escape sequences to the terminal to apply current text
+ * attributes (inverse and/or flash). This is called internally after
+ * attribute state changes.
+ * 
+ * ANSI sequences used:
+ * - \x1b[0m: Reset all attributes
+ * - \x1b[7m: Inverse (reverse video)
+ * - \x1b[5m: Blink (flash)
+ * - \x1b[7;5m: Both inverse and blink
+ * 
+ * Platform considerations:
+ * - Windows: Checks vtEnabled_ flag, falls back silently if unavailable
+ * - Unix/Linux: Always attempts to send sequences
+ * - Terminal support varies: not all terminals support blinking
+ */
 void Interpreter::updateTextAttributes() {
 #ifdef _WIN32
   if (!vtEnabled_) {
@@ -2161,6 +2434,24 @@ void Interpreter::updateTextAttributes() {
   std::cout << "m";
 }
 
+/**
+ * @brief Print text to output (internal helper)
+ * 
+ * Outputs text character by character, tracking cursor position for HTAB/VTAB.
+ * This is the low-level output primitive used by PRINT and other output commands.
+ * 
+ * Character handling:
+ * - Bell character (\a): Flushes output immediately for audible feedback
+ * - Newline (\n): Resets column to 0, increments row
+ * - Other characters: Increments column position
+ * 
+ * Position tracking:
+ * - outputColumn_: Current horizontal position (0-based)
+ * - outputRow_: Current vertical position (0-based)
+ * - These are used by HTAB, VTAB, and POS() function
+ * 
+ * @param text Text string to output
+ */
 void Interpreter::printText(const std::string &text) {
   for (char ch : text) {
     std::cout << ch;
@@ -2176,6 +2467,23 @@ void Interpreter::printText(const std::string &text) {
   }
 }
 
+/**
+ * @brief Print newline and update cursor tracking
+ * 
+ * Outputs a newline character and updates cursor position tracking. Also
+ * updates memory location 0x0025 (37) with the new cursor row for
+ * compatibility with Applesoft BASIC PEEK operations.
+ * 
+ * Cursor updates:
+ * - outputColumn_ set to 0 (start of new line)
+ * - outputRow_ incremented
+ * - Memory location 37: Updated with new row value
+ * 
+ * Used by:
+ * - PRINT with no trailing semicolon/comma
+ * - VTAB to advance to target row
+ * - Automatic line wrapping (if implemented)
+ */
 void Interpreter::printNewline() {
   std::cout << "\n";
   outputColumn_ = 0;
@@ -2184,6 +2492,32 @@ void Interpreter::printNewline() {
   pokeMemory(0x0025, outputRow_);
 }
 
+/**
+ * @brief Advance to next print zone (comma separator handling)
+ * 
+ * Implements the comma separator behavior in PRINT statements. Advances the
+ * cursor to the next 14-column zone boundary. This matches Applesoft BASIC's
+ * columnar output formatting.
+ * 
+ * Zone layout:
+ * - Zones are 14 characters wide
+ * - Zone 1: columns 0-13
+ * - Zone 2: columns 14-27
+ * - Zone 3: columns 28-41
+ * - Zone 4: columns 42-55
+ * - Zone 5: columns 56-69
+ * 
+ * Behavior:
+ * - Calculates next zone boundary from current position
+ * - Prints spaces to reach that boundary
+ * - If already at boundary, advances to next zone
+ * 
+ * BASIC Usage:
+ *   PRINT "NAME", "AGE", "CITY"
+ *   PRINT A, B, C  (values in columns)
+ * 
+ * @note Zone width of 14 matches Applesoft BASIC convention
+ */
 void Interpreter::printToNextZone() {
   constexpr int kZoneWidth = 14;
   int nextZoneStart = ((outputColumn_ / kZoneWidth) + 1) * kZoneWidth;
@@ -2193,6 +2527,23 @@ void Interpreter::printToNextZone() {
   }
 }
 
+/**
+ * @brief Reset output cursor position to home
+ * 
+ * Resets the output cursor tracking to the top-left position (0,0) and
+ * clears all text attributes (inverse, flash). Called at the start of
+ * program execution and by screen-clearing operations.
+ * 
+ * Resets:
+ * - outputColumn_ = 0 (leftmost column)
+ * - outputRow_ = 0 (top row)
+ * - Text attributes to NORMAL (no inverse, no flash)
+ * 
+ * Used by:
+ * - Program startup (RUN command)
+ * - Screen clear operations
+ * - Initialize immediate mode
+ */
 void Interpreter::resetOutputPosition() {
   outputColumn_ = 0;
   outputRow_ = 0;
