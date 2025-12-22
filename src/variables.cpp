@@ -92,6 +92,25 @@ Value coerceInteger(const Value &value) {
 }
 } // namespace
 
+/**
+ * @brief Set a variable value
+ * 
+ * Stores a value in a variable, applying type coercion for integer variables.
+ * Variable names are normalized according to Applesoft rules (2-char significance).
+ * 
+ * Type handling:
+ * - Integer variables (name ends with %): value is clamped to 16-bit signed range
+ * - String variables (name ends with $): value stored as-is
+ * - Numeric variables: value stored as-is (Float40 precision)
+ * 
+ * Examples:
+ *   setVariable("COUNTER%", 100)   → stores 100 as integer
+ *   setVariable("NAME$", "HELLO")  → stores "HELLO" as string
+ *   setVariable("X", 3.14159)      → stores 3.14159 as number
+ * 
+ * @param name Variable name (may include $ or % suffix)
+ * @param value Value to store (type coercion applied for %)
+ */
 void Variables::setVariable(const std::string &name, const Value &value) {
   if (!name.empty() && name.back() == '%') {
     variables_[normalizeName(name)] = coerceInteger(value);
@@ -100,10 +119,34 @@ void Variables::setVariable(const std::string &name, const Value &value) {
   variables_[normalizeName(name)] = value;
 }
 
+/**
+ * @brief Remove a variable from storage
+ * 
+ * Deletes a variable from memory. If the variable doesn't exist,
+ * this operation silently succeeds.
+ * 
+ * @param name Variable name to remove
+ */
 void Variables::unsetVariable(const std::string &name) {
   variables_.erase(normalizeName(name));
 }
 
+/**
+ * @brief Get a variable value
+ * 
+ * Retrieves the value of a variable. Returns default values for uninitialized
+ * variables following Applesoft BASIC conventions:
+ * - String variables ($): empty string ""
+ * - Numeric variables: 0.0
+ * 
+ * Examples:
+ *   getVariable("X")      → returns 0.0 if X not set
+ *   getVariable("NAME$")  → returns "" if NAME$ not set
+ *   getVariable("COUNT%") → returns 0 if COUNT% not set
+ * 
+ * @param name Variable name to retrieve
+ * @return Variable value, or default if uninitialized
+ */
 Value Variables::getVariable(const std::string &name) {
   std::string normalized = normalizeName(name);
   auto it = variables_.find(normalized);
@@ -118,10 +161,28 @@ Value Variables::getVariable(const std::string &name) {
   return Value(0.0);
 }
 
+/**
+ * @brief Check if a variable exists
+ * 
+ * Tests whether a variable has been explicitly set. Returns false for
+ * variables that would return default values (0 or "").
+ * 
+ * @param name Variable name to check
+ * @return true if variable has been set, false otherwise
+ */
 bool Variables::hasVariable(const std::string &name) const {
   return variables_.find(normalizeName(name)) != variables_.end();
 }
 
+/**
+ * @brief Clear all variables and arrays
+ * 
+ * Removes all variables and arrays from memory. User-defined functions
+ * (DEF FN) are preserved, matching Applesoft BASIC behavior where
+ * functions persist across CLEAR commands.
+ * 
+ * This is called by the CLR and NEW commands.
+ */
 void Variables::clear() {
   variables_.clear();
   arrays_.clear();
@@ -203,10 +264,28 @@ void Variables::defineFunction(const std::string &name,
   func.body = expr;
 }
 
+/**
+ * @brief Check if a user-defined function exists
+ * 
+ * Tests whether a function has been defined with DEF FN.
+ * 
+ * @param name Function name (e.g., "FNXY")
+ * @return true if function is defined, false otherwise
+ */
 bool Variables::hasFunction(const std::string &name) const {
   return functions_.find(normalizeName(name)) != functions_.end();
 }
 
+/**
+ * @brief Get user-defined function definition
+ * 
+ * Retrieves the function definition for evaluation. Function calls
+ * substitute the parameter value and evaluate the function body expression.
+ * 
+ * @param name Function name (e.g., "FNXY")
+ * @return Function information (parameter name and body expression)
+ * @throws std::runtime_error if function is not defined
+ */
 const Variables::FunctionInfo &Variables::getFunction(const std::string &name) {
   std::string normalized = normalizeName(name);
   auto it = functions_.find(normalized);
@@ -216,10 +295,31 @@ const Variables::FunctionInfo &Variables::getFunction(const std::string &name) {
   return it->second;
 }
 
+/**
+ * @brief Check if an array has been dimensioned
+ * 
+ * Tests whether an array has been explicitly dimensioned with DIM
+ * or auto-dimensioned by first use.
+ * 
+ * @param name Array name
+ * @return true if array exists, false otherwise
+ */
 bool Variables::hasArray(const std::string &name) const {
   return arrays_.find(normalizeName(name)) != arrays_.end();
 }
 
+/**
+ * @brief Get array dimensions
+ * 
+ * Returns the dimension sizes for a dimensioned array.
+ * 
+ * Example:
+ *   DIM A(5,10) creates array with dimensions [5, 10]
+ * 
+ * @param name Array name
+ * @return Vector of dimension sizes
+ * @throws std::runtime_error if array not defined
+ */
 const std::vector<int> &Variables::getArrayDimensions(const std::string &name) const {
   std::string normalized = normalizeName(name);
   auto it = arrays_.find(normalized);
@@ -229,6 +329,17 @@ const std::vector<int> &Variables::getArrayDimensions(const std::string &name) c
   return it->second.dimensions;
 }
 
+/**
+ * @brief Get array data storage
+ * 
+ * Returns the sparse array data map. Array elements are stored as
+ * map entries keyed by dimension indices. Uninitialized elements
+ * are not stored (sparse storage).
+ * 
+ * @param name Array name
+ * @return Map of dimension indices to values
+ * @throws std::runtime_error if array not defined
+ */
 const std::map<std::vector<int>, Value> &
 Variables::getArrayData(const std::string &name) const {
   std::string normalized = normalizeName(name);
@@ -239,6 +350,16 @@ Variables::getArrayData(const std::string &name) const {
   return it->second.data;
 }
 
+/**
+ * @brief Set array data (bulk restore)
+ * 
+ * Sets the complete array dimensions and data. Used by RECALL command
+ * to restore arrays from tape storage.
+ * 
+ * @param name Array name
+ * @param dimensions Array dimension sizes
+ * @param data Complete array data map
+ */
 void Variables::setArrayData(const std::string &name,
                              const std::vector<int> &dimensions,
                              const std::map<std::vector<int>, Value> &data) {
@@ -248,6 +369,14 @@ void Variables::setArrayData(const std::string &name,
   arr.data = data;
 }
 
+/**
+ * @brief Get all numeric variables
+ * 
+ * Returns a map of all numeric variables (non-string) for iteration
+ * or inspection. Used for debugging and state export.
+ * 
+ * @return Map of normalized variable names to numeric values
+ */
 std::map<std::string, double> Variables::getAllNumericVariables() const {
   std::map<std::string, double> numVars;
   for (const auto &pair : variables_) {
@@ -258,6 +387,14 @@ std::map<std::string, double> Variables::getAllNumericVariables() const {
   return numVars;
 }
 
+/**
+ * @brief Get all string variables
+ * 
+ * Returns a map of all string variables for iteration or inspection.
+ * Used for debugging and state export.
+ * 
+ * @return Map of normalized variable names to string values
+ */
 std::map<std::string, std::string> Variables::getAllStringVariables() const {
   std::map<std::string, std::string> strVars;
   for (const auto &pair : variables_) {

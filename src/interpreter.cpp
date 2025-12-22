@@ -171,6 +171,17 @@ void Interpreter::addLine(LineNumber lineNum, const std::string &text) {
   }
 }
 
+/**
+ * @brief Delete a program line
+ * 
+ * Removes a program line from memory. If the line number doesn't exist,
+ * this operation silently succeeds (no error is raised).
+ * 
+ * Usage in BASIC:
+ *   Type just a line number (e.g., "10") to delete line 10
+ * 
+ * @param lineNum Line number to delete
+ */
 void Interpreter::deleteLine(LineNumber lineNum) { program_.erase(lineNum); }
 
 /**
