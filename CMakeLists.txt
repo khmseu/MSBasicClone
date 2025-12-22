@@ -35,6 +35,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Option to treat warnings as errors (must be defined before use)
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+
 # Platform detection
 if(WIN32)
     add_compile_definitions(PLATFORM_WINDOWS)
@@ -115,9 +118,6 @@ include(CPack)
 
 # Option to build raylib from source if not found
 option(AUTO_BUILD_RAYLIB "Automatically build raylib from source if not found" ON)
-
-# Option to treat warnings as errors
-option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
 # Optional: Find Raylib for graphics support
 find_package(raylib QUIET)
