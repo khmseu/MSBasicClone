@@ -147,3 +147,5 @@ postest.txt
 docs/api/
 typescript
 build_docs.log
+build-defaults/generated/version.h
+test_file.txt
