@@ -52,6 +52,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         -pedantic
         -O3  # Performance optimization
     )
+    if(WARNINGS_AS_ERRORS)
+        add_compile_options(-Werror)
+    endif()
 endif()
 
 if(MSVC)
@@ -59,6 +62,9 @@ if(MSVC)
         /W4
         /O2
     )
+    if(WARNINGS_AS_ERRORS)
+        add_compile_options(/WX)
+    endif()
 endif()
 
 # Source files
@@ -109,6 +115,9 @@ include(CPack)
 
 # Option to build raylib from source if not found
 option(AUTO_BUILD_RAYLIB "Automatically build raylib from source if not found" ON)
+
+# Option to treat warnings as errors
+option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 
 # Optional: Find Raylib for graphics support
 find_package(raylib QUIET)
