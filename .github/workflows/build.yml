@@ -117,6 +117,8 @@ jobs:
             exit 1
           fi
           echo "Found artifact: $archive"
+
+          # Try common archive formats, else handle plain files/directories
           case "$archive" in
             *.zip)
               unzip -q html-artifact/$archive -d html-artifact/contents ;;
@@ -125,7 +127,13 @@ jobs:
             *.tar.bz2)
               tar -xjf html-artifact/$archive -C html-artifact/contents ;;
             *)
-              if file html-artifact/$archive | grep -q "tar archive"; then
+              if [ -d "html-artifact/$archive" ]; then
+                echo "Artifact is a directory; copying contents"
+                cp -r html-artifact/$archive/. html-artifact/contents/
+              elif [ -f "html-artifact/$archive" ]; then
+                echo "Artifact is a single file; copying into contents/"
+                cp html-artifact/$archive html-artifact/contents/
+              elif file html-artifact/$archive | grep -q "tar archive"; then
                 tar -xf html-artifact/$archive -C html-artifact/contents
               else
                 echo "Unknown archive format: $archive"
@@ -254,6 +262,8 @@ jobs:
             exit 1
           fi
           echo "Found artifact: $archive"
+
+          # Try common archive formats, else handle plain files/directories
           case "$archive" in
             *.zip)
               unzip -q pages-artifact/$archive -d pages-artifact/contents ;;
@@ -262,8 +272,13 @@ jobs:
             *.tar.bz2)
               tar -xjf pages-artifact/$archive -C pages-artifact/contents ;;
             *)
-              # Some artifacts may already be directory contents packed as 'artifact.tar'
-              if file pages-artifact/$archive | grep -q "tar archive"; then
+              if [ -d "pages-artifact/$archive" ]; then
+                echo "Artifact is a directory; copying contents"
+                cp -r pages-artifact/$archive/. pages-artifact/contents/
+              elif [ -f "pages-artifact/$archive" ]; then
+                echo "Artifact is a single file; copying into contents/"
+                cp pages-artifact/$archive pages-artifact/contents/
+              elif file pages-artifact/$archive | grep -q "tar archive"; then
                 tar -xf pages-artifact/$archive -C pages-artifact/contents
               else
                 echo "Unknown archive format: $archive"
