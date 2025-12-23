@@ -150,3 +150,4 @@ build_docs.log
 build-defaults/generated/version.h
 test_file.txt
 .clangd
+DOCS_CI_SETUP.md
