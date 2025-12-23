@@ -172,3 +172,19 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+
+      # Fallback: if deploy-pages fails to fetch the signed artifact URL, try
+      # downloading the artifact and publishing with peaceiris/actions-gh-pages
+      - name: Download Pages artifact (fallback)
+        if: failure()
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: ./pages-artifact
+
+      - name: Fallback publish to GitHub Pages (peaceiris)
+        if: failure()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./pages-artifact
