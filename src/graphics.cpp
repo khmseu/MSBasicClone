@@ -32,10 +32,11 @@
 #include <cmath>
 #include <cstdlib>
 
-#if defined(_WIN32) || defined(_WIN64)
-// On Windows use native Win32 headers. When Raylib is enabled it also
-// provides cross-platform window helpers; including <windows.h> here is
-// safe and prevents POSIX-only headers from being pulled on Windows.
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(HAVE_RAYLIB)
+// When Raylib is NOT available, include Win32 headers for native helpers.
+// When Raylib is enabled it already provides cross-platform helpers such
+// as CloseWindow() and ShowCursor(), so avoid including <windows.h> to
+// prevent symbol conflicts with Raylib's own functions.
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
