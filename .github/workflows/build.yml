@@ -55,11 +55,13 @@ jobs:
       - name: Configure and build
         run: |
           cmake -S . -B build
-          cmake --build build
+          # Use Release configuration on multi-config generators (MSVC/Visual Studio)
+          cmake --build build --config Release
 
       - name: Run tests
         run: |
-          ctest --test-dir build --output-on-failure
+          # ctest needs the configuration on multi-config generators
+          ctest --test-dir build -C Release --output-on-failure
 
   # ============================================================================
   # HTML Docs (on push/PR; HTML-only, no PDF to skip LaTeX deps)
