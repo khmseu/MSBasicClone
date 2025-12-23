@@ -186,8 +186,10 @@ jobs:
           case "$archive" in
             *.zip)
               unzip -q pages-artifact/$archive -d pages-artifact/contents ;;
-            *.tar|*.tar.gz|*.tgz)
+            *.tar.gz|*.tgz)
               tar -xzf pages-artifact/$archive -C pages-artifact/contents ;;
+            *.tar)
+              tar -xf pages-artifact/$archive -C pages-artifact/contents ;;
             *.tar.bz2)
               tar -xjf pages-artifact/$archive -C pages-artifact/contents ;;
             *)
