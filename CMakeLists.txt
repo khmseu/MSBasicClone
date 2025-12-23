@@ -173,6 +173,11 @@ else()
             set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
             set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
+                # Fix MSVC debug/release flag conflict on Windows
+                if(MSVC)
+                    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL" CACHE STRING "" FORCE)
+                endif()
+
             # Attempt to build raylib
             FetchContent_MakeAvailable(raylib)
 
