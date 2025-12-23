@@ -81,10 +81,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 if(MSVC)
-    add_compile_options(
-        /W4
-        /O2
-    )
+    # Don't apply /O2 globally (it can conflict with /RTC in vendored projects).
+    # Keep the warning level globally but apply optimization flags only to the
+    # `msbasic` target after it's created to avoid MSVC flag conflicts.
+    add_compile_options(/W4)
 endif()
 
 # Source files
@@ -224,6 +224,12 @@ if(WARNINGS_AS_ERRORS)
     elseif(MSVC)
         target_compile_options(msbasic PRIVATE /WX)
     endif()
+endif()
+
+# Apply MSVC optimization flags only to the msbasic target to avoid
+# conflicting with flags used by vendored projects (e.g., /RTC1).
+if(MSVC)
+    target_compile_options(msbasic PRIVATE /O2)
 endif()
 
 enable_testing()

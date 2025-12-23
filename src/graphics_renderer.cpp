@@ -401,7 +401,7 @@ void GraphicsRenderer::loadApple2Font() {
       font_ = LoadFontEx(foundPath, 8, nullptr, 0);
 
       // Check if font loaded successfully using IsFontReady()
-      if (IsFontReady(font_)) {
+      if (IsFontValid(font_)) {
         // Apply bilinear filtering for better quality when scaling
         SetTextureFilter(font_.texture, TEXTURE_FILTER_BILINEAR);
 
