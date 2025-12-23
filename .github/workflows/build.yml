@@ -186,12 +186,8 @@ jobs:
           case "$archive" in
             *.zip)
               unzip -q pages-artifact/$archive -d pages-artifact/contents ;;
-            *.tar.gz|*.tgz)
-              tar -xzf pages-artifact/$archive -C pages-artifact/contents ;;
-            *.tar)
+            *.tar.gz|*.tgz|*.tar|*.tar.bz2)
               tar -xf pages-artifact/$archive -C pages-artifact/contents ;;
-            *.tar.bz2)
-              tar -xjf pages-artifact/$archive -C pages-artifact/contents ;;
             *)
               if [ -d "pages-artifact/$archive" ]; then
                 echo "Artifact is a directory; copying contents"
