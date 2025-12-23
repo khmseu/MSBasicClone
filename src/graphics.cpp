@@ -32,7 +32,11 @@
 #include <cmath>
 #include <cstdlib>
 
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS) && !defined(HAVE_RAYLIB)
+// When Raylib is enabled, it declares cross-platform window helpers such as
+// CloseWindow() and ShowCursor(). Avoid pulling in the Win32 headers in the
+// same translation unit to prevent duplicate declarations/conflicts.
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
 #include <sys/ioctl.h>
@@ -755,13 +759,28 @@ void Graphics::loadShape(int shapeNum,
  * @return true if a size was obtained, false otherwise
  */
 bool Graphics::queryTerminalSize(int &columns, int &rows) const {
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS) && !defined(HAVE_RAYLIB)
   HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
   if (h != nullptr && h != INVALID_HANDLE_VALUE) {
     CONSOLE_SCREEN_BUFFER_INFO info;
     if (GetConsoleScreenBufferInfo(h, &info)) {
       columns = static_cast<int>(info.srWindow.Right - info.srWindow.Left + 1);
       rows = static_cast<int>(info.srWindow.Bottom - info.srWindow.Top + 1);
+      return true;
+    }
+  }
+  return false;
+#elif defined(PLATFORM_WINDOWS) && defined(HAVE_RAYLIB)
+  // When Raylib is enabled on Windows we avoid including <windows.h> in this
+  // TU to prevent symbol collisions with Raylib. Fall back to env vars only.
+  const char *colsEnv = std::getenv("COLUMNS");
+  const char *rowsEnv = std::getenv("LINES");
+  if (colsEnv != nullptr && rowsEnv != nullptr) {
+    int envCols = std::atoi(colsEnv);
+    int envRows = std::atoi(rowsEnv);
+    if (envCols > 0 && envRows > 0) {
+      columns = envCols;
+      rows = envRows;
       return true;
     }
   }
