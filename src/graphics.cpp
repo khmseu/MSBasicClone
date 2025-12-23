@@ -33,19 +33,19 @@
 #include <cstdlib>
 
 #if defined(_WIN32) || defined(_WIN64)
-  // On Windows: include Windows headers only when Raylib is not in use.
-  // If Raylib is enabled we avoid pulling Windows-only headers to prevent
-  // symbol collisions and to keep the build portable across platforms.
-  #if !defined(HAVE_RAYLIB)
-    #ifndef WIN32_LEAN_AND_MEAN
-      #define WIN32_LEAN_AND_MEAN
-    #endif
-    #include <windows.h>
-  #endif
+// On Windows: include Windows headers only when Raylib is not in use.
+// If Raylib is enabled we avoid pulling Windows-only headers to prevent
+// symbol collisions and to keep the build portable across platforms.
+#if !defined(HAVE_RAYLIB)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
 #else
-  // Non-Windows platforms need POSIX headers
-  #include <sys/ioctl.h>
-  #include <unistd.h>
+// Non-Windows platforms need POSIX headers
+#include <sys/ioctl.h>
+#include <unistd.h>
 #endif
 
 namespace {
