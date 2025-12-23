@@ -173,6 +173,13 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v2
 
+      # Small pause to avoid rare artifact indexing races between services
+      - name: Wait a moment for artifact propagation
+        if: success() || failure()
+        run: |
+          echo "Sleeping 15s to allow artifact service to propagate"
+          sleep 15
+
       # Fallback: if deploy-pages fails to fetch the signed artifact URL, try
       # downloading the artifact and publishing with peaceiris/actions-gh-pages
       - name: Download Pages artifact (fallback)
@@ -182,9 +189,38 @@ jobs:
           name: github-pages
           path: ./pages-artifact
 
+      - name: Extract downloaded Pages artifact (fallback)
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p pages-artifact/contents
+          archive=$(ls pages-artifact | head -n1 || true)
+          if [ -z "$archive" ]; then
+            echo "No artifact file found in pages-artifact/"
+            exit 1
+          fi
+          echo "Found artifact: $archive"
+          case "$archive" in
+            *.zip)
+              unzip -q pages-artifact/$archive -d pages-artifact/contents ;;
+            *.tar|*.tar.gz|*.tgz)
+              tar -xzf pages-artifact/$archive -C pages-artifact/contents ;;
+            *.tar.bz2)
+              tar -xjf pages-artifact/$archive -C pages-artifact/contents ;;
+            *)
+              # Some artifacts may already be directory contents packed as 'artifact.tar'
+              if file pages-artifact/$archive | grep -q "tar archive"; then
+                tar -xf pages-artifact/$archive -C pages-artifact/contents
+              else
+                echo "Unknown archive format: $archive"
+                exit 1
+              fi ;;
+          esac
+
       - name: Fallback publish to GitHub Pages (peaceiris)
         if: failure()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./pages-artifact
+          publish_dir: ./pages-artifact/contents
