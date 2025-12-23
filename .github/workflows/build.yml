@@ -118,205 +118,39 @@ jobs:
   # ============================================================================
   # Deploy to GitHub Pages (on v* tags only)
   # ============================================================================
-  deploy-pages:
+  deploy:
     name: Deploy Docs to GitHub Pages
     runs-on: ubuntu-latest
     needs: build-docs
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
-      contents: write
+      contents: read
       pages: write
       id-token: write
 
     steps:
-      - name: Wait for Pages artifact
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          owner="${{ github.repository_owner }}"
-          repo="${{ github.event.repository.name }}"
-          runid="${{ github.run_id }}"
+      - name: Checkout
+        uses: actions/checkout@v4
 
-          echo "Waiting for 'github-pages' artifact to appear for run $runid..."
-          for i in {1..36}; do
-            artifacts=$(gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[].name' 2>/dev/null || true)
-            if echo "$artifacts" | grep -qw "github-pages"; then
-              echo "Found 'github-pages' artifact"
-              exit 0
-            fi
-            echo "Not found yet (attempt $i/36), sleeping 5s"
-            sleep 5
-          done
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
-          echo "Artifact 'github-pages' not found after retries"
-          echo "Available artifacts:" 
-          gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[] | {id: .id, name: .name}' || true
-          exit 1
-
-      - name: Ensure GitHub Pages is enabled
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          owner="${{ github.repository_owner }}"
-          repo="${{ github.event.repository.name }}"
-          # Check if Pages is configured for the repository
-          if ! gh api repos/$owner/$repo/pages >/dev/null 2>&1; then
-            echo "GitHub Pages is not enabled for $owner/$repo. Please enable Pages in repository settings: https://github.com/$owner/$repo/settings/pages"
-            exit 1
-          fi
+      - name: Upload HTML docs artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/api/html
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
-        continue-on-error: true
+        uses: actions/deploy-pages@v4
 
-      # Small pause to avoid rare artifact indexing races between services
-      - name: Wait a moment for artifact propagation
-        if: success() || failure()
-        run: |
-          echo "Sleeping 15s to allow artifact service to propagate"
-          sleep 15
-
-      # Fallback: if deploy-pages fails to fetch the signed artifact URL, try
-      # downloading the artifact and publishing with peaceiris/actions-gh-pages
-      - name: Download Pages artifact (fallback)
-        if: steps.deployment.outcome == 'failure'
-        uses: actions/download-artifact@v4
-        with:
-          name: github-pages
-          path: ./pages-artifact
-
-      - name: Extract downloaded Pages artifact (fallback)
-        if: failure()
+      - name: Confirm deployment
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p pages-artifact/contents
-          archive=$(ls pages-artifact | head -n1 || true)
-          if [ -z "$archive" ]; then
-            echo "No artifact file found in pages-artifact/"
-            exit 1
+          echo "Deployed: ${{ steps.deployment.outputs.page_url }}"
+          if [ -z "${{ steps.deployment.outputs.page_url }}" ]; then
+            echo "WARN: deployment URL not provided"
           fi
-          echo "Found artifact: $archive"
-
-          # Try common archive formats, else handle plain files/directories
-          case "$archive" in
-            *.zip)
-              unzip -q pages-artifact/$archive -d pages-artifact/contents ;;
-            *.tar.gz|*.tgz|*.tar|*.tar.bz2)
-              tar -xf pages-artifact/$archive -C pages-artifact/contents ;;
-            *)
-              if [ -d "pages-artifact/$archive" ]; then
-                echo "Artifact is a directory; copying contents"
-                cp -r pages-artifact/$archive/. pages-artifact/contents/
-              elif [ -f "pages-artifact/$archive" ]; then
-                echo "Artifact is a single file; copying into contents/"
-                cp pages-artifact/$archive pages-artifact/contents/
-              elif file pages-artifact/$archive | grep -q "tar archive"; then
-                tar -xf pages-artifact/$archive -C pages-artifact/contents
-              else
-                echo "Unknown archive format: $archive"
-                exit 1
-              fi ;;
-          esac
-
-      - name: Fallback publish via git (PAT preferred)
-        id: fallback_git
-        if: steps.deployment.outcome == 'failure'
-        continue-on-error: true
-        shell: bash
-        env:
-          REPO: ${{ github.repository }}
-          OWNER: ${{ github.repository_owner }}
-          GIT_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
-          GIT_NAME: "github-actions[bot]"
-        run: |
-          set -euo pipefail
-
-          # Prefer a user-supplied PAT if present, otherwise use GITHUB_TOKEN
-          if [ -n "${{ secrets.PAGES_PAT }}" ]; then
-            TOKEN="${{ secrets.PAGES_PAT }}"
-            TOKEN_IS_PAT=true
-          else
-            TOKEN="${{ secrets.GITHUB_TOKEN }}"
-            TOKEN_IS_PAT=false
-          fi
-
-          echo "Using token from selected secret to push gh-pages"
-
-          # Quick test: validate token can access repository for read/push
-          set +e
-          git ls-remote "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD >/dev/null 2>&1
-          LS_REMOTE_STATUS=$?
-          set -e
-          if [ $LS_REMOTE_STATUS -ne 0 ]; then
-            echo "Token cannot access repository for pushing. Set a Personal Access Token with 'repo' and 'pages' permissions in secret PAGES_PAT, or grant the workflow GITHUB_TOKEN appropriate permissions."
-            # continue to allow other fallbacks (peaceiris) to run
-            exit 1
-          fi
-
-          # Prepare a temporary git worktree for publishing
-          git config --global user.email "$GIT_EMAIL"
-          git config --global user.name "$GIT_NAME"
-
-          # Clone the gh-pages branch (or create an orphan branch if missing)
-          TARGET_DIR="gh-pages-tmp"
-          rm -rf "$TARGET_DIR"
-          set +e
-          git clone --depth=1 --branch=gh-pages "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "$TARGET_DIR"
-          CLONE_STATUS=$?
-          set -e
-
-          if [ $CLONE_STATUS -ne 0 ]; then
-            echo "gh-pages branch not found or clone failed; creating orphan branch"
-            mkdir -p "$TARGET_DIR"
-            git init "$TARGET_DIR"
-            pushd "$TARGET_DIR" >/dev/null
-            git checkout --orphan gh-pages
-            popd >/dev/null
-          fi
-
-          # Sync files
-          rm -rf "$TARGET_DIR"/*
-          cp -r pages-artifact/contents/. "$TARGET_DIR/" || true
-
-          pushd "$TARGET_DIR" >/dev/null
-          git add --all
-          if git diff --quiet --cached; then
-            echo "No changes to publish"
-            popd >/dev/null
-            exit 0
-          fi
-          git commit -m "Publish site from ${GITHUB_SHA}"
-          # Force push to allow branch protection rules to be satisfied by PAT
-          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD:gh-pages --force || true
-          popd >/dev/null
-
-      - name: Fallback publish to GitHub Pages (peaceiris)
-        id: peaceiris_publish
-        if: steps.deployment.outcome == 'failure'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./pages-artifact/contents
-
-      - name: Verify publish result
-        shell: bash
-        run: |
-          set -euo pipefail
-          deploy_outcome=${{ steps.deployment.outcome || 'failure' }}
-          git_outcome=${{ steps.fallback_git.outcome || 'failure' }}
-          peaceiris_outcome=${{ steps.peaceiris_publish.outcome || 'failure' }}
-
-          echo "Deploy step outcome: $deploy_outcome"
-          echo "Fallback git step outcome: $git_outcome"
-          echo "Peaceiris publish outcome: $peaceiris_outcome"
-
-          if [ "$deploy_outcome" = "success" ] || [ "$git_outcome" = "success" ] || [ "$peaceiris_outcome" = "success" ]; then
-            echo "Pages published successfully by at least one method."
-            exit 0
-          fi
-
-          echo "ERROR: All publish methods failed. See above logs for details and ensure GitHub Pages is enabled and PAGES_PAT (with repo+pages permissions) secret is configured for fallback push."
-          exit 1
