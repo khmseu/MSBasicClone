@@ -85,6 +85,11 @@ if(MSVC)
     # Keep the warning level globally but apply optimization flags only to the
     # `msbasic` target after it's created to avoid MSVC flag conflicts.
     add_compile_options(/W4)
+
+    # Avoid Windows headers defining min/max macros which conflict with std::min/max
+    # Reduce Windows header surface area and enable math constants on MSVC
+    # Also disable CRT deprecation warnings for cross-platform code using getenv
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN _USE_MATH_DEFINES _CRT_SECURE_NO_WARNINGS)
 endif()
 
 # Source files
