@@ -52,9 +52,17 @@ jobs:
             libxi-dev \
             libgl1-mesa-dev
 
-      - name: Configure and build
+      - name: Configure and build (Linux/macOS)
+        if: matrix.os != 'windows-latest'
         run: |
           cmake -S . -B build
+          cmake --build build
+
+      - name: Configure and build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          # Disable automatic raylib build on Windows to avoid WinAPI header conflicts
+          cmake -S . -B build -DAUTO_BUILD_RAYLIB=OFF
           cmake --build build
 
       - name: Run tests
