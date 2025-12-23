@@ -207,13 +207,13 @@ jobs:
           runid="${{ github.run_id }}"
 
           echo "Waiting for 'github-pages' artifact to appear for run $runid..."
-          for i in {1..36}; do
+          for i in {1..24}; do
             artifacts=$(gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[].name' 2>/dev/null || true)
             if echo "$artifacts" | grep -qw "github-pages"; then
               echo "Found 'github-pages' artifact"
               exit 0
             fi
-            echo "Not found yet (attempt $i/36), sleeping 5s"
+            echo "Not found yet (attempt $i/24), sleeping 5s"
             sleep 5
           done
 
@@ -222,15 +222,16 @@ jobs:
           gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[] | {id: .id, name: .name}' || true
           exit 1
 
-      # Small pause to avoid rare artifact indexing races between services
-      - name: Wait a moment for artifact propagation
-        run: |
-          echo "Sleeping 15s to allow artifact service to propagate"
-          sleep 15
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+
+      # Small pause to avoid rare artifact indexing races between services
+      - name: Wait a moment for artifact propagation
+        if: success() || failure()
+        run: |
+          echo "Sleeping 15s to allow artifact service to propagate"
+          sleep 15
 
       # Fallback: if deploy-pages fails to fetch the signed artifact URL, try
       # downloading the artifact and publishing with peaceiris/actions-gh-pages
@@ -270,26 +271,9 @@ jobs:
               fi ;;
           esac
 
-      - name: Fallback publish with PAT (peaceiris)
-        if: failure() && secrets.PAGES_PAT != ''
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.PAGES_PAT }}
-          publish_dir: ./pages-artifact/contents
-          publish_branch: gh-pages
-          allow_empty_commit: false
-          keep_files: false
-          force_orphan: false
-          enable_jekyll: false
-
-      - name: Fallback publish with GITHUB_TOKEN (peaceiris)
-        if: failure() && secrets.PAGES_PAT == ''
+      - name: Fallback publish to GitHub Pages (peaceiris)
+        if: failure()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./pages-artifact/contents
-          publish_branch: gh-pages
-          allow_empty_commit: false
-          keep_files: false
-          force_orphan: false
-          enable_jekyll: false
