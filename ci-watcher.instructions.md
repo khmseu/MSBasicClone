@@ -3,7 +3,7 @@ Purpose: Monitor CI runs for the latest commit and triage failures.
 When to act:
 
 - If there are local commits to push, push them first to trigger CI.
-- Always watch the workflow run for the pushed commit until it completes.
+- Always keep watching the workflow run for the pushed commit until it completes.
 
 Steps to follow:
 
