@@ -218,29 +218,62 @@ jobs:
               fi ;;
           esac
 
-      - name: Fallback publish with PAT (peaceiris)
-        if: failure() && secrets.PAGES_PAT
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.PAGES_PAT }}
-          publish_dir: ./pages-artifact/contents
-          publish_branch: gh-pages
-          allow_empty_commit: false
-          keep_files: false
-          force_orphan: false
-          enable_jekyll: false
+      - name: Fallback publish via git (PAT preferred)
+        if: failure()
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          GIT_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          GIT_NAME: "github-actions[bot]"
+        run: |
+          set -euo pipefail
 
-      - name: Fallback publish with GITHUB_TOKEN (peaceiris)
-        if: failure() && !secrets.PAGES_PAT
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./pages-artifact/contents
-          publish_branch: gh-pages
-          allow_empty_commit: false
-          keep_files: false
-          force_orphan: false
-          enable_jekyll: false
+          # Prefer a user-supplied PAT if present, otherwise use GITHUB_TOKEN
+          if [ -n "${{ secrets.PAGES_PAT }}" ]; then
+            TOKEN="${{ secrets.PAGES_PAT }}"
+          else
+            TOKEN="${{ secrets.GITHUB_TOKEN }}"
+          fi
+
+          echo "Using token from selected secret to push gh-pages"
+
+          # Prepare a temporary git worktree for publishing
+          git config --global user.email "$GIT_EMAIL"
+          git config --global user.name "$GIT_NAME"
+
+          # Clone the gh-pages branch (or create an orphan branch if missing)
+          TARGET_DIR="gh-pages-tmp"
+          rm -rf "$TARGET_DIR"
+          set +e
+          git clone --depth=1 --branch=gh-pages "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "$TARGET_DIR"
+          CLONE_STATUS=$?
+          set -e
+
+          if [ $CLONE_STATUS -ne 0 ]; then
+            echo "gh-pages branch not found or clone failed; creating orphan branch"
+            mkdir -p "$TARGET_DIR"
+            git init "$TARGET_DIR"
+            pushd "$TARGET_DIR" >/dev/null
+            git checkout --orphan gh-pages
+            popd >/dev/null
+          fi
+
+          # Sync files
+          rm -rf "$TARGET_DIR"/*
+          cp -r pages-artifact/contents/. "$TARGET_DIR/" || true
+
+          pushd "$TARGET_DIR" >/dev/null
+          git add --all
+          if git diff --quiet --cached; then
+            echo "No changes to publish"
+            popd >/dev/null
+            exit 0
+          fi
+          git commit -m "Publish site from ${GITHUB_SHA}"
+          # Force push to allow branch protection rules to be satisfied by PAT
+          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD:gh-pages --force
+          popd >/dev/null
 
       - name: Fallback publish to GitHub Pages (peaceiris)
         if: failure()
