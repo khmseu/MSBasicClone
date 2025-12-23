@@ -70,7 +70,6 @@ jobs:
   build-docs:
     name: Build Docs (HTML + PDF)
     runs-on: ubuntu-latest
-    needs: build
 
     steps:
       - uses: actions/checkout@v4
@@ -121,7 +120,7 @@ jobs:
   deploy:
     name: Deploy Docs to GitHub Pages
     runs-on: ubuntu-latest
-    needs: build-docs
+    needs: [build, build-docs]
     if: startsWith(github.ref, 'refs/tags/v')
     environment:
       name: github-pages
@@ -154,3 +153,5 @@ jobs:
           if [ -z "${{ steps.deployment.outputs.page_url }}" ]; then
             echo "WARN: deployment URL not provided"
           fi
+deploy:
+    
