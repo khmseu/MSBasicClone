@@ -129,7 +129,8 @@ jobs:
           retention-days: 30
 
       - name: Upload HTML artifact (for Pages)
-        uses: actions/upload-pages-artifact@v2
+        # Use the latest major to avoid deprecated upload-artifact v3 dependency
+        uses: actions/upload-pages-artifact@v3
         with:
           path: docs/api/html
 
