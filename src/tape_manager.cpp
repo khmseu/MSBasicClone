@@ -40,6 +40,13 @@
 constexpr uint32_t MAX_RECORD_SIZE = 1024 * 1024;
 
 #if defined(PLATFORM_WINDOWS)
+// Define lightweight Windows headers to avoid pulling unnecessary symbols
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <commdlg.h>
 #include <windows.h>
 #elif defined(PLATFORM_MACOS)
