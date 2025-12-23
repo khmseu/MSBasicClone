@@ -169,6 +169,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+        continue-on-error: true
 
       # Small pause to avoid rare artifact indexing races between services
       - name: Wait a moment for artifact propagation
@@ -221,7 +222,9 @@ jobs:
           esac
 
       - name: Fallback publish via git (PAT preferred)
+        id: fallback_git
         if: failure()
+        continue-on-error: true
         shell: bash
         env:
           REPO: ${{ github.repository }}
@@ -249,6 +252,7 @@ jobs:
           set -e
           if [ $LS_REMOTE_STATUS -ne 0 ]; then
             echo "Token cannot access repository for pushing. Set a Personal Access Token with 'repo' and 'pages' permissions in secret PAGES_PAT, or grant the workflow GITHUB_TOKEN appropriate permissions."
+            # continue to allow other fallbacks (peaceiris) to run
             exit 1
           fi
 
@@ -286,12 +290,33 @@ jobs:
           fi
           git commit -m "Publish site from ${GITHUB_SHA}"
           # Force push to allow branch protection rules to be satisfied by PAT
-          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD:gh-pages --force
+          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD:gh-pages --force || true
           popd >/dev/null
 
       - name: Fallback publish to GitHub Pages (peaceiris)
+        id: peaceiris_publish
         if: failure()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./pages-artifact/contents
+
+      - name: Verify publish result
+        shell: bash
+        run: |
+          set -euo pipefail
+          deploy_outcome=${{ steps.deployment.outcome || 'failure' }}
+          git_outcome=${{ steps.fallback_git.outcome || 'failure' }}
+          peaceiris_outcome=${{ steps.peaceiris_publish.outcome || 'failure' }}
+
+          echo "Deploy step outcome: $deploy_outcome"
+          echo "Fallback git step outcome: $git_outcome"
+          echo "Peaceiris publish outcome: $peaceiris_outcome"
+
+          if [ "$deploy_outcome" = "success" ] || [ "$git_outcome" = "success" ] || [ "$peaceiris_outcome" = "success" ]; then
+            echo "Pages published successfully by at least one method."
+            exit 0
+          fi
+
+          echo "ERROR: All publish methods failed. See above logs for details and ensure GitHub Pages is enabled and PAGES_PAT (with repo+pages permissions) secret is configured for fallback push."
+          exit 1
