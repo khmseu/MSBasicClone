@@ -228,6 +228,10 @@ file(GLOB BAS_TEST_FILES
     "${CMAKE_SOURCE_DIR}/examples/*.bas"
 )
 
+# Use a dedicated working directory for tests to keep artifacts out of source tree
+set(TEST_WORK_DIR "${CMAKE_BINARY_DIR}/test_work")
+file(MAKE_DIRECTORY "${TEST_WORK_DIR}")
+
 # Exclude interactive examples that require user input (e.g., GET/INPUT).
 list(FILTER BAS_TEST_FILES EXCLUDE REGEX ".*textmode_demo\\.bas$")
 
@@ -236,7 +240,7 @@ foreach(BAS_FILE ${BAS_TEST_FILES})
     add_test(
         NAME bas_${BAS_NAME}
         COMMAND $<TARGET_FILE:msbasic> ${BAS_FILE}
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        WORKING_DIRECTORY ${TEST_WORK_DIR}
     )
 endforeach()
 
