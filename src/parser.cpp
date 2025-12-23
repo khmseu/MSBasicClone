@@ -1108,13 +1108,12 @@ private:
 
 class WhileStmt : public Statement {
 public:
-  WhileStmt(std::shared_ptr<Expression> condition, LineNumber returnLine)
-      : condition_(std::move(condition)), returnLine_(returnLine) {}
+  explicit WhileStmt(std::shared_ptr<Expression> condition)
+      : condition_(std::move(condition)) {}
   void execute(Interpreter *interp) override;
 
 private:
   std::shared_ptr<Expression> condition_;
-  LineNumber returnLine_;
 };
 
 class WendStmt : public Statement {
@@ -4050,8 +4049,7 @@ std::shared_ptr<Statement> Parser::parseWhile(const std::vector<Token> &tokens,
                                               size_t &pos) {
   pos++; // Skip WHILE
   auto condition = parseExpression(tokens, pos);
-  return std::make_shared<WhileStmt>(condition,
-                                     -1); // returnLine set at runtime
+  return std::make_shared<WhileStmt>(condition);
 }
 
 /**
