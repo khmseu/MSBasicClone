@@ -3,7 +3,7 @@ Purpose: Monitor CI runs for the latest commit and triage failures.
 When to act:
 
 - If there are local commits to push, push them first to trigger CI.
-- Always keep watching the workflow run for the pushed commit until it completes.
+- Always keep watching the workflow run for the pushed commit until it completes. The agent **SHOULD NOT STOP WATCHING** until the workflow run reaches a terminal state (success, failure, or cancelled); once it terminates, the agent must fetch logs and analyze the result as described below.
 
 Steps to follow:
 
