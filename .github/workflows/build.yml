@@ -181,7 +181,7 @@ jobs:
       # Fallback: if deploy-pages fails to fetch the signed artifact URL, try
       # downloading the artifact and publishing with peaceiris/actions-gh-pages
       - name: Download Pages artifact (fallback)
-        if: failure()
+        if: steps.deployment.outcome == 'failure'
         uses: actions/download-artifact@v4
         with:
           name: github-pages
@@ -223,7 +223,7 @@ jobs:
 
       - name: Fallback publish via git (PAT preferred)
         id: fallback_git
-        if: failure()
+        if: steps.deployment.outcome == 'failure'
         continue-on-error: true
         shell: bash
         env:
@@ -295,7 +295,7 @@ jobs:
 
       - name: Fallback publish to GitHub Pages (peaceiris)
         id: peaceiris_publish
-        if: failure()
+        if: steps.deployment.outcome == 'failure'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
