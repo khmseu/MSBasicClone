@@ -153,6 +153,19 @@ jobs:
           gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[] | {id: .id, name: .name}' || true
           exit 1
 
+      - name: Ensure GitHub Pages is enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          owner="${{ github.repository_owner }}"
+          repo="${{ github.event.repository.name }}"
+          # Check if Pages is configured for the repository
+          if ! gh api repos/$owner/$repo/pages >/dev/null 2>&1; then
+            echo "GitHub Pages is not enabled for $owner/$repo. Please enable Pages in repository settings: https://github.com/$owner/$repo/settings/pages"
+            exit 1
+          fi
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
@@ -221,11 +234,23 @@ jobs:
           # Prefer a user-supplied PAT if present, otherwise use GITHUB_TOKEN
           if [ -n "${{ secrets.PAGES_PAT }}" ]; then
             TOKEN="${{ secrets.PAGES_PAT }}"
+            TOKEN_IS_PAT=true
           else
             TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            TOKEN_IS_PAT=false
           fi
 
           echo "Using token from selected secret to push gh-pages"
+
+          # Quick test: validate token can access repository for read/push
+          set +e
+          git ls-remote "https://x-access-token:${TOKEN}@github.com/${REPO}.git" HEAD >/dev/null 2>&1
+          LS_REMOTE_STATUS=$?
+          set -e
+          if [ $LS_REMOTE_STATUS -ne 0 ]; then
+            echo "Token cannot access repository for pushing. Set a Personal Access Token with 'repo' and 'pages' permissions in secret PAGES_PAT, or grant the workflow GITHUB_TOKEN appropriate permissions."
+            exit 1
+          fi
 
           # Prepare a temporary git worktree for publishing
           git config --global user.email "$GIT_EMAIL"
