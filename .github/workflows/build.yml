@@ -145,6 +145,8 @@ jobs:
 
     steps:
       - name: Wait for Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           owner="${{ github.repository_owner }}"
@@ -152,13 +154,13 @@ jobs:
           runid="${{ github.run_id }}"
 
           echo "Waiting for 'github-pages' artifact to appear for run $runid..."
-          for i in {1..12}; do
+          for i in {1..24}; do
             artifacts=$(gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[].name' 2>/dev/null || true)
             if echo "$artifacts" | grep -qw "github-pages"; then
               echo "Found 'github-pages' artifact"
               exit 0
             fi
-            echo "Not found yet (attempt $i/12), sleeping 5s"
+            echo "Not found yet (attempt $i/24), sleeping 5s"
             sleep 5
           done
 
