@@ -142,6 +142,7 @@ jobs:
           esac
 
       - name: Publish HTML to gh-pages (peaceiris)
+        if: ${{ github.event_name != 'pull_request' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -151,6 +152,11 @@ jobs:
           keep_files: false
           force_orphan: false
           enable_jekyll: false
+
+      - name: Skip publish on pull requests
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          echo "Skipping publishing to gh-pages for pull_request events (GITHUB_TOKEN may not have push permission)."
 
   # ============================================================================
   # PDF Docs (on v* tags only; slower, includes LaTeX)
