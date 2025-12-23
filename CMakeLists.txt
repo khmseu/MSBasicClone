@@ -228,8 +228,13 @@ endif()
 
 # Apply MSVC optimization flags only to the msbasic target to avoid
 # conflicting with flags used by vendored projects (e.g., /RTC1).
+# Only apply /O2 for non-Debug configurations (Release/RelWithDebInfo/MinSizeRel)
 if(MSVC)
-    target_compile_options(msbasic PRIVATE /O2)
+    target_compile_options(msbasic PRIVATE
+        $<$<CONFIG:Release>:/O2>
+        $<$<CONFIG:RelWithDebInfo>:/O2>
+        $<$<CONFIG:MinSizeRel>:/O2>
+    )
 endif()
 
 enable_testing()
