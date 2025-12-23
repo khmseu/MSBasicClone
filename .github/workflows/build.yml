@@ -144,6 +144,29 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
+      - name: Wait for Pages artifact
+        shell: bash
+        run: |
+          owner="${{ github.repository_owner }}"
+          repo="${{ github.event.repository.name }}"
+          runid="${{ github.run_id }}"
+
+          echo "Waiting for 'github-pages' artifact to appear for run $runid..."
+          for i in {1..12}; do
+            artifacts=$(gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[].name' 2>/dev/null || true)
+            if echo "$artifacts" | grep -qw "github-pages"; then
+              echo "Found 'github-pages' artifact"
+              exit 0
+            fi
+            echo "Not found yet (attempt $i/12), sleeping 5s"
+            sleep 5
+          done
+
+          echo "Artifact 'github-pages' not found after retries"
+          echo "Available artifacts:" 
+          gh api repos/$owner/$repo/actions/runs/$runid/artifacts --jq '.artifacts[] | {id: .id, name: .name}' || true
+          exit 1
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
