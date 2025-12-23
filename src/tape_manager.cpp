@@ -47,8 +47,10 @@ constexpr uint32_t MAX_RECORD_SIZE = 1024 * 1024;
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <commdlg.h>
+// Include Windows core headers before any specialized headers such as commdlg
+// so that types like CALLBACK and related macros are defined.
 #include <windows.h>
+#include <commdlg.h>
 #elif defined(PLATFORM_MACOS)
 #include <cstdlib>
 #elif defined(PLATFORM_LINUX)
