@@ -92,6 +92,59 @@ jobs:
           retention-days: 30
 
   # ============================================================================
+  # Publish HTML Docs every time they're built
+  # ============================================================================
+  publish-html:
+    name: Publish HTML Docs
+    runs-on: ubuntu-latest
+    needs: docs-html
+
+    steps:
+      - name: Download HTML artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-html
+          path: ./html-artifact
+
+      - name: Extract HTML artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p html-artifact/contents
+          archive=$(ls html-artifact | head -n1 || true)
+          if [ -z "$archive" ]; then
+            echo "No artifact file found in html-artifact/"
+            exit 1
+          fi
+          echo "Found artifact: $archive"
+          case "$archive" in
+            *.zip)
+              unzip -q html-artifact/$archive -d html-artifact/contents ;;
+            *.tar|*.tar.gz|*.tgz)
+              tar -xzf html-artifact/$archive -C html-artifact/contents ;;
+            *.tar.bz2)
+              tar -xjf html-artifact/$archive -C html-artifact/contents ;;
+            *)
+              if file html-artifact/$archive | grep -q "tar archive"; then
+                tar -xf html-artifact/$archive -C html-artifact/contents
+              else
+                echo "Unknown archive format: $archive"
+                exit 1
+              fi ;;
+          esac
+
+      - name: Publish HTML to gh-pages (peaceiris)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./html-artifact/contents
+          publish_branch: gh-pages
+          allow_empty_commit: false
+          keep_files: false
+          force_orphan: false
+          enable_jekyll: false
+
+  # ============================================================================
   # PDF Docs (on v* tags only; slower, includes LaTeX)
   # ============================================================================
   docs-pdf:
