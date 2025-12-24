@@ -96,6 +96,23 @@ jobs:
           cmake -S . -B build-docs
           cmake --build build-docs --target docs
 
+      - name: Docs version smoke check (git describe)
+        run: |
+          set -euo pipefail
+          # Ensure git metadata available (checkout uses fetch-depth: 0)
+          expected=$(git describe --tags --dirty --always)
+          echo "Expected docs version: $expected"
+          if grep -qF "$expected" docs/api/html/index.html; then
+            echo "Docs version $expected found in index.html"
+            exit 0
+          fi
+          echo "ERROR: Docs version $expected not found in index.html"
+          echo "--- index.html (head) ---"
+          sed -n '1,120p' docs/api/html/index.html || true
+          echo "--- index.html (tail) ---"
+          sed -n '$(($(wc -l < docs/api/html/index.html) - 120)),$(wc -l < docs/api/html/index.html)p' docs/api/html/index.html || true
+          exit 1
+
       - name: Upload HTML docs artifact
         uses: actions/upload-artifact@v4
         with:
