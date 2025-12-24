@@ -138,4 +138,37 @@ jobs:
         run: |
           echo "Deployed: ${{ steps.deployment.outputs.page_url }}"
 
+  # ==========================================================================
+  # Smoke test GitHub Pages (runs after deploy)
+  # =============================================================================
+  pages-smoke-test:
+    name: Smoke test Pages site
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Check Pages URL (retry)
+        run: |
+          set -euo pipefail
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          URL="https://$OWNER.github.io/$REPO/"
+
+          echo "Checking Pages URL: $URL"
+          # Retry a few times to allow DNS/propagation
+          for i in {1..6}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" "$URL" ) || status=000
+            echo "Attempt $i: HTTP $status"
+            if [ "$status" = "200" ]; then
+              echo "Pages site is up"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "ERROR: Pages site did not return HTTP 200 after retries"
+          curl -sS "$URL" || true
+          exit 1
+
 # end.
