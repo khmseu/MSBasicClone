@@ -214,6 +214,15 @@ file(WRITE "${_doxy_out}" "@INCLUDE = ${_doxy_in}\n")
 # Ensure docs always go to the intended output directory.
 file(APPEND "${_doxy_out}" "OUTPUT_DIRECTORY = ${_output_dir}\n")
 
+# Stamp the current project version into the Doxygen config so it appears in
+# generated pages (PROJECT_NUMBER). The version is passed from the parent
+# CMake (MSBASIC_VERSION_STRING) when invoking this script.
+if(DEFINED MSBASIC_VERSION_STRING)
+  file(APPEND "${_doxy_out}" "PROJECT_NUMBER = ${MSBASIC_VERSION_STRING}\n")
+else()
+  message(STATUS "MSBASIC_VERSION_STRING not defined; PROJECT_NUMBER will remain as set in Doxyfile")
+endif()
+
 if(DOCS_ENABLE_DOT)
   file(APPEND "${_doxy_out}" "HAVE_DOT = YES\n")
   file(APPEND "${_doxy_out}" "DOT_IMAGE_FORMAT = png\n")

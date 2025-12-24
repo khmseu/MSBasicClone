@@ -299,6 +299,7 @@ if(DOXYGEN_FOUND)
             -DDOCS_BUILD_PDF=${DOCS_BUILD_PDF}
             -DDOCS_LATEX_ENGINE=${DOCS_LATEX_ENGINE}
             -DDOCS_LOG_DIR=${DOCS_LOG_DIR}
+            -DMSBASIC_VERSION_STRING=${MSBASIC_VERSION_STRING}
             -P ${CMAKE_SOURCE_DIR}/cmake/BuildDocs.cmake
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             COMMENT "Generating API documentation (clean + Doxygen)"
