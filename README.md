@@ -1,5 +1,7 @@
 # Applesoft BASIC Clone
 
+[![MSBasic Logo](assets/logo/rbr.png)](https://khmseu.github.io/MSBasicClone/)
+
 A modern implementation of the Applesoft II BASIC interpreter written in C++20, targeting compatibility with the classic Apple II BASIC dialect.
 
 ## Documentation
