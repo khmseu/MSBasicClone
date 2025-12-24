@@ -25,14 +25,11 @@ else()
 endif()
 
 project(MSBasicClone LANGUAGES CXX)
-# If running in GitHub Actions, prefer the ref name (tags/branches) for a clean version string
-if(DEFINED ENV{GITHUB_REF_NAME} AND NOT "$ENV{GITHUB_REF_NAME}" STREQUAL "")
-  # Use the provided ref name (typically the tag name when building a tag) so
-  # docs and packaging show a readable version like 'v0.5.7' instead of a
-  # short commit hash when the checkout is shallow or tags are unavailable.
-  set(MSBASIC_VERSION_STRING "$ENV{GITHUB_REF_NAME}")
-endif()
 
+# Derive version from `git describe --tags --dirty --always` when available
+# This ensures the build and generated docs consistently use the exact
+# repository state (tag, dirty marker, or commit id) rather than an
+# external ref name which may not reflect local repository state.
 message(STATUS "MSBasicClone version: ${MSBASIC_VERSION_STRING}")
 
 # Generate a project-local .clangd at configure time if missing, using the
