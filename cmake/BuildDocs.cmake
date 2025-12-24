@@ -268,13 +268,21 @@ if(NOT _doxygen_rv EQUAL 0)
 endif()
 
 # Copy repository assets into the generated HTML output so image paths
-# used in markdown like `assets/logo/rbr.png` resolve on the site.
+# used in markdown like `assets/logo/rbr.svg` resolve on the site. We prefer
+# the SVG logo; a PNG fallback may be present in the repo but it will be
+# removed from the generated docs to encourage using the vector asset.
 if(EXISTS "${SOURCE_DIR}/assets")
   set(_html_assets_dir "${_output_dir}/html/assets")
   message(STATUS "Copying repository assets to docs output: ${SOURCE_DIR}/assets -> ${_html_assets_dir}")
   # Ensure target directory exists and perform a directory copy
   file(MAKE_DIRECTORY "${_html_assets_dir}")
   execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory "${SOURCE_DIR}/assets" "${_html_assets_dir}")
+
+  # Prefer SVG logo only: remove PNG fallback after copying so the site uses
+  # the scalable SVG asset (older tools can still fallback to PNG if needed)
+  if(EXISTS "${_html_assets_dir}/logo/rbr.png")
+    file(REMOVE "${_html_assets_dir}/logo/rbr.png")
+  endif()
 endif()
 
 # Doxygen's LaTeX output is primarily tailored for pdfTeX/LuaTeX.
