@@ -1,0 +1,90 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+        "label": "Clean build",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-lc",
+            "rm -rf build && cmake -S . -B build && cmake --build build --clean-first -j$(nproc)"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        },
+        "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "CMake configure",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-lc",
+            "cmake -S . -B build"
+        ],
+        "group": {
+            "kind": "build"
+        },
+        "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "Run all tests (ctest)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-lc",
+            "cd build && ctest --output-on-failure -j$(nproc)"
+        ],
+        "group": {
+            "kind": "test",
+            "isDefault": true
+        },
+        "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "Clean build & Run tests",
+        "dependsOn": [
+            "Clean build",
+            "Run all tests (ctest)"
+        ],
+        "dependsOrder": "sequence",
+        "group": {
+            "kind": "test"
+        },
+        "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Docs: Generate API (HTML + PDF)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-lc",
+            "cmake -S . -B build-docs && cmake --build build-docs --target docs"
+        ],
+        "group": {
+            "kind": "build"
+        },
+        "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+        },
+        "problemMatcher": []
+    }
+]
+}
