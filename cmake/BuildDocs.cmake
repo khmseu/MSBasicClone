@@ -267,6 +267,16 @@ if(NOT _doxygen_rv EQUAL 0)
   message(FATAL_ERROR "Doxygen failed with exit code ${_doxygen_rv}")
 endif()
 
+# Copy repository assets into the generated HTML output so image paths
+# used in markdown like `assets/logo/rbr.png` resolve on the site.
+if(EXISTS "${SOURCE_DIR}/assets")
+  set(_html_assets_dir "${_output_dir}/html/assets")
+  message(STATUS "Copying repository assets to docs output: ${SOURCE_DIR}/assets -> ${_html_assets_dir}")
+  # Ensure target directory exists and perform a directory copy
+  file(MAKE_DIRECTORY "${_html_assets_dir}")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_directory "${SOURCE_DIR}/assets" "${_html_assets_dir}")
+endif()
+
 # Doxygen's LaTeX output is primarily tailored for pdfTeX/LuaTeX.
 # When using XeLaTeX, guard pdfTeX-only primitives that can appear in refman.tex.
 if(DOCS_BUILD_PDF AND _engine STREQUAL "xelatex")
